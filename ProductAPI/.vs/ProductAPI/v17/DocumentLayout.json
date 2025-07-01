@@ -1,0 +1,109 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\ngthu\\source\\repos\\ProductAPI\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\ngthu\\source\\repos\\ProductAPI\\Migrations\\20250701160207_UpdatePromotionFields.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Migrations\\20250701160207_UpdatePromotionFields.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FB715847-C8E3-4D09-996A-2D59D1CCBBA9}|ProductAPI.csproj|c:\\users\\ngthu\\source\\repos\\productapi\\models\\promotion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FB715847-C8E3-4D09-996A-2D59D1CCBBA9}|ProductAPI.csproj|solutionrelative:models\\promotion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FB715847-C8E3-4D09-996A-2D59D1CCBBA9}|ProductAPI.csproj|c:\\users\\ngthu\\source\\repos\\productapi\\services\\userservices.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FB715847-C8E3-4D09-996A-2D59D1CCBBA9}|ProductAPI.csproj|solutionrelative:services\\userservices.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FB715847-C8E3-4D09-996A-2D59D1CCBBA9}|ProductAPI.csproj|c:\\users\\ngthu\\source\\repos\\productapi\\iservices\\iuserservices.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FB715847-C8E3-4D09-996A-2D59D1CCBBA9}|ProductAPI.csproj|solutionrelative:iservices\\iuserservices.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FB715847-C8E3-4D09-996A-2D59D1CCBBA9}|ProductAPI.csproj|c:\\users\\ngthu\\source\\repos\\productapi\\controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FB715847-C8E3-4D09-996A-2D59D1CCBBA9}|ProductAPI.csproj|solutionrelative:controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "20250701160207_UpdatePromotionFields.cs",
+              "DocumentMoniker": "C:\\Users\\ngthu\\source\\repos\\ProductAPI\\Migrations\\20250701160207_UpdatePromotionFields.cs",
+              "RelativeDocumentMoniker": "Migrations\\20250701160207_UpdatePromotionFields.cs",
+              "ToolTip": "C:\\Users\\ngthu\\source\\repos\\ProductAPI\\Migrations\\20250701160207_UpdatePromotionFields.cs",
+              "RelativeToolTip": "Migrations\\20250701160207_UpdatePromotionFields.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-01T16:02:07.593Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Promotion.cs",
+              "DocumentMoniker": "C:\\Users\\ngthu\\source\\repos\\ProductAPI\\Models\\Promotion.cs",
+              "RelativeDocumentMoniker": "Models\\Promotion.cs",
+              "ToolTip": "C:\\Users\\ngthu\\source\\repos\\ProductAPI\\Models\\Promotion.cs",
+              "RelativeToolTip": "Models\\Promotion.cs",
+              "ViewState": "AQIAABYAAAAAAAAAAADwvwoAAAAXAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-01T15:34:14.879Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "IUserServices.cs",
+              "DocumentMoniker": "C:\\Users\\ngthu\\source\\repos\\ProductAPI\\IServices\\IUserServices.cs",
+              "RelativeDocumentMoniker": "IServices\\IUserServices.cs",
+              "ToolTip": "C:\\Users\\ngthu\\source\\repos\\ProductAPI\\IServices\\IUserServices.cs",
+              "RelativeToolTip": "IServices\\IUserServices.cs",
+              "ViewState": "AQIAAAcAAAAAAAAAAIA3wAsAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-01T15:25:53.106Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "UserServices.cs",
+              "DocumentMoniker": "C:\\Users\\ngthu\\source\\repos\\ProductAPI\\Services\\UserServices.cs",
+              "RelativeDocumentMoniker": "Services\\UserServices.cs",
+              "ToolTip": "C:\\Users\\ngthu\\source\\repos\\ProductAPI\\Services\\UserServices.cs",
+              "RelativeToolTip": "Services\\UserServices.cs",
+              "ViewState": "AQIAABAAAAAAAAAAAAAAABYAAAANAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-01T15:25:00.714Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "UserController.cs",
+              "DocumentMoniker": "C:\\Users\\ngthu\\source\\repos\\ProductAPI\\Controllers\\UserController.cs",
+              "RelativeDocumentMoniker": "Controllers\\UserController.cs",
+              "ToolTip": "C:\\Users\\ngthu\\source\\repos\\ProductAPI\\Controllers\\UserController.cs",
+              "RelativeToolTip": "Controllers\\UserController.cs",
+              "ViewState": "AQIAACYAAAAAAAAAAAAgwCkAAAAJAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-01T15:24:33.978Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
