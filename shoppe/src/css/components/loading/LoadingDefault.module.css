@@ -1,0 +1,23 @@
+.bannerWrapper {
+  height: 100%;
+  width: 100%;
+}
+
+.bannerItem {
+  display: block;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  height: 100%;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden; /* bo góc khi scale */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.bannerItem:hover {
+  transform: scale(1.02); /* scale nhẹ cho mượt */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+}

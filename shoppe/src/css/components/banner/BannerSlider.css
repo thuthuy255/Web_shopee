@@ -1,0 +1,15 @@
+.containerBanner {
+  width: 100%;
+  height: 100%; /* cố định chiều cao */
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.bannerItem {
+  background-size: cover;
+  background-repeat: no-repeat;
+  width: 100%;
+  height: 400px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* thêm hiệu ứng mượt */
+  cursor: pointer;
+}
