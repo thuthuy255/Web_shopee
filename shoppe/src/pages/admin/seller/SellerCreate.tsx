@@ -1,0 +1,63 @@
+import React, { useRef } from 'react';
+import DynamicForm, { type Field } from '../../../components/DynamicForm';
+import { RegisterbyAdmin } from '../../../api/auth.api';
+import { showError, showSuccess } from '../../../untils/ShowToast';
+import { useNavigate } from 'react-router-dom';
+import { inserProduct } from '../../../api/product/product.api';
+
+export default function SellerCreate() {
+    const formRef = useRef<any>(null); // ✅ khai báo đúng kiểu có thể null ban đầu
+    const navigate = useNavigate();
+    const fields: Field[] = [
+        {
+            name: 'email', label: 'Email', type: 'email', rules: [
+                { required: true, message: 'Vui lòng nhập email' },
+                { type: 'email', message: 'Email không hợp lệ' }
+            ]
+        },
+        {
+            name: 'password', label: 'Mật khẩu', type: 'password', rules: [
+                { required: true, message: 'Vui lòng nhập mật khẩu' },
+                { min: 6, message: 'Mật khẩu ít nhất 6 ký tự' }
+            ]
+        },
+        {
+            name: 'username', label: 'Tên người bán', type: 'text', rules: [
+                { required: true, message: 'Vui lòng nhập tên người dùng' }
+            ]
+        },
+        {
+            name: 'fullName', label: 'Tên cửa hàng', type: 'text', rules: [
+                { required: true, message: 'Vui lòng nhập họ và tên' }
+            ]
+        },
+        {
+            name: 'phone', label: 'Số điện thoại', type: 'text', rules: [
+                { required: true, message: 'Vui lòng nhập số điện thoại' },
+                { pattern: /^[0-9]{9,11}$/, message: 'Số điện thoại không hợp lệ' }
+            ]
+        },
+    ];
+
+
+
+
+    const handleSubmit = async (values: any) => {
+        try {
+            await RegisterbyAdmin(values);
+            showSuccess('Tạo tài khoản thành công');
+            formRef.current?.resetFields(); // ✅
+            navigate('/admin/seller')
+        } catch (error) {
+            console.log("🚀 ~ handleSubmit ~ error:", error)
+            showError('Tạo tài khoản thất bại');
+        }
+    };
+
+    return (
+        <div>
+            <h2>Thêm sản phẩm</h2>
+            <DynamicForm fields={fields} onSubmit={handleSubmit} formRef={formRef} />
+        </div>
+    );
+}

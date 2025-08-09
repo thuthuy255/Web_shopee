@@ -1,0 +1,147 @@
+import React from 'react';
+import { Row, Col, Form, Input, Button, Typography, Image, Space } from 'antd';
+import { GoogleOutlined, FacebookFilled } from '@ant-design/icons';
+import logo from '../../assets/img/logo.png';
+import backgroundImg from '../../assets/img/background.jpg';
+import { RegisterUser } from '../../api/auth.api';
+import { showError, showSuccess } from '../../untils/ShowToast';
+import { useNavigate } from 'react-router-dom';
+
+const { Title } = Typography;
+
+const Register: React.FC = () => {
+    const navigate = useNavigate();
+    const [form] = Form.useForm();
+
+    const handleRegister = async (values: any) => {
+        try {
+            const payload = {
+                email: values.email,
+                password: values.password,
+                username: values.username,
+                fullName: values.fullName,
+                phone: values.phone,
+                avatar: '', // mặc định nếu chưa cho upload avatar
+            };
+
+            await RegisterUser(payload);
+            showSuccess('Đăng ký thành công');
+            navigate('/auth/login');
+        } catch (error) {
+            showError('Tạo tài khoản thất bại');
+        }
+    };
+
+    return (
+        <Row style={{ height: '100vh' }}>
+            <Col xs={24} md={12} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '100%', maxWidth: 400, padding: 20 }}>
+                    <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                        <Image src={logo} alt="logo" preview={false} width={70} />
+                    </div>
+
+                    <Title level={4} style={{ textAlign: 'center', marginBottom: 12 }}>
+                        Đăng Ký
+                    </Title>
+
+                    <Form
+                        layout="vertical"
+                        form={form}
+                        onFinish={handleRegister}
+                        initialValues={{ email: '', password: '', phone: '', username: '', fullName: '' }}
+                    >
+                        <Form.Item
+                            label="Tên đăng nhập"
+                            name="username"
+                            rules={[{ required: true, message: 'Vui lòng nhập tên đăng nhập' }]}
+                        >
+                            <Input size="large" placeholder="Tên đăng nhập" />
+                        </Form.Item>
+
+                        <Form.Item
+                            label="Họ và tên"
+                            name="fullName"
+                            rules={[{ required: true, message: 'Vui lòng nhập họ và tên' }]}
+                        >
+                            <Input size="large" placeholder="Họ và tên" />
+                        </Form.Item>
+
+                        <Form.Item
+                            label="Email"
+                            name="email"
+                            rules={[
+                                { required: true, message: 'Vui lòng nhập email' },
+                                { type: 'email', message: 'Email không hợp lệ' },
+                            ]}
+                        >
+                            <Input size="large" placeholder="Email" />
+                        </Form.Item>
+
+                        <Form.Item
+                            label="Số điện thoại"
+                            name="phone"
+                            rules={[{ required: true, message: 'Vui lòng nhập số điện thoại' }]}
+                        >
+                            <Input size="large" placeholder="Số điện thoại" />
+                        </Form.Item>
+
+                        <Form.Item
+                            label="Mật khẩu"
+                            name="password"
+                            rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
+                        >
+                            <Input.Password size="large" placeholder="Mật khẩu" />
+                        </Form.Item>
+
+                        <Form.Item>
+                            <Button type="primary" htmlType="submit" block size="large">
+                                Đăng ký
+                            </Button>
+                        </Form.Item>
+                    </Form>
+
+                    <div style={{ textAlign: 'center', margin: '16px 0', color: '#999' }}>
+                        Hoặc đăng nhập bằng tài khoản
+                    </div>
+
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                        <Button
+                            icon={<GoogleOutlined />}
+                            block
+                            size="large"
+                            style={{ backgroundColor: '#DB4437', color: '#fff', border: 'none' }}
+                        >
+                            Đăng nhập với Google
+                        </Button>
+                        <Button
+                            icon={<FacebookFilled />}
+                            block
+                            size="large"
+                            style={{ backgroundColor: '#3b5998', color: '#fff', border: 'none' }}
+                        >
+                            Đăng nhập với Facebook
+                        </Button>
+                    </Space>
+                </div>
+            </Col>
+
+            <Col xs={0} md={12}>
+                <div
+                    style={{
+                        height: '100%',
+                        backgroundImage: `url(${backgroundImg})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        position: 'relative',
+                        clipPath: 'polygon(10% 0, 100% 0, 100% 100%, 0 100%)',
+                    }}
+                ></div>
+            </Col>
+        </Row>
+    );
+};
+
+export default Register;

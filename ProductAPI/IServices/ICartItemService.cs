@@ -1,0 +1,17 @@
+﻿using ProductAPI.Core;
+using ProductAPI.DTOs.CartItem;
+
+namespace ProductAPI.IServices
+{
+    public interface ICartItemService
+    {
+
+        Task<MethodResult<List<CartItemDetailDto>>> GetSelectedCartItemsAsync(Guid userId);
+        Task RemoveSelectedItemsAsync(Guid userId);
+        Task RemoveAllItemsAsync(Guid userId);
+        Task<MethodResult<CartItemDetailDto>> AddToCartAsync(Guid userId, CartItemDto dto);
+        Task<MethodResult<CartItemDetailDto>> UpdateCartItemAsync(Guid userId, CartItemDto dto);
+        Task<MethodResult<string>> ToggleCartItemSelectionAsync(Guid userId, Guid productId, bool isSelected);
+        Task<MethodResult<string>> ToggleSelectAllSmartAsync(Guid userId);
+    }
+}

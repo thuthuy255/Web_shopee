@@ -1,0 +1,21 @@
+- Đăng nhập (đã call api, giao diện hoàn thiện)
+- Đăng ký (đã call api, giao diện hoàn thiện )
+- Admin :
+   + Quản lý nhân viên : Thêm (đã xong)
+                        Sửa (đã xong)
+   + Quản lý sản phẩm : Thêm (chưa xong)
+                        Sửa (chưa xong)
+   + Dashboard (chưa xong)
+- Seller:
+   + Quản lý sản phẩm : Thêm (chưa xong)
+                        Sửa (chưa xong)
+   + Dashboard (chưa xong)
+
+
+- thêm sửa xóa người bán (admin)
+- thêm sửa xóa sản phẩm 
+- theo dõi đơn hàng để cập nhật trạng thái đơn hàng
+- thống kê , báo cáo 
+
+
+- BE cần sửa đưa các error 

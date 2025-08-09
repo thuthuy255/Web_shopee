@@ -1,0 +1,16 @@
+﻿namespace ProductAPI.DTOs.Product
+{
+    public class ProductFormDataDto
+    {
+        public string? ProductName { get; set; } = null!;
+        public string? Description { get; set; } = null!;
+        public decimal? Price { get; set; }
+        public int? StockQuantity { get; set; }
+        public string? Status { get; set; } = null!;
+        public Guid? CategoryId { get; set; }
+       
+
+        public IFormFile? Thumbnail { get; set; }  // Ảnh đại diện
+        public List<IFormFile>? ProductImages { get; set; }  // Ảnh chi tiết
+    }
+}

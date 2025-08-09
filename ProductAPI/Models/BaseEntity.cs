@@ -1,0 +1,26 @@
+﻿namespace ProductAPI.Models
+{
+    public abstract class BaseEntity
+    {
+        public Guid Id { get; set; }
+        public DateTime Created { get; set; }
+        public Guid? CreatedBy { get; set; }
+        public DateTime Modified { get; set; }
+        public Guid? ModifiedBy { get; set; }
+        public bool IsDeleted { get; set; }
+        private readonly HashSet<string> _dirtyProperties = new();
+
+        public void MarkDirty(string propertyName)
+        {
+            _dirtyProperties.Add(propertyName);
+        }
+
+        // ✅ Trả về danh sách đã mark
+        public virtual IEnumerable<string> GetDirtyProperties() => _dirtyProperties;
+
+
+
+    }
+
+
+}

@@ -1,0 +1,168 @@
+﻿using Microsoft.EntityFrameworkCore;
+using ProductAPI.Core;
+using ProductAPI.DTOs.Category;
+using ProductAPI.DTOs.Common;
+using ProductAPI.IRepository;
+using ProductAPI.IServices;
+using ProductAPI.Models;
+
+namespace ProductAPI.Services
+{
+    public class CategoryService : BaseService<Category> , ICategoryService
+    {
+        private readonly IRepository<Category> _categoryRepo;
+        private readonly IUserPrincipalService _userPrincipalService;
+        private readonly CloudinaryService _cloudinaryService;
+
+
+        public CategoryService(
+            IRepository<Category> categoryRepo,
+            IUserPrincipalService userPrincipalService,
+            CloudinaryService cloudinaryService) : base(categoryRepo)
+        {
+            _categoryRepo = categoryRepo;
+            _userPrincipalService = userPrincipalService;
+            _cloudinaryService = cloudinaryService;
+        }
+
+        public async Task<MethodResult<List<CategoryDto>>> GetAllAsync(GridInfo grid)
+        {
+            IQueryable<Category> query = _categoryRepo.TableNoTracking
+                .Where(c => !c.IsDeleted);
+
+            if (!string.IsNullOrWhiteSpace(grid.KeyWord))
+            {
+                var keyword = grid.KeyWord.ToLower();
+                query = query.Where(c => c.Name.ToLower().Contains(keyword));
+            }
+
+            var total = await query.CountAsync();
+
+            var data = await query
+                .OrderByDescending(c => c.Created)
+                .Skip((grid.PageInfo.Page - 1) * grid.PageInfo.PageSize)
+                .Take(grid.PageInfo.PageSize)
+                .ToListAsync();
+
+            var result = data.Select(c => new CategoryDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Description = c.Description,
+                ImageUrl = c.ImageUrl,
+                ParentCategoryId = c.ParentCategoryId
+            }).ToList();
+
+            return MethodResult<List<CategoryDto>>.ResultWithData(result, "Lấy danh sách danh mục thành công", total);
+        }
+
+        public async Task<IMethodResult<CategoryDto>> GetByIdAsync(Guid id)
+        {
+            var category = await _categoryRepo.TableNoTracking
+                .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+
+            if (category == null)
+                return MethodResult<CategoryDto>.ResultWithError("Không tìm thấy danh mục");
+
+            var dto = new CategoryDto
+            {
+                Name = category.Name,
+                Description = category.Description,
+                ImageUrl = category.ImageUrl,
+                ParentCategoryId = category.ParentCategoryId
+            };
+
+            return MethodResult<CategoryDto>.ResultWithData(dto, "Lấy chi tiết danh mục thành công");
+        }
+
+        public async Task<IMethodResult<CategoryDto>> CreateAsync(CreateCategoryDto dto)
+        {
+            string? imageUrl = null;
+            if (dto.ImageFile != null)
+            {
+                imageUrl = await _cloudinaryService.UploadImageAsync(dto.ImageFile);
+            }
+
+            var entity = new Category
+            {
+                Id = Guid.NewGuid(),
+                Name = dto.Name,
+                Description = dto.Description,
+                ImageUrl = imageUrl,
+                ParentCategoryId = dto.ParentCategoryId,
+                Created = DateTime.UtcNow,
+            };
+
+            await _categoryRepo.AddAsync(entity);
+            await _categoryRepo.SaveChangesAsync();
+
+            var resultDto = new CategoryDto
+            {
+                Id = entity.Id,
+                Name = entity.Name,
+                Description = entity.Description,
+                ImageUrl = entity.ImageUrl,
+                ParentCategoryId = entity.ParentCategoryId
+            };
+
+            return MethodResult<CategoryDto>.ResultWithData(resultDto, "Tạo danh mục thành công");
+        }
+
+
+        public async Task<IMethodResult<CategoryDto>> UpdateAsync(Guid id, UpdateCategoryDto dto)
+        {
+            var category = await _categoryRepo.GetByIdAsync(id);
+
+            if (category == null || category.IsDeleted)
+                return MethodResult<CategoryDto>.ResultWithError("Danh mục không tồn tại");
+
+            if (dto.ParentCategoryId == id)
+                return MethodResult<CategoryDto>.ResultWithError("Không thể chọn chính danh mục này làm danh mục cha");
+
+            string? imageUrl = category.ImageUrl;
+
+            if (dto.ImageFile != null)
+            {
+                imageUrl = await _cloudinaryService.UploadImageAsync(dto.ImageFile);
+            }
+            
+            category.Name = dto.Name;
+            category.Description = dto.Description;
+            category.ImageUrl = imageUrl;
+            category.ParentCategoryId = dto.ParentCategoryId;
+            category.Modified = DateTime.UtcNow;
+            category.MarkDirty(nameof(category.ImageUrl));
+            category.MarkDirty(nameof(category.Name));
+            category.MarkDirty(nameof(category.Description));
+            category.MarkDirty(nameof(category.ParentCategoryId));
+            category.MarkDirty(nameof(category.Modified));
+            await _categoryRepo.UpdateAsync(category);
+            await _categoryRepo.SaveChangesAsync();
+
+            var resultDto = new CategoryDto
+            {
+                Id = category.Id,
+                Name = category.Name,
+                Description = category.Description,
+                ImageUrl = category.ImageUrl,
+                ParentCategoryId = category.ParentCategoryId
+            };
+
+            return MethodResult<CategoryDto>.ResultWithData(resultDto, "Cập nhật danh mục thành công");
+        }
+
+
+
+        public async Task<IMethodResult<bool>> DeleteAsync(Guid categoryId)
+        {
+            var category = await _categoryRepo.GetByIdAsync(categoryId);
+            if (category == null)
+            {
+                return MethodResult<bool>.ResultWithError("Không tìm thấy danh mục.");
+            }
+
+            await _categoryRepo.DeleteAsync(category);
+            return MethodResult<bool>.ResultWithData(true, "Xóa danh mục thành công.");
+        }
+    }
+}
