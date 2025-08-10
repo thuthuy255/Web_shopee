@@ -1,0 +1,32 @@
+# Visual Studio / VSCode / IDE
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output
+bin/
+obj/
+debug/
+Debug/
+# Node
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+
+# Yarn
+yarn.lock
+
+# Misc
+*.cache
+*.pdb
+*.dll
+*.exe
+*.json  # Nếu bạn muốn ignore json build hoặc debug config
+
+# Các thư mục hoặc file tạm khác nếu có
+shoppe/yarn.lock
