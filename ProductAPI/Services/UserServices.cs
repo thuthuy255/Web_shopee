@@ -109,7 +109,7 @@ namespace ProductAPI.Services
             existingUser.Username = dto.Username;
             existingUser.Email = dto.Email;
             existingUser.Phone = dto.Phone;
-            existingUser.IsLocked = dto.IsLocked;
+            existingUser.IsLocked = dto.IsLocked ?? false;
             if (dto.Avatar != null)
             {
                 var url = await _cloudService.UploadImageAsync(dto.Avatar);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Button,
   Form,
@@ -10,6 +10,7 @@ import {
   Upload,
   message,
   Card,
+  type UploadFile,
 } from "antd";
 import { getUserInfo, updateUser } from "../../api/user.api";
 import { showError, showSuccess } from "../../untils/ShowToast";
@@ -19,40 +20,38 @@ const { Title, Text } = Typography;
 const ProfileForm = () => {
   const [form] = Form.useForm();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-
   const [loading, setLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
 
-  const handleUpload = (info: any) => {
-    console.log("🚀 ~ handleUpload ~ info:", info);
-    if (info.file.name || info.file.originFileObj) {
-      const file = info.file;
-      setAvatarFile(file);
-      const newAvatar = URL.createObjectURL(file);
-      setAvatarUrl(newAvatar);
-      showSuccess(`Ảnh đã được cập nhật`);
-    } else if (info.file === "error") {
-      message.error(`Tải ảnh thất bại`);
+  const handleUpload = ({ fileList }: { fileList: UploadFile[] }) => {
+    setFileList(fileList);
+    if (fileList.length > 0 && fileList[0].originFileObj) {
+      const file = fileList[0].originFileObj as File;
+      setAvatarUrl(URL.createObjectURL(file)); // preview local
+    } else {
+      setAvatarUrl(null);
     }
   };
 
   const onFinish = async (values: any) => {
     try {
       const formData = new FormData();
-      formData.append("Id", values.id); // BE đang dùng Guid => để đúng key & chữ hoa nếu cần
+      formData.append("Id", values.id);
       formData.append("Username", values.username);
-      formData.append("FullName", values.fullName);
       formData.append("Email", values.email);
+      formData.append("FullName", values.fullName);
       formData.append("Phone", values.phone);
 
-      if (avatarFile) {
-        formData.append("Avatar", avatarFile);
+      // Avatar phải là file thật
+      if (fileList[0]?.originFileObj) {
+        formData.append("Avatar", fileList[0].originFileObj as File);
       }
 
       const res: any = await updateUser(formData);
       if (res.success) {
         showSuccess("Cập nhật thành công");
-        handleGetInfoUser(); // refresh lại dữ liệu
+        handleGetInfoUser();
       } else {
         showError(res.message || "Cập nhật thất bại");
       }
@@ -62,12 +61,13 @@ const ProfileForm = () => {
     }
   };
 
-  const handleGetInfoUser = async () => {
+  const handleGetInfoUser = useCallback(async () => {
     setLoading(true);
     try {
       const res: any = await getUserInfo();
       if (res.success && res.data) {
         const userData = res.data;
+        console.log("🚀 ~ ProfileForm ~ userData:", userData);
 
         // set giá trị vào form
         form.setFieldsValue({
@@ -87,10 +87,11 @@ const ProfileForm = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [form, setLoading, setAvatarUrl]); // dependencies
 
   useEffect(() => {
     handleGetInfoUser();
+    console.log("kìn chá nà");
   }, []);
 
   return (
@@ -178,9 +179,11 @@ const ProfileForm = () => {
           />
           <div style={{ marginTop: 12 }}>
             <Upload
-              showUploadList={false}
-              accept="image/*"
+              beforeUpload={() => false}
+              // showUploadList={false}
               onChange={handleUpload}
+              maxCount={1}
+              fileList={fileList}
             >
               <Button>Chọn Ảnh</Button>
             </Upload>
