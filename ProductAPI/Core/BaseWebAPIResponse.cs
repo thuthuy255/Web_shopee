@@ -10,6 +10,7 @@
         public int TotalRecord { get; set; }
 
 
+
         public static MethodResult<TResult> ResultWithData(TResult data, string message = "", int totalRecord = 0)
         {
 

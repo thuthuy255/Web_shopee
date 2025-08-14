@@ -6,7 +6,7 @@ namespace ProductAPI.IServices
     public interface ICartItemService
     {
 
-        Task<MethodResult<List<CartItemDetailDto>>> GetSelectedCartItemsAsync(Guid userId);
+        Task<MethodResult<List<SellerCartItemsDto>>> GetUserCartAsync(SearchCartItem request);
         Task RemoveSelectedItemsAsync(Guid userId);
         Task RemoveAllItemsAsync(Guid userId);
         Task<MethodResult<CartItemDetailDto>> AddToCartAsync(Guid userId, CartItemDto dto);

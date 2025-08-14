@@ -120,7 +120,7 @@ export default function ProductsCreate() {
             formData.append('price', values.price.toString());
             formData.append('stockQuantity', values.stockQuantity.toString());
             formData.append('status', values.status);
-            formData.append('categoryId', values.categoryId); // ✅ đúng ID danh mục
+            formData.append('categoryId', values.categoryId);
 
             if (values.thumbnail?.file instanceof File) {
                 formData.append('thumbnail', values.thumbnail.file);

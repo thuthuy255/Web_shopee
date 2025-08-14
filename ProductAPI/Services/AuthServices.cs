@@ -201,7 +201,9 @@ namespace ProductAPI.Services
                 Email = user.Email,
                 Role = _userPrincipalService.GetRoleUser() ?? "", // fallback từ claims nếu không có Role trong entity
                 IsLocked = user.IsLocked,
-                Avatar = user.Avatar
+                Avatar = user.Avatar,
+                UserName = user.Username,
+                Phone = user.Phone,
             };
             return MethodResult<UserInfoDto>.ResultWithData(dto);
 

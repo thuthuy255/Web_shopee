@@ -10,6 +10,7 @@ import ProductEdit from "../pages/seller/product/ProductEdit";
 import PromotionManagement from "../pages/seller/promotions/PromotionManagement";
 import PromotionCreate from "../pages/seller/promotions/PromotionCreate";
 import PromotionEdit from "../pages/seller/promotions/PromotionEdit";
+import ProfileForm from "../pages/admin/Profile";
 
 const SellerRoutes = [
   {
@@ -48,6 +49,10 @@ const SellerRoutes = [
       {
         path: "promotions/edit/:id",
         element: <PromotionEdit />,
+      },
+      {
+        path: "profile",
+        element: <ProfileForm />,
       },
     ],
   },

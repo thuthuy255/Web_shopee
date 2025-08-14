@@ -9,73 +9,98 @@ namespace ProductAPI.Services
 {
     public class CartItemService : BaseService<CartItem>, ICartItemService
     {
-        private readonly IRepository<CartItem> _cartItemRepo;
-        private readonly IRepository<Product> _productRepo;
-        private readonly IRepository<ProductVariant> _productVariantRepo;
-
+        private readonly IRepository<CartItem> _cartItemRepos;
+        private readonly IRepository<Product> _productRepos;
+        private readonly IRepository<ProductVariant> _productVariantRepos;
+        private readonly IRepository<User> _userRepos;
+        private readonly IUserPrincipalService _userPrincipal;
         public CartItemService(
-            IRepository<CartItem> cartItemRepo,
-            IRepository<Product> productRepo,
-            IRepository<ProductVariant> productVariantRepo
-        ) : base(cartItemRepo)
+            IRepository<CartItem> cartItemRepos,
+            IRepository<Product> productRepos,
+            IRepository<ProductVariant> productVariantRepos,
+            IUserPrincipalService userPrincipal,
+            IRepository<User> userRepos
+        ) : base(cartItemRepos)
         {
-            _cartItemRepo = cartItemRepo;
-            _productRepo = productRepo;
-            _productVariantRepo = productVariantRepo;
+            _cartItemRepos = cartItemRepos;
+            _productRepos = productRepos;
+            _productVariantRepos = productVariantRepos;
+            _userPrincipal = userPrincipal;
+            _userRepos = userRepos;
         }
 
-        public async Task<MethodResult<List<CartItemDetailDto>>> GetSelectedCartItemsAsync(Guid userId)
+        public async Task<MethodResult<List<SellerCartItemsDto>>> GetUserCartAsync(SearchCartItem request)
         {
-            var selectedItems = await _cartItemRepo.TableNoTracking
-                .Where(c => c.UserId == userId && c.IsSelected)
-                .Include(c => c.Product)
-                .Include(c => c.ProductVariant)
+            var currentUser =  _userPrincipal.GetUserId();
+            var query = from c in _cartItemRepos.TableNoTracking
+                        join p in _productRepos.TableNoTracking on c.ProductId equals p.Id
+                        join pr in _productVariantRepos.TableNoTracking on c.ProductVariantId equals pr.Id into prj
+                        from pr in prj.DefaultIfEmpty()
+                        join u in _userRepos.TableNoTracking on p.SellerId equals u.Id
+                        where c.UserId == currentUser.Value
+                        select new CartItemDetailDto
+                        {
+                            Id = c.Id,
+                            Quantity = c.Quantity,
+                            IsSelected = c.IsSelected,
+
+                            ProductId = p.Id,
+                            ProductName = p.ProductName,
+                            Thumbnail = p.Thumbnail,
+
+                            ProductVariantId = pr != null ? pr.Id : (Guid?)null,
+                            StockQuantity = pr != null ? pr.StockQuantity : p.StockQuantity,
+                            Color = pr != null ? pr.Color : null,
+                            Size = pr != null ? pr.Size : null,
+                            Price = pr != null ? pr.Price : p.Price,
+                            FullName = u.FullName, // tên seller
+                            SellerId = u.Id
+                        };
+
+            var resultGroup = query
+                .GroupBy(x => new { x.SellerId, x.FullName })
+                .Select(g => new SellerCartItemsDto
+                {
+                    SellerId = g.Key.SellerId,
+                    SellerName = g.Key.FullName,
+                    Items = g.ToList()
+                });
+            var totalRecords = await resultGroup.CountAsync();
+
+            var result = await resultGroup
+                .Skip((request.PageInfo.Page - 1) * request.PageInfo.PageSize)
+                .Take(request.PageInfo.PageSize)
                 .ToListAsync();
-
-            var result = selectedItems.Select(item => new CartItemDetailDto
-            {
-                Id = item.Id,
-                Quantity = item.Quantity,
-                IsSelected = item.IsSelected,
-                ProductId = item.ProductId,
-                ProductName = item.Product?.ProductName ?? string.Empty,
-                Thumbnail = item.Product?.Thumbnail,
-                ProductVariantId = item.ProductVariantId,
-                Color = item.ProductVariant?.Color,
-                Size = item.ProductVariant?.Size,
-                Price = item.ProductVariant?.Price ?? item.Product?.Price ?? 0
-            }).ToList();
-
-            return MethodResult<List<CartItemDetailDto>>.ResultWithData(result, "Danh sách sản phẩm được chọn.");
+            return MethodResult<List<SellerCartItemsDto>>.ResultWithData(result, "Danh sách sản phẩm theo người bán.", totalRecords);
         }
 
         public async Task RemoveSelectedItemsAsync(Guid userId)
         {
-            var selectedItems = await _cartItemRepo.Table
+            var selectedItems = await _cartItemRepos.Table
                 .Where(c => c.UserId == userId && c.IsSelected)
                 .ToListAsync();
 
             if (selectedItems.Any())
             {
-                await _cartItemRepo.DeleteRangeAsync(selectedItems);
+                await _cartItemRepos.DeleteRangeAsync(selectedItems);
             }
         }
 
         public async Task RemoveAllItemsAsync(Guid userId)
         {
-            var items = await _cartItemRepo.Table
+            var items = await _cartItemRepos.Table
                 .Where(c => c.UserId == userId )
                 .ToListAsync();
 
             if (items.Any())
             {
-                await _cartItemRepo.DeleteRangeAsync(items);
+                await _cartItemRepos.DeleteRangeAsync(items);
             }
         }
 
         public async Task<MethodResult<CartItemDetailDto>> AddToCartAsync(Guid userId, CartItemDto dto)
         {
-            var existingItem = await _cartItemRepo.Table
+            var existingItem = await _cartItemRepos.Table
                 .FirstOrDefaultAsync(c => c.UserId == userId
                     && c.ProductId == dto.ProductId
                     && c.ProductVariantId == dto.ProductVariantId);
@@ -86,7 +111,7 @@ namespace ProductAPI.Services
                 existingItem.MarkDirty(nameof(existingItem.Quantity));
                 existingItem.IsSelected = true;
                 existingItem.MarkDirty(nameof(existingItem.IsSelected));
-                await _cartItemRepo.UpdateAsync(existingItem);
+                await _cartItemRepos.UpdateAsync(existingItem);
             }
             else
             {
@@ -99,12 +124,12 @@ namespace ProductAPI.Services
                     IsSelected = true
                 };
 
-                await _cartItemRepo.AddAsync(newItem);
+                await _cartItemRepos.AddAsync(newItem);
                 existingItem = newItem;
             }
 
-            var product = await _productRepo.TableNoTracking.FirstOrDefaultAsync(p => p.Id == dto.ProductId);
-            var variant = await _productVariantRepo.TableNoTracking.FirstOrDefaultAsync(v => v.Id == dto.ProductVariantId);
+            var product = await _productRepos.TableNoTracking.FirstOrDefaultAsync(p => p.Id == dto.ProductId);
+            var variant = await _productVariantRepos.TableNoTracking.FirstOrDefaultAsync(v => v.Id == dto.ProductVariantId);
 
             var resultDto = new CartItemDetailDto
             {
@@ -132,12 +157,12 @@ namespace ProductAPI.Services
 
             if (dto.ProductVariantId.HasValue)
             {
-                item = await _cartItemRepo.Table
+                item = await _cartItemRepos.Table
                     .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == dto.ProductId && c.ProductVariantId == dto.ProductVariantId);
             }
             else
             {
-                item = await _cartItemRepo.Table
+                item = await _cartItemRepos.Table
                     .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == dto.ProductId && c.ProductVariantId == null);
             }
 
@@ -146,9 +171,9 @@ namespace ProductAPI.Services
 
             item.Quantity = dto.Quantity;
             item.MarkDirty(nameof(item.Quantity));
-            await _cartItemRepo.UpdateAsync(item);
+            await _cartItemRepos.UpdateAsync(item);
 
-            var fullItem = await _cartItemRepo.TableNoTracking
+            var fullItem = await _cartItemRepos.TableNoTracking
                 .Include(c => c.Product)
                 .Include(c => c.ProductVariant)
                 .FirstOrDefaultAsync(c => c.Id == item.Id);
@@ -172,19 +197,19 @@ namespace ProductAPI.Services
 
         public async Task<MethodResult<string>> ToggleCartItemSelectionAsync(Guid userId, Guid productId, bool isSelected)
         {
-            var item = await _cartItemRepo.Table.FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
+            var item = await _cartItemRepos.Table.FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
             if (item == null)
                 return MethodResult<string>.ResultWithError("Sản phẩm không tồn tại trong giỏ hàng.");
 
             item.IsSelected = isSelected;
-            await _cartItemRepo.UpdateAsync(item);
+            await _cartItemRepos.UpdateAsync(item);
 
             return MethodResult<string>.ResultWithData("OK", isSelected ? "Đã chọn sản phẩm để thanh toán." : "Đã bỏ chọn sản phẩm.");
         }
 
         public async Task<MethodResult<string>> ToggleSelectAllSmartAsync(Guid userId)
         {
-            var cartItems = await _cartItemRepo.Table
+            var cartItems = await _cartItemRepos.Table
                 .Where(c => c.UserId == userId)
                 .ToListAsync();
 
@@ -198,7 +223,7 @@ namespace ProductAPI.Services
                 item.IsSelected = !isCurrentlyAllSelected;
             }
 
-            await _cartItemRepo.UpdateRangeAsync(cartItems);
+            await _cartItemRepos.UpdateRangeAsync(cartItems);
 
             string message = isCurrentlyAllSelected ? "Đã bỏ chọn tất cả." : "Đã chọn tất cả.";
             return MethodResult<string>.ResultWithData("OK", message);

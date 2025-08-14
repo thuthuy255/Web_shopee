@@ -3,7 +3,7 @@
 export const uploadImageToCloudinary = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "productShopee"); // 👈 cấu hình trong Cloudinary
+    formData.append("upload_preset", "productShopee");
     formData.append("cloud_name", "dxnzqshf7");
 
     try {

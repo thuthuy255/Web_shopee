@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Form,
@@ -11,33 +11,94 @@ import {
   message,
   Card,
 } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import { getUserInfo, updateUser } from "../../api/user.api";
+import { showError, showSuccess } from "../../untils/ShowToast";
 
 const { Title, Text } = Typography;
 
-const ProfileForm: React.FC = () => {
-  const [avatarUrl, setAvatarUrl] = useState("https://i.pravatar.cc/150?img=5");
+const ProfileForm = () => {
+  const [form] = Form.useForm();
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+  const [loading, setLoading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const handleUpload = (info: any) => {
-    if (info.file.status === "done" || info.file.originFileObj) {
-      const newAvatar = URL.createObjectURL(info.file.originFileObj);
+    console.log("🚀 ~ handleUpload ~ info:", info);
+    if (info.file.name || info.file.originFileObj) {
+      const file = info.file;
+      setAvatarFile(file);
+      const newAvatar = URL.createObjectURL(file);
       setAvatarUrl(newAvatar);
-      message.success(`Ảnh đã được cập nhật`);
-    } else if (info.file.status === "error") {
+      showSuccess(`Ảnh đã được cập nhật`);
+    } else if (info.file === "error") {
       message.error(`Tải ảnh thất bại`);
     }
   };
+
+  const onFinish = async (values: any) => {
+    try {
+      const formData = new FormData();
+      formData.append("Id", values.id); // BE đang dùng Guid => để đúng key & chữ hoa nếu cần
+      formData.append("Username", values.username);
+      formData.append("FullName", values.fullName);
+      formData.append("Email", values.email);
+      formData.append("Phone", values.phone);
+
+      if (avatarFile) {
+        formData.append("Avatar", avatarFile);
+      }
+
+      const res: any = await updateUser(formData);
+      if (res.success) {
+        showSuccess("Cập nhật thành công");
+        handleGetInfoUser(); // refresh lại dữ liệu
+      } else {
+        showError(res.message || "Cập nhật thất bại");
+      }
+    } catch (err) {
+      console.error("🚀 ~ onFinish ~ err:", err);
+      showError("Cập nhật thất bại");
+    }
+  };
+
+  const handleGetInfoUser = async () => {
+    setLoading(true);
+    try {
+      const res: any = await getUserInfo();
+      if (res.success && res.data) {
+        const userData = res.data;
+
+        // set giá trị vào form
+        form.setFieldsValue({
+          id: userData.id, // lưu vào form hidden field
+          username: userData.userName, // map từ BE -> FE
+          fullName: userData.fullName,
+          email: userData.email,
+          phone: userData.phone,
+        });
+
+        if (userData.avatar) {
+          setAvatarUrl(userData.avatar);
+        }
+      }
+    } catch (error) {
+      showError("Không thể lấy thông tin người dùng");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    handleGetInfoUser();
+  }, []);
 
   return (
     <Card
       bordered={false}
       style={{
-        maxWidth: "80%",
-        margin: "0 auto",
-        padding: 32,
-        borderRadius: 16,
-        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.06)",
-        backgroundColor: "#fff",
+        border: "2px solid #d9d9d9",
+        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
       }}
     >
       <Title level={4} style={{ marginBottom: 24 }}>
@@ -47,7 +108,12 @@ const ProfileForm: React.FC = () => {
 
       <Row gutter={48} style={{ marginTop: 32 }}>
         <Col span={16}>
-          <Form layout="vertical">
+          <Form form={form} layout="vertical" onFinish={onFinish}>
+            {/* hidden id field */}
+            <Form.Item name="id" hidden>
+              <Input type="hidden" />
+            </Form.Item>
+
             <Form.Item
               name="username"
               label="Tên đăng nhập"
@@ -88,7 +154,12 @@ const ProfileForm: React.FC = () => {
             </Form.Item>
 
             <Form.Item style={{ textAlign: "left", marginTop: 24 }}>
-              <Button type="primary" htmlType="submit" size="large">
+              <Button
+                type="primary"
+                htmlType="submit"
+                size="large"
+                loading={loading}
+              >
                 Lưu
               </Button>
             </Form.Item>

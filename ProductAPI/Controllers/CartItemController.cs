@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProductAPI.DTOs.CartItem;
+using ProductAPI.IRepository;
 using ProductAPI.IServices;
 
 namespace ProductAPI.Controllers
@@ -10,18 +12,34 @@ namespace ProductAPI.Controllers
     {
         private readonly ICartItemService _cartItemServices;
         private readonly IUserPrincipalService _userPrincipal;
+        private readonly IRepository<CartItem> _cartItemRepos;
 
-        public CartItemController(ICartItemService cartItemServices, IUserPrincipalService userPrincipal)
+        public CartItemController(ICartItemService cartItemServices, IUserPrincipalService userPrincipal, IRepository<CartItem> cartItemRepos)
         {
             _cartItemServices = cartItemServices;
             _userPrincipal = userPrincipal;
+            _cartItemRepos = cartItemRepos;
         }
 
-        [HttpGet("user")]
-        public async Task<IActionResult> GetUserCartAsync()
+        [HttpPost("GetUserCartAsync")]
+        public async Task<IActionResult> GetUserCartAsync(SearchCartItem request)
         {
             var userId = _userPrincipal.GetUserId();
-            var result = await _cartItemServices.GetSelectedCartItemsAsync(userId.Value);
+            var result = await _cartItemServices.GetUserCartAsync(request);
+            if (result.Success)
+            {
+                var totalCartItem = await _cartItemRepos.TableNoTracking
+               .Where(p => p.UserId == userId)
+               .CountAsync();
+
+                    return Ok(new
+                    {
+                        result.Data,
+                        result.Message,
+                        result.TotalRecord,
+                        TotalCartItem = totalCartItem
+                    });
+            }
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
@@ -66,10 +84,10 @@ namespace ProductAPI.Controllers
         }
 
         [HttpGet("selected")]
-        public async Task<IActionResult> GetSelectedCartItems()
+        public async Task<IActionResult> GetSelectedCartItems(SearchCartItem request)
         {
             var userId = _userPrincipal.GetUserId();
-            var result = await _cartItemServices.GetSelectedCartItemsAsync(userId.Value);
+            var result = await _cartItemServices.GetUserCartAsync(request);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
