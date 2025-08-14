@@ -39,9 +39,9 @@ const Login: React.FC = () => {
         const token = res.data?.token;
         localStorage.setItem("access_token", token);
 
-        const cartRes = await getUserCartItems();
-        console.log("🚀 ~ handleLogin ~ cartRes:", cartRes)
-        disptach(setCartItems(cartRes?.data || []));
+        // const cartRes = await getUserCartItems();
+        // console.log("🚀 ~ handleLogin ~ cartRes:", cartRes)
+        // disptach(setCartItems(cartRes?.data || []));
 
         const decoded: any = jwtDecode(token);
         const role =

@@ -83,10 +83,10 @@ const ProductDetailPage = () => {
                 productVariantId: selectedVariant?.id || null,
                 quantity,
                 price: selectedVariant?.price || product?.price || 0,
-                product: {
-                    name: product.productName,
-                    thumbnail: selectedVariant?.imageUrl || product.thumbnail,
-                },
+                productName: product.productName,
+                thumbnail: selectedVariant?.imageUrl || product.thumbnail,
+                sellerId: product.sellerId,     // Bắt buộc phải có
+                sellerName: product.sellerName, // Bắt buộc phải có
             }));
 
             message.success('🛒 Sản phẩm đã được thêm vào giỏ hàng!');

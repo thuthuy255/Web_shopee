@@ -32,7 +32,6 @@ namespace ProductAPI.Services
                     u.Email.ToLower().Contains(keyword));
             }
 
-            // Lọc Role = "User"
             query = query.Where(u => u.Role == Constant.Constants.ROLE_USER);
 
             // Đếm tổng bản ghi
@@ -104,7 +103,6 @@ namespace ProductAPI.Services
             {
                 return MethodResult<UserDto>.ResultWithError("Không tìm thấy người dùng");
             }
-
             // Cập nhật các trường cần thiết
             existingUser.FullName = dto.FullName;
 

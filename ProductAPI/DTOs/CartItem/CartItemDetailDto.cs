@@ -11,8 +11,11 @@
         public string? Thumbnail { get; set; }
 
         public Guid? ProductVariantId { get; set; }
+        public int StockQuantity { get; set; }
         public string? Color { get; set; }
         public string? Size { get; set; }
         public decimal Price { get; set; }
+        public string FullName { get; set; }
+        public Guid SellerId { get; set; }
     }
 }
