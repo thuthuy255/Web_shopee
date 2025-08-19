@@ -25,8 +25,9 @@ export default function useAuthToken(token: string | null): UseAuthTokenResult {
         const role =
           decoded.role_id ||
           decoded[
-            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
           ];
+        console.log("🚀 ~ useAuthToken ~ role:", role)
 
         if (!role) throw new Error("Missing role_id trong token");
 

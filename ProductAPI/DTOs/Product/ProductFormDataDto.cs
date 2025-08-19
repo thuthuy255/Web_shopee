@@ -6,7 +6,9 @@
         public string? Description { get; set; } = null!;
         public decimal? Price { get; set; }
         public int? StockQuantity { get; set; }
-        public string? Status { get; set; } = null!;
+        public bool IsActive { get; set; } = true;
+
+        public bool SellerStatus { get; set; } = true; 
         public Guid? CategoryId { get; set; }
        
 

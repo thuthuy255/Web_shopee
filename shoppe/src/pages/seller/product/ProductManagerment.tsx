@@ -4,6 +4,7 @@ import { message } from 'antd';
 import CustomTable from '../../../components/CustomTable';
 import { useNavigate } from 'react-router-dom';
 import { deleteProduct, getAllProductOfSeller } from '../../../api/product/product.api';
+import LoadingDefault from '../../../components/loading/LoadingDefault';
 
 interface Product {
     id: string;
@@ -13,7 +14,8 @@ interface Product {
     stockQuantity: number;
     status: string;
     thumbnail: string;
-
+    isActive: boolean;
+    sellerStatus: boolean;
     categoryId: string;
     categoryName: string;
     categoryDescription: string;
@@ -38,12 +40,6 @@ const columns: TableColumnsType<Product> = [
         key: 'description',
         ellipsis: true,
     },
-    // {
-    //     title: 'Mô tả danh mục',
-    //     dataIndex: 'categoryDescription',
-    //     key: 'categoryDescription',
-    //     ellipsis: true,
-    // },
     {
         title: 'Giá',
         dataIndex: 'price',
@@ -56,10 +52,18 @@ const columns: TableColumnsType<Product> = [
         key: 'stockQuantity',
     },
     {
-        title: 'Trạng thái',
-        dataIndex: 'status',
-        key: 'status',
+        title: 'Hoạt động',
+        dataIndex: 'isActive',
+        key: 'isActive',
+        render: (value) => (value ? 'Hoạt động' : 'Hết hàng')
     },
+    {
+        title: 'Trạng thái người bán',
+        dataIndex: 'sellerStatus',
+        key: 'sellerStatus',
+        render: (value) => (value ? 'Hoạt động' : 'Ngưng bán ')
+    },
+
     {
         title: 'Ảnh sản phẩm',
         dataIndex: 'thumbnail',
@@ -77,7 +81,7 @@ const columns: TableColumnsType<Product> = [
 
 export default function ProductManagement() {
     const [data, setData] = useState<Product[]>([]);
-    const [loading, setLoading] = useState(false); // ✅ loading state
+    const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize] = useState(10);
     const [total, setTotal] = useState(0);
@@ -85,18 +89,19 @@ export default function ProductManagement() {
 
     const fetchProduct = async (page: number) => {
         try {
-            setLoading(true); // ✅ loading bắt đầu
+            setLoading(true);
             const body = {
-                pageInfo: { page, pageSize },
+                pageInfo: {
+                    page,
+                    pageSize,
+                },
                 keyWord: '',
-                filter: {},
-                sorts: {},
             };
-            const res = await getAllProductOfSeller(body);
+            const res: any = await getAllProductOfSeller(body);
             console.log("🚀 ~ fetchProduct ~ res:", res)
-            if (res.data) {
-                setData(res.data);
-                setTotal(res.data?.totalRecord || res.data?.length || 0);
+            if (res?.success) {
+                setData(res?.data);
+                setTotal(res?.totalRecord);
                 setCurrentPage(page);
             } else {
                 message.error('Không thể lấy danh sách sản phẩm');
@@ -105,7 +110,7 @@ export default function ProductManagement() {
             console.error(error);
             message.error('Đã xảy ra lỗi khi tải dữ liệu');
         } finally {
-            setLoading(false); // ✅ loading kết thúc
+            setLoading(false);
         }
     };
 
@@ -127,7 +132,7 @@ export default function ProductManagement() {
 
     const handleDelete = async (id: string) => {
         try {
-            setLoading(true); // ✅ loading bắt đầu
+            setLoading(true);
             await deleteProduct(id);
             setData((prev) => prev.filter((item) => item.id !== id));
             message.success('Đã xoá sản phẩm');
@@ -135,27 +140,31 @@ export default function ProductManagement() {
             console.error(error);
             message.error('Xoá sản phẩm thất bại');
         } finally {
-            setLoading(false); // ✅ loading kết thúc
+            setLoading(false);
         }
     };
 
     return (
         <div>
             <h2>Danh sách sản phẩm</h2>
-            <CustomTable<Product>
-                rowKey="id"
-                columns={columns}
-                dataSource={data}
-                pageSize={pageSize}
-                currentPage={currentPage}
-                total={total}
-                scrollY={window.innerHeight - 300}
-                loading={loading} // ✅ truyền loading
-                onPageChange={handlePageChange}
-                onAdd={handleAdd}
-                onView={handleView}
-                onDelete={handleDelete}
-            />
+            {loading ? (
+                <LoadingDefault />
+            ) : (
+                <CustomTable<Product>
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={data}
+                    pageSize={pageSize}
+                    currentPage={currentPage}
+                    total={total}
+                    scrollY={window.innerHeight - 300}
+                    onPageChange={handlePageChange}
+                    onAdd={handleAdd}
+                    onView={handleView}
+                    onDelete={handleDelete}
+                />
+            )}
+
         </div>
     );
 }

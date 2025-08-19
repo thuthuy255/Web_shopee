@@ -9,7 +9,6 @@ interface BannerSliderProps {
 
 const BannerSlider = ({ bannerType }: BannerSliderProps) => {
   const [data, setData] = useState<any[]>([]);
-  console.log("🚀 ~ BannerSlider ~ data:", data);
   const [loading, setLoading] = useState(false);
 
   const fetchBanner = async () => {

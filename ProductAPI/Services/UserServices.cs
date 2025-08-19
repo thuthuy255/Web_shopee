@@ -109,26 +109,23 @@ namespace ProductAPI.Services
             existingUser.Username = dto.Username;
             existingUser.Email = dto.Email;
             existingUser.Phone = dto.Phone;
-            existingUser.IsLocked = dto.IsLocked ?? false;
+            existingUser.IsLocked = dto.IsLocked || false;
             if (dto.Avatar != null)
             {
                 var url = await _cloudService.UploadImageAsync(dto.Avatar);
                 existingUser.Avatar = url; // Lưu URL cloud vào DB
             }
+            existingUser.Created = DateTime.UtcNow;
             existingUser.MarkDirty(nameof(existingUser.FullName));
             existingUser.MarkDirty(nameof(existingUser.Username));
             existingUser.MarkDirty(nameof(existingUser.Email));
             existingUser.MarkDirty(nameof(existingUser.Phone));
             existingUser.MarkDirty(nameof(existingUser.IsLocked));
             existingUser.MarkDirty(nameof(existingUser.Avatar));
+            existingUser.MarkDirty(nameof(existingUser.Created));
 
-
-
-
-            // Gọi UpdateAsync để đánh dấu các field thay đổi (nếu tracking không tự động)
             await _userRepo.UpdateAsync(existingUser);
 
-            // Chuyển sang UserDto nếu cần ẩn bớt thông tin nhạy cảm (như password)
             var updatedDto = new UserDto
             {
                 FullName = existingUser.FullName,

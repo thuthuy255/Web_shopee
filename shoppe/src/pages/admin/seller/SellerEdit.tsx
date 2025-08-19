@@ -31,12 +31,12 @@ export default function SellerEdit() {
                 { label: 'Bị khoá', value: true },
             ],
         },
-        {
-            name: 'avatar',
-            label: 'Ảnh đại diện',
-            type: 'file',
-            fullWidth: false,
-        }
+        // {
+        //     name: 'avatar',
+        //     label: 'Ảnh đại diện',
+        //     type: 'file',
+        //     fullWidth: false,
+        // }
     ];
 
     useEffect(() => {
@@ -49,7 +49,7 @@ export default function SellerEdit() {
                 email: user?.email || '',
                 phone: user?.phone || '',
                 isLocked: user?.isLocked ?? false,
-                avatar: user?.avatar ? { url: user.avatar } : null, // ✅ preview ảnh nếu có
+                // avatar: user?.avatar ? { url: user.avatar } : null, // ✅ preview ảnh nếu có
             });
         }
     }, [data]);

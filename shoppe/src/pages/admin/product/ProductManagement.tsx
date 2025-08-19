@@ -4,6 +4,7 @@ import { message } from 'antd';
 import CustomTable from '../../../components/CustomTable';
 import { useNavigate } from 'react-router-dom';
 import { deleteProduct, getAllProduct } from '../../../api/product/product.api';
+import LoadingDefault from '../../../components/loading/LoadingDefault';
 
 interface Product {
     id: string; // tương đương Id
@@ -13,6 +14,10 @@ interface Product {
     stockQuantity: number;
     status: string;
     thumbnail: string;
+    categoryName: string;
+    sellerName: string;
+    isActive: boolean;
+    sellerStatus: boolean;
 }
 
 const columns: TableColumnsType<Product> = [
@@ -20,6 +25,11 @@ const columns: TableColumnsType<Product> = [
         title: 'Tên sản phẩm',
         dataIndex: 'productName',
         key: 'productName',
+    },
+    {
+        title: 'Danh mục',
+        dataIndex: 'categoryName',
+        key: 'categoryName',
     },
     {
         title: 'Mô tả',
@@ -39,9 +49,22 @@ const columns: TableColumnsType<Product> = [
         key: 'stockQuantity',
     },
     {
-        title: 'Trạng thái',
-        dataIndex: 'status',
-        key: 'status',
+        title: 'Hoạt động',
+        dataIndex: 'isActive',
+        key: 'isActive',
+        render: (value) => (value ? 'Hoạt động' : 'Hết hàng')
+    },
+    {
+        title: 'Trạng thái người bán',
+        dataIndex: 'sellerStatus',
+        key: 'sellerStatus',
+        render: (value) => (value ? 'Hoạt động' : 'Ngưng bán ')
+    },
+    {
+        title: 'Người bán',
+        dataIndex: 'sellerName',
+        key: 'sellerName',
+
     },
     {
         title: 'Ảnh',
@@ -73,20 +96,19 @@ export default function ProductManagement() {
 
     const fetchProduct = async (page: number) => {
         try {
+            setLoading(true);
             const body = {
                 pageInfo: {
-                    page: page,
-                    pageSize: pageSize,
+                    page,
+                    pageSize,
                 },
                 keyWord: '',
-                filter: {},
-                sorts: {},
             };
-            const res = await getAllProduct(body);
-            console.log("🚀 ~ fetchProduct ~ res:", res.data)
-            if (res.data) {
-                setData(res.data);
-                setTotal(res.data?.totalRecord || (res.data?.length ?? 0));
+            const res: any = await getAllProduct(body);
+            console.log("🚀 ~ fetchProduct ~ res:", res)
+            if (res?.success) {
+                setData(res?.data);
+                setTotal(res?.totalRecord);
                 setCurrentPage(page);
             } else {
                 message.error('Không thể lấy danh sách sản phẩm');
@@ -94,6 +116,9 @@ export default function ProductManagement() {
         } catch (error) {
             console.error(error);
             message.error('Đã xảy ra lỗi khi tải dữ liệu');
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -104,14 +129,6 @@ export default function ProductManagement() {
     const handlePageChange = (page: number) => {
         fetchProduct(page);
     };
-    // const handleAdd = () => {
-    //     navigate('/admin/products/create');
-    // };
-
-    // const handleView = (record: Product) => {
-    //     message.info(`Xem sản phẩm: ${record.productName}`);
-    // };
-
     const handleDelete = async (id: string) => {
         try {
             setLoading(true);
@@ -129,19 +146,22 @@ export default function ProductManagement() {
     return (
         <div>
             <h2>Danh sách sản phẩm</h2>
-            <CustomTable<Product>
-                rowKey="id"
-                columns={columns}
-                dataSource={data}
-                pageSize={pageSize}
-                currentPage={currentPage}
-                total={total}
-                scrollY={window.innerHeight - 300}
-                onPageChange={handlePageChange}
-                // onAdd={handleAdd}
-                // onView={handleView}
-                onDelete={handleDelete}
-            />
+            {loading ? (
+                <LoadingDefault />
+            ) : (
+                <CustomTable<Product>
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={data}
+                    pageSize={pageSize}
+                    currentPage={currentPage}
+                    total={total}
+                    scrollY={window.innerHeight - 300}
+                    onPageChange={handlePageChange}
+                    // onAdd={handleAdd}
+                    // onView={handleView}
+                    onDelete={handleDelete}
+                />)}
         </div>
     );
 }

@@ -66,7 +66,17 @@ namespace ProductAPI.Controllers
                 return Unauthorized("Không xác định được người dùng.");
 
             var result = await _promotionService.GetAllBySellerWithGridAsync(sellerId.Value, grid);
-            return Ok(result);
+            if (result.Success)
+            {
+                return Ok(new
+                {
+                    success= true,
+                    message = result.Message,
+                    data = result.Data,
+                    totalRecord = result.TotalRecord,
+                });
+            }
+            return BadRequest(result);
         }
 
         [HttpDelete("delete/{id}")]

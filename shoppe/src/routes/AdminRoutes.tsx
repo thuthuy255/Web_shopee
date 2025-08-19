@@ -68,10 +68,10 @@ const AdminRoutes = [
         path: "category",
         element: <CategoryManagement />,
       },
-      {
-        path: "category/create",
-        element: <CategoryCreate />,
-      },
+      // {
+      //   path: "category/create",
+      //   element: <CategoryCreate />,
+      // },
     ],
   },
 ];

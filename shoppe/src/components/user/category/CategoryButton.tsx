@@ -23,7 +23,6 @@ function CategoryButton() {
             const res: any = await getAllCategories(body);
             if (res.success && Array.isArray(res.data)) {
                 setData(res.data);
-                console.log("🚀 ~ fetchCategory ~ res.data:", res.data)
             } else {
                 console.error('Không thể lấy danh sách category');
             }

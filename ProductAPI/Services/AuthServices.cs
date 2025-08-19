@@ -39,7 +39,10 @@ namespace ProductAPI.Services
             {
                 return MethodResult<LoginResponseDTO>.ResultWithError("Email không tồn tại.");
             }
-
+            if(user.IsLocked == true )
+            {
+                return MethodResult<LoginResponseDTO>.ResultWithError(Constant.Constants.MESS_Locked);
+            }
             // Kiểm tra mật khẩu
             var isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!isPasswordValid)
@@ -52,7 +55,7 @@ namespace ProductAPI.Services
                 Token = _jwtTokenService.GenerateToken(user),
 
             };
-
+           
             return MethodResult<LoginResponseDTO>.ResultWithData(response, "Đăng nhập thành công");
         }
 
@@ -99,7 +102,8 @@ namespace ProductAPI.Services
             {
                 return MethodResult<bool>.ResultWithError(Constants.MESS_AlreadyExists);
             }
-
+          
+          
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
             var newUser = new User

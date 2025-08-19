@@ -52,7 +52,8 @@ export default function ProductEdit() {
                 description: product.description || '',
                 Price: product.price || '',
                 StockQuantity: product.stockQuantity || '',
-                Status: product.status || '',
+                isActive: product.isActive || false,
+                sellerStatus: product.sellerStatus || false,
                 categoryId: product.categoryId || '',
                 Thumbnail: product.thumbnail,
                 ProductImages: product.imageListJson
@@ -69,13 +70,12 @@ export default function ProductEdit() {
         { name: 'Price', label: 'Giá', type: 'number' },
         { name: 'StockQuantity', label: 'Tồn kho', type: 'number' },
         {
-            name: 'Status',
+            name: 'sellerStatus',
             label: 'Trạng thái',
             type: 'select',
             options: [
-                { label: 'Hoạt động', value: 'active' },
-                { label: 'Ngừng bán', value: 'inactive' },
-                { label: 'Hết hàng', value: 'out_of_stock' },
+                { label: 'Hoạt động', value: true },
+                { label: 'Ngưng bán', value: false },
             ],
         },
         {
@@ -105,7 +105,7 @@ export default function ProductEdit() {
         formData.append('description', values.description);
         formData.append('Price', values.Price.toString());
         formData.append('StockQuantity', values.StockQuantity.toString());
-        formData.append('Status', values.Status);
+        formData.append('sellerStatus', values.sellerStatus.toString());
         formData.append('categoryId', values.categoryId);
 
         if (values.Thumbnail?.file instanceof File) {

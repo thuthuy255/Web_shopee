@@ -1,13 +1,15 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import DynamicForm, { type Field } from '../../../components/DynamicForm';
 import { RegisterbyAdmin } from '../../../api/auth.api';
 import { showError, showSuccess } from '../../../untils/ShowToast';
 import { useNavigate } from 'react-router-dom';
 import { inserProduct } from '../../../api/product/product.api';
+import LoadingDefault from '../../../components/loading/LoadingDefault';
 
 export default function SellerCreate() {
     const formRef = useRef<any>(null); // ✅ khai báo đúng kiểu có thể null ban đầu
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
     const fields: Field[] = [
         {
             name: 'email', label: 'Email', type: 'email', rules: [
@@ -44,6 +46,7 @@ export default function SellerCreate() {
 
     const handleSubmit = async (values: any) => {
         try {
+            setLoading(true);
             await RegisterbyAdmin(values);
             showSuccess('Tạo tài khoản thành công');
             formRef.current?.resetFields(); // ✅
@@ -52,12 +55,19 @@ export default function SellerCreate() {
             console.log("🚀 ~ handleSubmit ~ error:", error)
             showError('Tạo tài khoản thất bại');
         }
+        finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div>
             <h2>Thêm sản phẩm</h2>
-            <DynamicForm fields={fields} onSubmit={handleSubmit} formRef={formRef} />
+            {loading ? (
+                <LoadingDefault />
+            ) :
+
+                (<DynamicForm fields={fields} onSubmit={handleSubmit} formRef={formRef} />)}
         </div>
     );
 }

@@ -5,6 +5,7 @@ import CustomTable from '../../../components/CustomTable';
 import { useNavigate } from 'react-router-dom';
 import { deleteSeller, getAllSeller } from '../../../api/seller/seller.api';
 import { showError, showSuccess } from '../../../untils/ShowToast';
+import LoadingDefault from '../../../components/loading/LoadingDefault';
 
 interface Seller {
     id: string;
@@ -29,35 +30,34 @@ const columns: TableColumnsType<Seller> = [
         render: (value) => new Date(value).toLocaleString('vi-VN'),
     },
     {
-        title: 'Trạng thái',
-        dataIndex: 'isLocked',
-        key: 'isLocked',
-        render: (value) => (value ? 'Bị khoá' : 'Hoạt động'),
-    },
+        title: "Trạng thái",
+        dataIndex: "isLocked",
+        key: "isLocked",
+        render: (value: boolean) => (value ? "Bị khóa" : "Hoạt động"),
+    }
+
 ];
 
 export default function SellerManagement() {
     const [data, setData] = useState<Seller[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(10);
+    const [pageSize, setPageSize] = useState(5);
     const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const fetchSellers = async (page: number) => {
         try {
+            setLoading(true);
             const body = {
-                pageInfo: {
-                    page: page,
-                    pageSize: pageSize,
-                },
+                pageInfo: { page, pageSize },
                 keyWord: '',
-                filter: {},
-                sorts: {},
             };
-            const res = await getAllSeller(body);
-            if (res.data) {
-                setData(res.data);
-                setTotal(res.data?.totalRecord || (res.data?.length ?? 0));
+            const res: any = await getAllSeller(body);
+            console.log("🚀 ~ fetchSellers ~ res:", res)
+            if (res?.success) {
+                setData(res?.data);
+                setTotal(res?.totalRecord);
                 setCurrentPage(page);
             } else {
                 message.error('Không thể lấy danh sách người bán');
@@ -65,6 +65,8 @@ export default function SellerManagement() {
         } catch (error) {
             console.error(error);
             message.error('Đã xảy ra lỗi khi tải dữ liệu');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -72,24 +74,15 @@ export default function SellerManagement() {
         fetchSellers(currentPage);
     }, []);
 
-    const handlePageChange = (page: number) => {
-        fetchSellers(page);
-    };
-    const handleAdd = () => {
-        navigate('/admin/seller/create');
-    };
-
-    const handleView = (record: Seller) => {
-        navigate(`/admin/seller/edit/${record.id}`);
-    };
-
+    const handlePageChange = (page: number) => fetchSellers(page);
+    const handleAdd = () => navigate('/admin/seller/create');
+    const handleView = (record: Seller) => navigate(`/admin/seller/edit/${record.id}`);
     const handleDelete = (id: string) => {
         try {
             deleteSeller(id);
             setData((prev) => prev.filter((s) => s.id !== id));
             showSuccess('Đã xoá người bán');
-        }
-        catch (error) {
+        } catch (error) {
             console.error(error);
             showError('Không thể xoá người bán');
         }
@@ -98,19 +91,23 @@ export default function SellerManagement() {
     return (
         <div>
             <h2>Danh sách người bán</h2>
-            <CustomTable<Seller>
-                rowKey="id"
-                columns={columns}
-                dataSource={data}
-                pageSize={pageSize}
-                currentPage={currentPage}
-                total={total}
-                scrollY={window.innerHeight - 300}
-                onPageChange={handlePageChange}
-                onAdd={handleAdd}
-                onView={handleView}
-                onDelete={handleDelete}
-            />
+            {loading ? (
+                <LoadingDefault />
+            ) : (
+                <CustomTable<Seller>
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={data}
+                    pageSize={pageSize}
+                    currentPage={currentPage}
+                    total={total}
+                    scrollY={window.innerHeight - 300}
+                    onPageChange={handlePageChange}
+                    onAdd={handleAdd}
+                    onView={handleView}
+                    onDelete={handleDelete}
+                />
+            )}
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import { axiosClient, axiosClientNoAuth } from "../services/axiosConfig";
+import { axiosClient, axiosClientFile, axiosClientNoAuth } from "../services/axiosConfig";
 
 export const getUserInfo = () => {
   const url = `/Auth/getUserInfo`;
@@ -6,5 +6,5 @@ export const getUserInfo = () => {
 };
 export const updateUser = (body: any) => {
   const url = `/User/updateUser`;
-  return axiosClientNoAuth.post(url, body);
+  return axiosClientFile.post(url, body);
 };

@@ -15,8 +15,11 @@ public class Product : BaseEntity
 
     public int StockQuantity { get; set; }
 
-    [StringLength(20)]
-    public string Status { get; set; } = "Available";
+    // Trạng thái hoạt động: true = hoạt động, false = ngưng bán hoặc hết hàng
+    public bool IsActive { get; set; } = true;
+
+    // Trạng thái do seller set: true = hoạt động, false = ngưng bán
+    public bool SellerStatus { get; set; } = true;
 
     [StringLength(255)]
     public string Thumbnail { get; set; } = string.Empty;
@@ -30,9 +33,11 @@ public class Product : BaseEntity
     public Category Category { get; set; }
 
     public User? Seller { get; set; }
+
     public ICollection<CartItem>? CartItems { get; set; }
-    public ICollection<ProductVariant> ProductVariants { get; set; }
+    public ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
 
     public ICollection<OrderItem>? OrderItems { get; set; }
     public ICollection<Review>? Reviews { get; set; }
+
 }

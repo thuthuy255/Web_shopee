@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { message } from 'antd';
+import { useEffect, useState } from 'react';
 import type { TableColumnsType } from 'antd';
 import CustomTable from '../../../components/CustomTable';
 import { useNavigate } from 'react-router-dom';
-import { deleteSeller, getAllSeller } from '../../../api/seller/seller.api';
 import { showError, showSuccess } from '../../../untils/ShowToast';
 import { deleteCategory, getAllCategories } from '../../../api/category/category.api';
+import LoadingDefault from '../../../components/loading/LoadingDefault';
 
 interface Category {
     id: string;
@@ -13,6 +12,7 @@ interface Category {
     description: string;
     imageUrl: string;
     parentCategoryId?: string | null;
+    sellerName: string;
 }
 
 
@@ -48,12 +48,13 @@ const columns: TableColumnsType<Category> = [
 export default function CategoryManagement() {
     const [data, setData] = useState<Category[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(10);
+    const [pageSize] = useState(5);
     const [total, setTotal] = useState(0);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
 
     const fetchCategory = async (page: number) => {
+        setLoading(true);
         try {
             const body = {
                 pageInfo: {
@@ -64,10 +65,10 @@ export default function CategoryManagement() {
                 filter: {},
                 sorts: {},
             };
-            const res = await getAllCategories(body);
-            if (res.data) {
-                setData(res.data);
-                setTotal(res.data?.totalRecord || (res.data?.length ?? 0));
+            const res: any = await getAllCategories(body);
+            if (res?.success) {
+                setData(res?.data);
+                setTotal(res?.totalRecord);
                 setCurrentPage(page);
             } else {
                 showError('Không thể lấy danh sách danh mục');
@@ -75,6 +76,9 @@ export default function CategoryManagement() {
         } catch (error) {
             console.error(error);
             showError('Đã xảy ra lỗi khi tải dữ liệu');
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -85,17 +89,11 @@ export default function CategoryManagement() {
     const handlePageChange = (page: number) => {
         fetchCategory(page);
     };
-    const handleAdd = () => {
-        navigate('/admin/category/create');
-    };
 
-    const handleView = (record: Category) => {
-        navigate(`/admin/seller/edit/${record.id}`);
-    };
 
     const handleDelete = async (id: string) => {
         try {
-            setLoading(true); // ✅ loading bắt đầu
+            setLoading(true);
             await deleteCategory(id);
             setData((prev) => prev.filter((item) => item.id !== id));
             showSuccess('Đã xoá danh mục');
@@ -103,7 +101,7 @@ export default function CategoryManagement() {
             console.error(error);
             showError('Xoá danh mục thất bại');
         } finally {
-            setLoading(false); // ✅ loading kết thúc
+            setLoading(false);
         }
     };
 
@@ -112,19 +110,23 @@ export default function CategoryManagement() {
     return (
         <div>
             <h2>Danh sách người bán</h2>
-            <CustomTable<Category>
-                rowKey="id"
-                columns={columns}
-                dataSource={data}
-                pageSize={pageSize}
-                currentPage={currentPage}
-                total={total}
-                scrollY={window.innerHeight - 300}
-                onPageChange={handlePageChange}
-                onAdd={handleAdd}
-                onView={handleView}
-                onDelete={handleDelete}
-            />
+            {loading ? (
+                <LoadingDefault />
+            ) : (
+                <CustomTable<Category>
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={data}
+                    pageSize={pageSize}
+                    currentPage={currentPage}
+                    total={total}
+                    scrollY={window.innerHeight - 300}
+                    onPageChange={handlePageChange}
+
+                    onDelete={handleDelete}
+                />
+            )}
+
         </div>
     );
 }

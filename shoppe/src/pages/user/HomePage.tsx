@@ -1,13 +1,12 @@
-import React from "react";
 import { Flex } from "antd";
-import BannerSlider from "../../components/user/banner/BannerSlider";
-import BannerStatic from "../../components/user/banner/BannerStatic";
 import CategoryButton from "../../components/user/category/CategoryButton";
 import ProductRecommended from "../../components/user/product/Product_Recommended";
 import { COLOR_DEFAULT } from "../../constants/Color";
 import BannerHome from "./components/BannerHome";
 
+
 export default function HomePage() {
+
   return (
     <div>
       <BannerHome />

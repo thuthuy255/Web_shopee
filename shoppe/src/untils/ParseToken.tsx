@@ -30,8 +30,8 @@ export const parseToken = (token: string): ParsedUserInfo | null => {
             ];
         const role =
             decoded[
-                "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-            ]?.toLowerCase();
+            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+            ];
         const exp = decoded.exp;
 
         return { userId, email, role, exp };

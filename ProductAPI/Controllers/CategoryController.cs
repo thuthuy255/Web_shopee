@@ -30,6 +30,18 @@ namespace ProductAPI.Controllers
         public async Task<IActionResult> GetCategoryDetail([FromRoute] Guid id)
         {
             var result = await _categoryService.GetByIdAsync(id);
+            if (result.Success)
+            {
+                return Ok(new
+                {
+                    success = true,
+                    message = result.Message,
+                    data = result.Data,
+                    totalRecord = result.TotalRecord,
+                    
+              
+            });
+            }
             return result.Success ? Ok(result) : BadRequest(result);
         }
 

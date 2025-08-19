@@ -26,8 +26,7 @@ const ShopeeSearch = () => {
                     pageSize: pageSize,
                 },
                 keyWord: '',
-                filter: {},
-                sorts: {},
+
             };
             const res = await getAllCategories(body);
             if (res.data) {
@@ -49,7 +48,7 @@ const ShopeeSearch = () => {
 
 
     return (
-        <div style={{ width: '81%', display: 'flex', justifyContent: 'center', backgroundColor: COLOR_DEFAULT }}>
+        <div style={{ width: '60%', display: 'flex', justifyContent: 'center', backgroundColor: COLOR_DEFAULT }}>
             {/* Container gói search và category */}
             <div style={{ width: '80%' }}>
 
@@ -59,7 +58,7 @@ const ShopeeSearch = () => {
                         display: 'flex',
                         alignItems: 'center',
                         width: '100%',
-                        height: '60px',
+                        height: '50px',
                         border: `2px solid ${COLOR_DEFAULT}`,
                         borderRadius: 4,
                         overflow: 'hidden',

@@ -46,7 +46,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                 }
             });
             form.setFieldsValue(convertedValues);
-            console.log('✅ initialValues gán vào form:', convertedValues);
         }
     }, [initialValues, fields, form]);
 

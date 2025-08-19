@@ -23,7 +23,18 @@ namespace ProductAPI.Controllers
         public async Task<IActionResult> GetAll([FromBody] GridInfo grid)
         {
             var result = await _bannerService.GetAllBanner(grid);
-            return Ok(result);
+            if (result.Success)
+            {
+                return Ok(new
+                {
+                    success = true,
+                    message = result.Message,
+                    data = result.Data,
+                    totalRecord = result.TotalRecord,
+
+                });
+            }
+            return BadRequest(result);
         }
 
         [HttpPost("createBanner")]

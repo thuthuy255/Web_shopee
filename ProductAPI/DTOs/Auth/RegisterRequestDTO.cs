@@ -19,6 +19,6 @@ public class RegisterRequestDTO
     [Required]
     [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
     public string Phone { get; set; }
-    public string Avatar { get; set; }
+    public string? Avatar { get; set; }
 
 }

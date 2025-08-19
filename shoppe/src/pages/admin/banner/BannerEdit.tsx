@@ -6,6 +6,7 @@ import { updateSeller } from '../../../api/seller/seller.api';
 import { showError, showSuccess } from '../../../untils/ShowToast';
 import { useGetBannerDetailtQuery } from '../../../api/banner/banner.query';
 import { updateBanner } from '../../../api/banner/banner.api';
+import LoadingDefault from '../../../components/loading/LoadingDefault';
 
 export default function BannerEdit() {
     const { id } = useParams();
@@ -111,7 +112,7 @@ export default function BannerEdit() {
                 />
             ) : (
                 <Flex justify="center" style={{ marginTop: '5%' }}>
-                    <Spin />
+                    <LoadingDefault />
                 </Flex>
             )}
         </div>

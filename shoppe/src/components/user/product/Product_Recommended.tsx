@@ -15,8 +15,7 @@ function ProductRecommended() {
                 const res: any = await getAllProduct({
                     pageInfo: { page: 1, pageSize: 10 },
                     keyWord: '',
-                    filter: {},
-                    sorts: {},
+
                 });
                 if (res.success && Array.isArray(res.data)) setData(res.data);
                 else console.error('Lấy sản phẩm thất bại');

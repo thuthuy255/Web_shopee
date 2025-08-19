@@ -15,19 +15,20 @@ import type { MenuProps } from 'antd';
 
 import type { RootState } from '../features/store';
 import { getMenuByRole } from './MenuIttem';
-import { resetLogin } from '../features/slices/app.slice';
+import { getTokenState, resetLogin } from '../features/slices/app.slice';
 import logo from '../assets/img/logo.png';
 import person from '../assets/img/person.png';
+import { ROLE } from '../constants';
 
 const { Header, Sider, Content } = Layout;
 const { Search } = Input;
 
 interface MainLayoutProps {
-    basePath: 'admin' | 'seller' | 'user';
+    basePath: 'Admin' | 'Seller' | 'User';
     defaultRole?: string;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ basePath, defaultRole = 'user' }) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ basePath, defaultRole = ROLE.USER }) => {
     const [collapsed, setCollapsed] = useState(false);
     const {
         token: { colorBgContainer, borderRadiusLG },
@@ -37,8 +38,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ basePath, defaultRole = 'user' 
     const navigate = useNavigate();
     const location = useLocation();
 
-    const roleId = useSelector((state: RootState) => state.app.role_id);
-    const role = roleId || defaultRole;
+    const roleId = useSelector(getTokenState);
+    const role = roleId;
     const menuItems = getMenuByRole(role);
 
     const handleLogout = () => {
@@ -120,7 +121,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ basePath, defaultRole = 'user' 
                             <Tooltip title="Thông báo">
                                 <BellOutlined style={{ fontSize: '20px' }} />
                             </Tooltip>
-                            {role === 'admin' && (
+                            {role === 'Admin' && (
                                 <Tooltip title="Cài đặt">
                                     <SettingOutlined style={{ fontSize: '20px' }} />
                                 </Tooltip>

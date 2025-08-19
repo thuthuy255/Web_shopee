@@ -2,6 +2,7 @@
 import { useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
 import { getStateApp } from "../features/slices/app.slice";
+import LoadingDefault from "../components/loading/LoadingDefault";
 
 const ProtectedRoute = ({
   children,
@@ -12,8 +13,12 @@ const ProtectedRoute = ({
 }) => {
   const location = useLocation();
   const stateApp = useSelector(getStateApp);
+  const token = localStorage.getItem("access_token");
+  if (token && !stateApp.role_id) {
+    return <LoadingDefault />
+  }
 
-  if (!stateApp?.token || !stateApp.role_id) {
+  if (!token || !stateApp.role_id) {
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 

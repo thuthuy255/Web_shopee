@@ -130,6 +130,9 @@ namespace ProductAPI.Services
 
             var product = await _productRepos.TableNoTracking.FirstOrDefaultAsync(p => p.Id == dto.ProductId);
             var variant = await _productVariantRepos.TableNoTracking.FirstOrDefaultAsync(v => v.Id == dto.ProductVariantId);
+            var seller = product != null
+                        ? await _userRepos.TableNoTracking.FirstOrDefaultAsync(u => u.Id == product.SellerId)
+                        : null;
 
             var resultDto = new CartItemDetailDto
             {
@@ -142,7 +145,10 @@ namespace ProductAPI.Services
                 ProductVariantId = existingItem.ProductVariantId,
                 Color = variant?.Color,
                 Size = variant?.Size,
-                Price = variant?.Price ?? product?.Price ?? 0
+                Price = variant?.Price ?? product?.Price ?? 0,
+                SellerId = seller?.Id ?? Guid.Empty,
+                FullName = seller?.FullName,
+
             };
 
             return MethodResult<CartItemDetailDto>.ResultWithData(resultDto, "Sản phẩm đã được thêm vào giỏ hàng.");
@@ -195,9 +201,13 @@ namespace ProductAPI.Services
             return MethodResult<CartItemDetailDto>.ResultWithData(resultDto, "Đã cập nhật sản phẩm thành công.");
         }
 
-        public async Task<MethodResult<string>> ToggleCartItemSelectionAsync(Guid userId, Guid productId, bool isSelected)
+        public async Task<MethodResult<string>> ToggleCartItemSelectionAsync(Guid userId, Guid productId, bool isSelected, Guid? productVariantId)
         {
-            var item = await _cartItemRepos.Table.FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
+            var item = await _cartItemRepos.Table
+                    .FirstOrDefaultAsync(c => c.UserId == userId
+                        && c.ProductId == productId
+                        && (c.ProductVariantId == productVariantId || (c.ProductVariantId == null && productVariantId == null)));
+
             if (item == null)
                 return MethodResult<string>.ResultWithError("Sản phẩm không tồn tại trong giỏ hàng.");
 

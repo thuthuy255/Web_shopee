@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProductAPI.DTOs.CartItem;
 using ProductAPI.IRepository;
@@ -20,8 +22,8 @@ namespace ProductAPI.Controllers
             _userPrincipal = userPrincipal;
             _cartItemRepos = cartItemRepos;
         }
-
         [HttpPost("GetUserCartAsync")]
+        [Authorize(Roles = "User")]
         public async Task<IActionResult> GetUserCartAsync(SearchCartItem request)
         {
             var userId = _userPrincipal.GetUserId();
@@ -48,7 +50,37 @@ namespace ProductAPI.Controllers
         {
             var userId = _userPrincipal.GetUserId();
             var result = await _cartItemServices.AddToCartAsync(userId.Value, dto);
-            return result.Success ? Ok(result) : BadRequest(result);
+            if (result.Success)
+            {
+                var request = new SearchCartItem()
+                {
+                    KeyWord = "",
+                    PageInfo = new DTOs.Common.PageInfo()
+                    {
+                        Page = 1,
+                        PageSize = 5,
+                    }
+
+                };
+                var resultCart = await _cartItemServices.GetUserCartAsync(request);
+                if (resultCart.Success)
+                {
+                    var totalCartItem = await _cartItemRepos.TableNoTracking
+                   .Where(p => p.UserId == userId)
+                   .CountAsync();
+
+                    return Ok(new
+                    {
+                        resultCart.Data,
+                        resultCart.Success,
+                        resultCart.Message,
+                        resultCart.TotalRecord,
+                        TotalCartItem = totalCartItem
+                    });
+                }
+                return result.Success ? Ok(result) : BadRequest(result);
+            }
+            return BadRequest(result);
         }
 
         [HttpPut("update")]
@@ -68,10 +100,10 @@ namespace ProductAPI.Controllers
         }
 
         [HttpPost("toggle-selection")]
-        public async Task<IActionResult> ToggleCartItemSelection([FromQuery] Guid productId, [FromQuery] bool isSelected)
+        public async Task<IActionResult> ToggleCartItemSelection([FromQuery] Guid productId, [FromQuery] bool isSelected, [FromQuery] Guid? productVariantId)
         {
             var userId = _userPrincipal.GetUserId();
-            var result = await _cartItemServices.ToggleCartItemSelectionAsync(userId.Value, productId, isSelected);
+            var result = await _cartItemServices.ToggleCartItemSelectionAsync(userId.Value, productId, isSelected, productVariantId);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 

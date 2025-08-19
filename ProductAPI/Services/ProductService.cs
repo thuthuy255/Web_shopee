@@ -15,6 +15,7 @@ namespace ProductAPI.Services
         private readonly IUserPrincipalService _userPrincipalService;
         private readonly CloudinaryService _cloudinaryService;
         private readonly IRepository<Category> _categoryRepo;
+        private readonly IRepository<User> _userRepo;
         private readonly IRepository<ProductVariant> _productVariantRepo;
 
 
@@ -23,6 +24,7 @@ namespace ProductAPI.Services
             IUserPrincipalService userPrincipalService,
             CloudinaryService cloudinaryService,
             IRepository<Category> categoryRepo,
+            IRepository<User> userRepo,
             IRepository<ProductVariant> productVariantRepo) : base(productRepo)
         {
             _productRepo = productRepo;
@@ -30,6 +32,7 @@ namespace ProductAPI.Services
             _cloudinaryService = cloudinaryService;
             _categoryRepo = categoryRepo;
             _productVariantRepo = productVariantRepo;
+            _userRepo = userRepo;
         }
 
         public async Task<MethodResult<List<ProductWithCategoryDto>>> FilterProductAsync(GridInfo grid)
@@ -40,8 +43,10 @@ namespace ProductAPI.Services
             var query = from p in _productRepo.TableNoTracking
                         join c in _categoryRepo.TableNoTracking on p.CategoryId equals c.Id into pc
                         from c in pc.DefaultIfEmpty()
+                        join u in _userRepo.TableNoTracking on p.SellerId equals u.Id into pu
+                        from u in pu
                         where !p.IsDeleted && (c == null || !c.IsDeleted)
-                        select new { p, c };
+                        select new { p, c , u };
 
             if (currentRole == Constant.Constants.ROLE_SELLER)
             {
@@ -53,6 +58,7 @@ namespace ProductAPI.Services
                 var keyword = grid.KeyWord.ToLower();
                 query = query.Where(x => x.p.ProductName.ToLower().Contains(keyword));
             }
+            
 
             var total = await query.CountAsync();
 
@@ -69,8 +75,10 @@ namespace ProductAPI.Services
                 Description = x.p.Description,
                 Price = x.p.Price,
                 StockQuantity = x.p.StockQuantity,
-                Status = x.p.Status,
+                IsActive = x.p.IsActive,
+                SellerStatus = x.p.SellerStatus,
                 Thumbnail = x.p.Thumbnail,
+                SellerName = x.u.Username,
                 ProductImages = string.IsNullOrWhiteSpace(x.p.ImageListJson)
                                 ? new List<string>()
                                 : x.p.ImageListJson.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList(),
@@ -105,7 +113,7 @@ namespace ProductAPI.Services
 
             if (product == null)
                 return MethodResult<ProductResultDto>.ResultWithError("Không tìm thấy sản phẩm");
-
+           
             var dto = new ProductResultDto
             {
                 Id = product.Id,
@@ -113,7 +121,8 @@ namespace ProductAPI.Services
                 Description = product.Description,
                 Price = product.Price,
                 StockQuantity = product.StockQuantity,
-                Status = product.Status,
+                IsActive = product.IsActive,
+                SellerStatus = product.SellerStatus,
                 Thumbnail = product.Thumbnail,
                 ImageListJson = product.ImageListJson,
                 CategoryId = product.CategoryId,
@@ -149,7 +158,9 @@ namespace ProductAPI.Services
                             Description = p.Description,
                             Price = p.Price,
                             StockQuantity = p.StockQuantity,
-                            Status = p.Status,
+                            // Nếu hết hàng thì mặc định isActive = false
+                            IsActive = p.StockQuantity == 0 ? false : p.IsActive,
+                            SellerStatus = p.SellerStatus,
                             Thumbnail = p.Thumbnail,
                             ProductImages = string.IsNullOrWhiteSpace(p.ImageListJson)
                                 ? new List<string>()
@@ -159,7 +170,6 @@ namespace ProductAPI.Services
                             CategoryDescription = c.Description,
                             CategoryImageUrl = c.ImageUrl,
                             ParentCategoryId = c.ParentCategoryId,
-
                         };
 
             // Áp dụng tìm kiếm nếu có
@@ -179,6 +189,7 @@ namespace ProductAPI.Services
 
             return MethodResult<List<ProductWithCategoryDto>>.ResultWithData(data, "Lấy danh sách sản phẩm theo seller thành công", total);
         }
+
 
 
         public async Task<MethodResult<List<ProductWithCategoryDto>>> GetProductsByCategoryAsync(Guid categoryId, GridInfo grid)
@@ -201,7 +212,8 @@ namespace ProductAPI.Services
                                   Description = p.Description,
                                   Price = p.Price,
                                   StockQuantity = p.StockQuantity,
-                                  Status = p.Status,
+                                  IsActive = p.IsActive,
+                                  SellerStatus = p.SellerStatus,
                                   Thumbnail = p.Thumbnail,
                                   ProductImages = string.IsNullOrWhiteSpace(p.ImageListJson)
                                                   ? new List<string>()
@@ -255,7 +267,8 @@ namespace ProductAPI.Services
                 Description = dto.Description,
                 Price = dto.Price ?? 0,
                 StockQuantity = dto.StockQuantity ?? 0,
-                Status = dto.Status,
+                IsActive = dto.IsActive,
+                SellerStatus = dto.SellerStatus,
                 Thumbnail = thumbnailUrl ?? "",
                 ImageListJson = string.Join(';', imageUrls),
                 CategoryId = dto.CategoryId.Value
@@ -271,7 +284,8 @@ namespace ProductAPI.Services
                 Description = product.Description,
                 Price = product.Price,
                 StockQuantity = product.StockQuantity,
-                Status = product.Status,
+                IsActive = product.IsActive,
+                SellerStatus = product.SellerStatus,
                 Thumbnail = product.Thumbnail,
                 ProductImages = imageUrls,
                 CategoryId = product.CategoryId
@@ -292,7 +306,8 @@ namespace ProductAPI.Services
             product.Description = dto.Description ?? "";
             product.Price = dto.Price ?? 0;
             product.StockQuantity = dto.StockQuantity ?? 0;
-            product.Status = dto.Status ?? "";
+            product.IsActive = dto.IsActive ;
+            product.SellerStatus = dto.SellerStatus;
 
             if (dto.CategoryId.HasValue && dto.CategoryId != Guid.Empty)
             {
@@ -303,7 +318,8 @@ namespace ProductAPI.Services
             product.MarkDirty(nameof(product.Price));
             product.MarkDirty(nameof(product.StockQuantity));
             product.MarkDirty(nameof(product.Description));
-            product.MarkDirty(nameof(product.Status));
+            product.MarkDirty(nameof(product.IsActive));
+            product.MarkDirty(nameof(product.SellerStatus));
             product.MarkDirty(nameof(product.ProductName));
 
             if (dto.Thumbnail != null)
@@ -340,7 +356,8 @@ namespace ProductAPI.Services
                 Description = product.Description,
                 Price = product.Price,
                 StockQuantity = product.StockQuantity,
-                Status = product.Status,
+                IsActive = product.IsActive,
+                SellerStatus = product.SellerStatus,
                 Thumbnail = product.Thumbnail,
                 // Trả về mảng cho FE
                 ProductImages = string.IsNullOrWhiteSpace(product.ImageListJson)

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { showError, showSuccess } from '../../../untils/ShowToast';
 import { deletePromotion, getPromotionsOfSeller } from '../../../api/promotion/promotion.api';
 import CustomTable from '../../../components/CustomTable';
+import LoadingDefault from '../../../components/loading/LoadingDefault';
 
 export default function PromotionManagement() {
     interface Promotion {
@@ -53,28 +54,28 @@ export default function PromotionManagement() {
     ];
 
     const [data, setData] = useState<Promotion[]>([]);
-    const [loading, setLoading] = useState(false); // ✅ loading state
+    const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(10);
+    const [pageSize] = useState(5);
     const [total, setTotal] = useState(0);
     const navigate = useNavigate();
 
     const fetchPromotion = async (page: number) => {
         try {
             setLoading(true);
-
             const body = {
-                pageInfo: { page, pageSize },
+                pageInfo: {
+                    page,
+                    pageSize,
+                },
                 keyWord: '',
-                filter: {},
-                sorts: {},
             };
 
-            const res = await getPromotionsOfSeller(body);
+            const res: any = await getPromotionsOfSeller(body);
             console.log("🚀 ~ fetchPromotion ~ res:", res)
-            if (res.data) {
-                setData(res.data || []); // Nếu backend trả về { data, message, totalRecord }
-                setTotal(res.data.totalRecord || 0);
+            if (res?.success) {
+                setData(res?.data);
+                setTotal(res?.totalRecord);
                 setCurrentPage(page);
             } else {
                 showError('Không thể lấy danh sách khuyến mãi');
@@ -104,7 +105,7 @@ export default function PromotionManagement() {
     };
     const handleDelete = async (id: string) => {
         try {
-            setLoading(true); // ✅ loading bắt đầu
+            setLoading(true);
             await deletePromotion(id);
             setData((prev) => prev.filter((item) => item.id !== id));
             showSuccess('Đã xoá thành công mã khuyến mãi');
@@ -112,26 +113,30 @@ export default function PromotionManagement() {
             console.error(error);
             showError('Xoá mã khuyến mãi thất bại');
         } finally {
-            setLoading(false); // ✅ loading kết thúc
+            setLoading(false);
         }
     };
     return (
         <div>
             <h2>Danh sách khuyến mãi</h2>
-            <CustomTable<Promotion>
-                rowKey="id"
-                columns={columns}
-                dataSource={data}
-                scrollY={window.innerHeight - 300}
-                loading={loading}
-                onAdd={handleAdd}
-                onView={handleView}
-                currentPage={currentPage}
-                pageSize={pageSize}
-                total={total}
-                onPageChange={handlePageChange}
-                onDelete={handleDelete}
-            />
+            {loading ? (
+                <LoadingDefault />
+            ) : (
+                <CustomTable<Promotion>
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={data}
+                    scrollY={window.innerHeight - 300}
+                    loading={loading}
+                    onAdd={handleAdd}
+                    onView={handleView}
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    total={total}
+                    onPageChange={handlePageChange}
+                    onDelete={handleDelete}
+                />
+            )}
         </div>
     );
 }

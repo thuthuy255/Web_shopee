@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { deleteSeller, getAllSeller } from '../../../api/seller/seller.api';
 import { showError, showSuccess } from '../../../untils/ShowToast';
 import { deleteBanner, getAllBanner } from '../../../api/banner/banner.api';
+import LoadingDefault from '../../../components/loading/LoadingDefault';
 
 interface Banner {
     id: string;
@@ -39,25 +40,25 @@ const columns: TableColumnsType<Banner> = [
 export default function BannerManagement() {
     const [data, setData] = useState<Banner[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(10);
+    const [pageSize] = useState(5);
     const [total, setTotal] = useState(0);
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
 
     const fetchBanner = async (page: number) => {
+        setLoading(true);
         try {
             const body = {
                 pageInfo: {
-                    page: page,
-                    pageSize: pageSize,
+                    page,
+                    pageSize,
                 },
                 keyWord: '',
-                filter: {},
-                sorts: {},
             };
-            const res = await getAllBanner(body);
-            if (res.data) {
+            const res: any = await getAllBanner(body);
+            if (res?.success) {
                 setData(res.data);
-                setTotal(res.data?.totalRecord || (res.data?.length ?? 0));
+                setTotal(res?.totalRecord || (res.data?.length ?? 0));
                 setCurrentPage(page);
             } else {
                 message.error('Không thể lấy danh sách người bán');
@@ -65,6 +66,9 @@ export default function BannerManagement() {
         } catch (error) {
             console.error(error);
             message.error('Đã xảy ra lỗi khi tải dữ liệu');
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -98,19 +102,25 @@ export default function BannerManagement() {
     return (
         <div>
             <h2>Danh sách người bán</h2>
-            <CustomTable<Banner>
-                rowKey="id"
-                columns={columns}
-                dataSource={data}
-                pageSize={pageSize}
-                currentPage={currentPage}
-                total={total}
-                scrollY={window.innerHeight - 300}
-                onPageChange={handlePageChange}
-                onAdd={handleAdd}
-                onView={handleView}
-                onDelete={handleDelete}
-            />
+            {loading ? (
+                <LoadingDefault />
+            ) : (
+                <CustomTable<Banner>
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={data}
+                    pageSize={pageSize}
+                    currentPage={currentPage}
+                    total={total}
+                    scrollY={window.innerHeight - 300}
+                    onPageChange={handlePageChange}
+                    onAdd={handleAdd}
+                    onView={handleView}
+                    onDelete={handleDelete}
+                />
+            )
+            }
+
         </div>
     );
 }

@@ -10,7 +10,7 @@
         public string Phone { get; set; } = default!;
         public string? Role { get; set; } 
         public bool IsLocked { get; set; } = false;
-        public IFormFile Avatar { get; set; }
+        public IFormFile? Avatar { get; set; }
 
     }
 }

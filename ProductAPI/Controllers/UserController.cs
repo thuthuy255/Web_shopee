@@ -33,11 +33,17 @@ namespace ProductAPI.Controllers
         public async Task<IActionResult> getAllSeller(GridInfo search)
         {
             var result = await _userServices.FilterSellerAsync(search);
-            if (!result.Success)
+            if (result.Success)
             {
-                return BadRequest(result);
+                return Ok(new
+                {
+                    success = true,
+                    message = result.Message,
+                    data = result.Data,
+                    totalRecord = result.TotalRecord
+                });
             }
-            return Ok(result);
+            return BadRequest(result);
         }
 
         [HttpPost("getDetailUser")]

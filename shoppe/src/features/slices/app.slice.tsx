@@ -20,7 +20,7 @@ const appSlice = createSlice({
       action: PayloadAction<{ token: string; role_id: string }>
     ) => {
       state.token = action.payload.token;
-      state.role_id = action.payload.role_id.toLowerCase();
+      state.role_id = action.payload.role_id;
     },
     resetLogin: (state) => {
       state.token = null;

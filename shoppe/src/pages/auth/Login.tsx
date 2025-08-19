@@ -22,11 +22,10 @@ import { ROLE } from "../../constants";
 import { useDispatch } from "react-redux";
 import { setAppState } from "../../features/slices/app.slice";
 import { getUserCartItems } from "../../api/cartitem/cartitem.api";
-import { setCartItems } from "../../features/slices/cart.slice";
 
 const { Title } = Typography;
 
-const Login: React.FC = () => {
+const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const disptach = useDispatch();
@@ -38,11 +37,6 @@ const Login: React.FC = () => {
       if (res?.success) {
         const token = res.data?.token;
         localStorage.setItem("access_token", token);
-
-        // const cartRes = await getUserCartItems();
-        // console.log("🚀 ~ handleLogin ~ cartRes:", cartRes)
-        // disptach(setCartItems(cartRes?.data || []));
-
         const decoded: any = jwtDecode(token);
         const role =
           decoded.role_id ||
@@ -50,13 +44,13 @@ const Login: React.FC = () => {
 
         disptach(
           setAppState({
-            role_id: role?.toLowerCase(),
+            role_id: role,
             token,
           })
         );
 
         // 👉 Điều hướng theo role
-        switch (role?.toLowerCase()) {
+        switch (role) {
           case ROLE.ADMIN:
             navigate("/admin/dashboard");
             break;
