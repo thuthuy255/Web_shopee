@@ -32,9 +32,10 @@ const ProductDetailPage = () => {
         setLoading(true);
         try {
             const res: any = await getDetailProduct(productId);
-            if (res.success) {
-                setProduct(res.data);
-                if (res.data.productVariants?.length) {
+            console.log("🚀 ~ fetchProductDetail ~ res:", res)
+            if (res?.success) {
+                setProduct(res?.data);
+                if (res?.data?.productVariants?.length) {
                     setSelectedVariantId(res.data.productVariants[0].id);
                 }
             } else setError('Không tìm thấy sản phẩm');
@@ -62,13 +63,26 @@ const ProductDetailPage = () => {
         }
 
         try {
+            const variant = hasVariants
+                ? product.productVariants.find((v: any) => v.id === selectedVariantId)
+                : null;
+
             const payload = {
                 productId: product.id,
-                productVariantId: hasVariants ? selectedVariantId : null,
+                productName: product.productName,
+                sellerName: product.sellerName,
+                thumbnail: product.thumbnail,
+                categoryName: product.categoryName,
+                productVariantId: variant ? variant.id : null,
+                variantName: variant ? `${variant.color} - ${variant.size}` : null,
+                variantPrice: variant ? variant.price : product.price,
+                variantImage: variant ? variant.imageUrl : null,
+                stockQuantity: variant ? variant.stockQuantity : product.stockQuantity,
+
                 quantity,
             };
+
             const res: any = await createCartItem(payload);
-            console.log("🚀 ~ handleAddToCart ~ res:", res)
             if (res.success) {
                 dispatch(setCart(res));
                 showSuccess('🛒 Đã thêm vào giỏ hàng!');
@@ -77,6 +91,7 @@ const ProductDetailPage = () => {
             message.error(error?.response?.data?.message || 'Không thể thêm vào giỏ hàng');
         }
     };
+
 
     // Số lượng
     const handleChangeQuantity = (value: number) => {
@@ -110,30 +125,51 @@ const ProductDetailPage = () => {
                         {/* Phân loại */}
                         {product?.productVariants?.length > 0 && (
                             <div style={{ marginBottom: 24 }}>
-                                <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>Phân loại hàng</div>
+                                <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>
+                                    Phân loại hàng
+                                </div>
+
                                 <Flex wrap gap={12}>
+                                    <Flex style={{ marginTop: 10, fontWeight: 500 }}>{product?.productVariants[0]?.variantName} :</Flex>
                                     {product?.productVariants?.map((v: any) => (
-                                        <div
-                                            key={v.id}
-                                            onClick={() => { setSelectedVariantId(v.id); setQuantity(1); }}
-                                            style={{
-                                                border: selectedVariantId === v.id ? `2px solid ${COLOR_DEFAULT}` : '1px solid #ccc',
-                                                borderRadius: 4,
-                                                padding: '8px 12px',
-                                                cursor: 'pointer',
-                                                background: selectedVariantId === v.id ? '#fff2ee' : '#fff',
-                                                fontSize: 14,
-                                            }}
-                                        >
-                                            <Flex align="center" gap={8}>
-                                                <Image style={{ width: 30, height: 30, objectFit: 'cover' }} src={v.imageUrl} />
-                                                {v.color} - {v.size}
+                                        <div key={v.id} style={{ display: "flex", alignItems: "center", gap: '10px' }}>
+
+                                            {/* Block chọn variant */}
+                                            <Flex
+                                                align="center"
+                                                gap={5}
+                                                onClick={() => {
+                                                    setSelectedVariantId(v.id);
+                                                    setQuantity(1);
+                                                }}
+                                                style={{
+                                                    border:
+                                                        selectedVariantId === v.id
+                                                            ? `2px solid ${COLOR_DEFAULT}`
+                                                            : "1px solid #ccc",
+                                                    borderRadius: 4,
+                                                    padding: "8px 12px",
+                                                    cursor: "pointer",
+                                                    background: selectedVariantId === v.id ? "#fff2ee" : "#fff",
+                                                    fontSize: 14,
+                                                    minWidth: 120,
+                                                    justifyContent: "center",
+                                                }}
+                                            >
+                                                <Flex align="center" gap={8}>
+                                                    <Image
+                                                        style={{ width: 30, height: 30, objectFit: "cover" }}
+                                                        src={v.imageUrl}
+                                                    />
+                                                    {v.variantValue}
+                                                </Flex>
                                             </Flex>
                                         </div>
                                     ))}
                                 </Flex>
                             </div>
                         )}
+
 
                         {selectedVariant && (
                             <div style={{ fontSize: 14, marginBottom: 16 }}>
@@ -216,6 +252,7 @@ const ProductDetailPage = () => {
 
                     <Button
                         type="default"
+                        onClick={() => navigate(`/user/shop/${product?.sellerId}`)} // 👉 điều hướng đến trang shop
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -229,6 +266,7 @@ const ProductDetailPage = () => {
                         <ShopFilled style={{ color: '#ff4d4f', fontSize: 16 }} />
                         <span>Xem shop</span>
                     </Button>
+
                 </Flex>
             </div>
 
@@ -236,7 +274,7 @@ const ProductDetailPage = () => {
             <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto', background: '#fff', borderRadius: 6 }}>
                 <Title level={5} style={{ margin: 0, paddingBottom: 12 }}>CHI TIẾT SẢN PHẨM</Title>
                 <Divider style={{ margin: '12px 0' }} />
-                <InfoRowDetail label="Danh Mục" value={<span>Shopee &gt; Danh mục &gt; Sản phẩm</span>} />
+                <InfoRowDetail label="Danh Mục" value={<span>{product?.sellerName} &gt; {product?.categoryName} &gt; {product?.productName}</span>} />
                 <InfoRowDetail label="Kho" value={product.stockQuantity > 0 ? 'CÒN HÀNG' : 'HẾT HÀNG'} />
                 <InfoRowDetail label="Trạng thái" value={product.status?.toUpperCase()} />
                 <InfoRowDetail label="Phân loại" value={product.productVariants?.length ? `${product.productVariants.length} biến thể` : 'Không có'} />

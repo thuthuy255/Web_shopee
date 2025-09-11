@@ -1,5 +1,6 @@
 ﻿using CloudinaryDotNet;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using ProductAPI.Core;
 using ProductAPI.DTOs.Common;
 using ProductAPI.DTOs.Product;
@@ -46,19 +47,23 @@ namespace ProductAPI.Services
                         join u in _userRepo.TableNoTracking on p.SellerId equals u.Id into pu
                         from u in pu
                         where !p.IsDeleted && (c == null || !c.IsDeleted)
-                        select new { p, c , u };
+                        select new { p, c, u };
 
             if (currentRole == Constant.Constants.ROLE_SELLER)
             {
                 query = query.Where(x => x.p.SellerId == currentUserId);
             }
-
             if (!string.IsNullOrWhiteSpace(grid.KeyWord))
             {
                 var keyword = grid.KeyWord.ToLower();
-                query = query.Where(x => x.p.ProductName.ToLower().Contains(keyword));
+
+                query = query.Where(x =>
+                    x.p.ProductName.ToLower().Contains(keyword) ||
+                    x.p.Price.ToString().Contains(keyword) ||
+                    (x.c != null && x.c.Name.ToLower().Contains(keyword)) ||
+                    (x.u != null && !string.IsNullOrEmpty(x.u.Username) && x.u.Username.ToLower().Contains(keyword))
+                );
             }
-            
 
             var total = await query.CountAsync();
 
@@ -93,8 +98,8 @@ namespace ProductAPI.Services
                             {
                                 Id = v.Id,
                                 ProductId = v.ProductId,
-                                Color = v.Color,
-                                Size = v.Size,
+                                VariantName = v.VariantName,
+                                VariantValue = v.VariantValue,
                                 Price = v.Price,
                                 StockQuantity = v.StockQuantity,
                                 ImageUrl = v.ImageUrl
@@ -108,12 +113,14 @@ namespace ProductAPI.Services
         {
             var product = await _productRepo
                 .TableNoTracking
-                .Include(p => p.ProductVariants) // Include các biến thể
+                .Include(p => p.ProductVariants)
+                 .Include(p => p.Seller)
+                 .Include(p =>p.Category)
                 .FirstOrDefaultAsync(p => p.Id == productId && !p.IsDeleted);
 
             if (product == null)
                 return MethodResult<ProductResultDto>.ResultWithError("Không tìm thấy sản phẩm");
-           
+
             var dto = new ProductResultDto
             {
                 Id = product.Id,
@@ -124,26 +131,29 @@ namespace ProductAPI.Services
                 IsActive = product.IsActive,
                 SellerStatus = product.SellerStatus,
                 Thumbnail = product.Thumbnail,
-                ImageListJson = product.ImageListJson,
                 CategoryId = product.CategoryId,
                 SellerId = product.SellerId,
+                SellerName= product.Seller.FullName,
+                CategoryName = product.Category.Name,
                 Created = product.Created,
                 IsDeleted = product.IsDeleted,
-
-                ProductVariants = product.ProductVariants?.Select(v => new ProductVariantDto
+                ProductImages = string.IsNullOrWhiteSpace(product.ImageListJson)
+                    ? new List<string>()
+                    : product.ImageListJson.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList(),
+                ProductVariants = product.ProductVariants?.Where(v => !v.IsDeleted)
+                                ?.Select(v => new ProductVariantDto
                 {
                     Id = v.Id,
                     ProductId = v.ProductId,
-                    Color = v.Color,
-                    Size = v.Size,
+                    VariantName = v.VariantName,
+                    VariantValue = v.VariantValue,
                     Price = v.Price,
                     StockQuantity = v.StockQuantity,
                     ImageUrl = v.ImageUrl,
                 }).ToList()
-
             };
 
-            return MethodResult<ProductResultDto>.ResultWithData(dto,"Lấy sản phẩm thành công");
+            return MethodResult<ProductResultDto>.ResultWithData(dto, "Lấy sản phẩm thành công");
         }
 
         public async Task<IMethodResult<List<ProductWithCategoryDto>>> FilterProductBySellerAsync(Guid sellerId, GridInfo grid)
@@ -170,6 +180,15 @@ namespace ProductAPI.Services
                             CategoryDescription = c.Description,
                             CategoryImageUrl = c.ImageUrl,
                             ParentCategoryId = c.ParentCategoryId,
+                            Variants = _productVariantRepo.TableNoTracking
+                                            .Where(v => v.ProductId == p.Id)
+                                            .Select(v => new ProductVariantDto
+                                            {
+                                                Id = v.Id,
+                                                VariantName = v.VariantName,
+                                                Price = v.Price,
+                                                StockQuantity = v.StockQuantity
+                                            }).ToList()
                         };
 
             // Áp dụng tìm kiếm nếu có
@@ -190,6 +209,38 @@ namespace ProductAPI.Services
             return MethodResult<List<ProductWithCategoryDto>>.ResultWithData(data, "Lấy danh sách sản phẩm theo seller thành công", total);
         }
 
+        public async Task<IMethodResult<SellerProductListDto>> GetShopWithProductsAsync(Guid sellerId, GridInfo grid)
+        {
+            var seller = await _userRepo.TableNoTracking
+                .Where(u => u.Id == sellerId && !u.IsDeleted)
+                .Select(u => new
+                {
+                    u.Id,
+                    u.FullName,
+                    u.Email,
+                    u.Avatar
+                })
+                .FirstOrDefaultAsync();
+
+            if (seller == null)
+                return MethodResult<SellerProductListDto>.ResultWithError("Không tìm thấy shop");
+
+            // lấy danh sách sản phẩm bằng cách tái sử dụng hàm cũ
+            var productResult = await FilterProductBySellerAsync(sellerId, grid);
+            if (!productResult.Success)
+                return MethodResult<SellerProductListDto>.ResultWithError(productResult.Error);
+
+            var result = new SellerProductListDto
+            {
+                SellerId = seller.Id,
+                SellerName = seller.FullName,
+                SellerEmail = seller.Email,
+                SellerAvatar = seller.Avatar,
+                Products = productResult.Data ?? new List<ProductWithCategoryDto>()
+            };
+
+            return MethodResult<SellerProductListDto>.ResultWithData(result, "Lấy thông tin shop + sản phẩm thành công", productResult.TotalRecord);
+        }
 
 
         public async Task<MethodResult<List<ProductWithCategoryDto>>> GetProductsByCategoryAsync(Guid categoryId, GridInfo grid)
@@ -222,7 +273,16 @@ namespace ProductAPI.Services
                                   CategoryName = c.Name,
                                   CategoryDescription = c.Description,
                                   CategoryImageUrl = c.ImageUrl,
-                                  ParentCategoryId = c.ParentCategoryId
+                                  ParentCategoryId = c.ParentCategoryId,
+                                  Variants = _productVariantRepo.TableNoTracking
+                                            .Where(v => v.ProductId == p.Id)
+                                            .Select(v => new ProductVariantDto
+                                            {
+                                                Id = v.Id,
+                                                VariantName = v.VariantName,
+                                                Price = v.Price,
+                                                StockQuantity = v.StockQuantity
+                                            }).ToList()
                               })
                               .Skip((grid.PageInfo.Page - 1) * grid.PageInfo.PageSize)
                               .Take(grid.PageInfo.PageSize)
@@ -232,47 +292,42 @@ namespace ProductAPI.Services
         }
 
 
-        public async Task<IMethodResult<ProductResultDto>> InsertProductFromFormAsync(ProductFormDataDto dto)
+        public async Task<IMethodResult<ProductResultDto>> CreateProductFromFormAsync(ProductFormDataDto dto, Guid sellerId)
         {
-            var currentUserId = _userPrincipalService.GetUserId();
-            if (currentUserId == null)
-                return MethodResult<ProductResultDto>.ResultWithError("Không xác định người dùng");
-            if (dto.CategoryId == null || dto.CategoryId == Guid.Empty)
-                return MethodResult<ProductResultDto>.ResultWithError("Danh mục không hợp lệ");
+            var product = new Product
+            {
+                Id = Guid.NewGuid(),
+                ProductName = dto.ProductName ?? "",
+                Description = dto.Description ?? "",
+                Price = dto.Price ?? 0,
+                StockQuantity = dto.StockQuantity ?? 0,
+                IsActive = dto.IsActive,
+                SellerStatus = dto.SellerStatus,
+                CategoryId = dto.CategoryId ?? Guid.Empty,
+                SellerId = sellerId
+            };
 
-            string? thumbnailUrl = null;
             if (dto.Thumbnail != null)
             {
-                thumbnailUrl = await _cloudinaryService.UploadImageAsync(dto.Thumbnail);
-                if (string.IsNullOrEmpty(thumbnailUrl))
-                    return MethodResult<ProductResultDto>.ResultWithError("Tải ảnh đại diện thất bại");
+                var url = await _cloudinaryService.UploadImageAsync(dto.Thumbnail);
+                if (!string.IsNullOrEmpty(url))
+                {
+                    product.Thumbnail = url;
+                }
             }
 
-            var imageUrls = new List<string>();
-            if (dto.ProductImages?.Any() == true)
+            if (dto.ProductImages != null && dto.ProductImages.Any())
             {
+                var imageUrls = new List<string>();
                 foreach (var image in dto.ProductImages)
                 {
                     var url = await _cloudinaryService.UploadImageAsync(image);
                     if (!string.IsNullOrEmpty(url))
                         imageUrls.Add(url);
                 }
+                product.ImageListJson = imageUrls.Count > 0 ? $";{string.Join(';', imageUrls)};" : null;
             }
 
-            var product = new Product
-            {
-                Id = Guid.NewGuid(),
-                SellerId = currentUserId.Value,
-                ProductName = dto.ProductName,
-                Description = dto.Description,
-                Price = dto.Price ?? 0,
-                StockQuantity = dto.StockQuantity ?? 0,
-                IsActive = dto.IsActive,
-                SellerStatus = dto.SellerStatus,
-                Thumbnail = thumbnailUrl ?? "",
-                ImageListJson = string.Join(';', imageUrls),
-                CategoryId = dto.CategoryId.Value
-            };
 
             await _productRepo.AddAsync(product);
             await _productRepo.SaveChangesAsync();
@@ -287,26 +342,27 @@ namespace ProductAPI.Services
                 IsActive = product.IsActive,
                 SellerStatus = product.SellerStatus,
                 Thumbnail = product.Thumbnail,
-                ProductImages = imageUrls,
+                ProductImages = string.IsNullOrWhiteSpace(product.ImageListJson)
+                    ? new List<string>()
+                    : product.ImageListJson.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList(),
                 CategoryId = product.CategoryId
             };
 
-            return MethodResult<ProductResultDto>.ResultWithData(result, "Tạo sản phẩm thành công");
+            return MethodResult<ProductResultDto>.ResultWithData(result, "Thêm sản phẩm thành công (chưa có biến thể)");
         }
+
 
         public async Task<IMethodResult<ProductResultDto>> UpdateProductFromFormAsync(Guid productId, ProductFormDataDto dto)
         {
             var product = await _productRepo.GetByIdAsync(productId);
             if (product == null)
-            {
                 return MethodResult<ProductResultDto>.ResultWithError("Không tìm thấy sản phẩm");
-            }
 
             product.ProductName = dto.ProductName ?? "";
             product.Description = dto.Description ?? "";
             product.Price = dto.Price ?? 0;
             product.StockQuantity = dto.StockQuantity ?? 0;
-            product.IsActive = dto.IsActive ;
+            product.IsActive = dto.IsActive;
             product.SellerStatus = dto.SellerStatus;
 
             if (dto.CategoryId.HasValue && dto.CategoryId != Guid.Empty)
@@ -331,23 +387,108 @@ namespace ProductAPI.Services
                     product.MarkDirty(nameof(product.Thumbnail));
                 }
             }
-
-            if (dto.ProductImages != null && dto.ProductImages.Any())
+            if (!string.IsNullOrEmpty(dto.ExistingProductImages) ||
+                (dto.ProductImages != null && dto.ProductImages.Any()))
             {
                 var imageUrls = new List<string>();
-                foreach (var image in dto.ProductImages)
+
+                // 1. Giữ ảnh cũ
+                if (!string.IsNullOrEmpty(dto.ExistingProductImages))
                 {
-                    var url = await _cloudinaryService.UploadImageAsync(image);
-                    if (!string.IsNullOrEmpty(url))
-                        imageUrls.Add(url);
+                    var oldImages = JsonConvert.DeserializeObject<List<string>>(dto.ExistingProductImages);
+                    if (oldImages != null && oldImages.Any())
+                        imageUrls.AddRange(oldImages);
                 }
 
-                // Lưu dạng ;url1;url2;
-                product.ImageListJson = imageUrls.Count > 0 ? $";{string.Join(';', imageUrls)};" : null;
+                // 2. Upload ảnh mới
+                if (dto.ProductImages != null && dto.ProductImages.Any())
+                {
+                    foreach (var image in dto.ProductImages)
+                    {
+                        var url = await _cloudinaryService.UploadImageAsync(image);
+                        if (!string.IsNullOrEmpty(url))
+                            imageUrls.Add(url);
+                    }
+                }
+
+                // 3. Lưu lại list mới (gồm cả ảnh cũ + mới)
+                product.ImageListJson = imageUrls.Count > 0
+                    ? $";{string.Join(';', imageUrls)};"
+                    : null;
+
                 product.MarkDirty(nameof(product.ImageListJson));
             }
 
+
+            if (dto.Variants != null)
+            {
+                var existingVariants = _productVariantRepo.Table.Where(v => v.ProductId == productId).ToList();
+
+                // Các Id FE gửi lên
+                var dtoIds = dto.Variants.Where(v => v.Id.HasValue).Select(v => v.Id.Value).ToList();
+
+                foreach (var variantDto in dto.Variants)
+                {
+                    if (variantDto.Id.HasValue)
+                    {
+                        var variant = existingVariants.FirstOrDefault(v => v.Id == variantDto.Id.Value);
+                        if (variant != null)
+                        {
+                            variant.VariantName = variantDto.VariantName;
+                            variant.VariantValue = variantDto.VariantValue;
+                            variant.Price = variantDto.Price ?? variant.Price;
+                            variant.StockQuantity = variantDto.StockQuantity ?? variant.StockQuantity;
+
+                            if (variantDto.ImageFile != null)
+                            {
+                                var imageUrl = await _cloudinaryService.UploadImageAsync(variantDto.ImageFile);
+                                if (!string.IsNullOrEmpty(imageUrl))
+                                {
+                                    variant.ImageUrl = imageUrl;
+                                }
+                            }
+
+                            variant.MarkDirty(nameof(variant.VariantName));
+                            variant.MarkDirty(nameof(variant.VariantValue));
+                            variant.MarkDirty(nameof(variant.Price));
+                            variant.MarkDirty(nameof(variant.StockQuantity));
+                            variant.MarkDirty(nameof(variant.ImageUrl));
+
+                            await _productVariantRepo.UpdateAsync(variant);
+                        }
+                    }
+                    else
+                    {
+                        string? imageUrl = null;
+                        if (variantDto.ImageFile != null)
+                        {
+                            imageUrl = await _cloudinaryService.UploadImageAsync(variantDto.ImageFile);
+                        }
+
+                        var newVariant = new ProductVariant
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = productId,
+                            VariantName = variantDto.VariantName,
+                            VariantValue = variantDto.VariantValue,
+                            Price = variantDto.Price ?? 0,
+                            StockQuantity = variantDto.StockQuantity ?? 0,
+                            IsDeleted = false,
+                            ImageUrl = imageUrl
+                        };
+                        await _productVariantRepo.AddAsync(newVariant);
+                    }
+                }
+                var variantsToDelete = existingVariants.Where(v => !dtoIds.Contains(v.Id)).ToList();
+                foreach (var variant in variantsToDelete)
+                {
+                    await _productVariantRepo.DeleteAsync(variant);
+                }
+            }
+
+
             await _productRepo.UpdateAsync(product);
+            await _productRepo.SaveChangesAsync();
 
             var result = new ProductResultDto
             {
@@ -359,15 +500,26 @@ namespace ProductAPI.Services
                 IsActive = product.IsActive,
                 SellerStatus = product.SellerStatus,
                 Thumbnail = product.Thumbnail,
-                // Trả về mảng cho FE
                 ProductImages = string.IsNullOrWhiteSpace(product.ImageListJson)
                     ? new List<string>()
                     : product.ImageListJson.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList(),
-                CategoryId = product.CategoryId
+                CategoryId = product.CategoryId,
+                ProductVariants = product.ProductVariants != null
+                                ? product.ProductVariants.Select(v => new ProductVariantDto
+                                {
+                                    Id = v.Id,
+                                    VariantName = v.VariantName,
+                                    Price = v.Price,
+                                    StockQuantity = v.StockQuantity,
+                                    // nếu có thêm Thumbnail riêng cho variant thì map vào
+                                    ImageUrl = v.ImageUrl,
+                                }).ToList()
+        : new List<ProductVariantDto>()
             };
 
             return MethodResult<ProductResultDto>.ResultWithData(result, "Cập nhật sản phẩm thành công");
         }
+
 
 
         public async Task<IMethodResult<bool>> DeleteProductAsync(Guid productId)
@@ -381,5 +533,26 @@ namespace ProductAPI.Services
             await _productRepo.DeleteAsync(product);
             return MethodResult<bool>.ResultWithData(true, "Xóa sản phẩm thành công.");
         }
+        public async Task<IMethodResult<bool>> DeleteVariantAsync(Guid variantId)
+        {
+            var variant = await _productVariantRepo.GetByIdAsync(variantId);
+            if (variant == null || variant.IsDeleted)
+                return MethodResult<bool>.ResultWithError("Không tìm thấy biến thể");
+
+            var product = await _productRepo.GetByIdAsync(variant.ProductId);
+            if (product == null)
+                return MethodResult<bool>.ResultWithError("Sản phẩm không tồn tại");
+
+            var currentUserId = _userPrincipalService.GetUserId();
+            if (!currentUserId.HasValue || product.CreatedBy != currentUserId)
+                return MethodResult<bool>.ResultWithError("Bạn không có quyền xóa biến thể này");
+
+            // Soft delete
+            await _productVariantRepo.DeleteAsync(variant);
+
+            return MethodResult<bool>.ResultWithData(true, "Xóa biến thể thành công");
+        }
+
+
     }
 }

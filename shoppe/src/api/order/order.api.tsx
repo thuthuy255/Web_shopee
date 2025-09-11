@@ -1,0 +1,21 @@
+import { axiosClient } from "../../services/axiosConfig";
+
+export const createTemporaryOrder = () => {
+    const url = "/Order/create-temp";
+    return axiosClient.post(url);
+};
+
+export const updateOrderInfo = (orderId: string, body: any) => {
+    const url = `/Order/${orderId}/update-info`;
+    return axiosClient.post(url, body);
+};
+
+export const getUserOrders = () => {
+    const url = "/Order/my-orders";
+    return axiosClient.get(url);
+};
+
+export const getOrderDetail = (orderId: string) => {
+    const url = `/Order/${orderId}`;
+    return axiosClient.get(url);
+};

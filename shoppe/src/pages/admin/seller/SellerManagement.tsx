@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { message } from 'antd';
+import { Flex, Input, message } from 'antd';
 import type { TableColumnsType } from 'antd';
 import CustomTable from '../../../components/CustomTable';
 import { useNavigate } from 'react-router-dom';
-import { deleteSeller, getAllSeller } from '../../../api/seller/seller.api';
+import { getAllSeller, deleteSeller } from '../../../api/seller/seller.api';
 import { showError, showSuccess } from '../../../untils/ShowToast';
 import LoadingDefault from '../../../components/loading/LoadingDefault';
+import { debounce } from 'lodash';
+import Search from 'antd/es/input/Search';
 
 interface Seller {
     id: string;
@@ -19,23 +21,25 @@ interface Seller {
 }
 
 const columns: TableColumnsType<Seller> = [
-    { title: 'Tên cửa hàng', dataIndex: 'fullName', key: 'fullName' },
-    { title: 'Tên người bán', dataIndex: 'username', key: 'username' },
-    { title: 'Email', dataIndex: 'email', key: 'email' },
-    { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone' },
+    { title: 'Tên cửa hàng', dataIndex: 'fullName', key: 'fullName', align: 'center' },
+    { title: 'Tên người bán', dataIndex: 'username', key: 'username', align: 'center' },
+    { title: 'Email', dataIndex: 'email', key: 'email', align: 'center' },
+    { title: 'Số điện thoại', dataIndex: 'phone', key: 'phone', align: 'center' },
     {
         title: 'Ngày tạo',
         dataIndex: 'created',
         key: 'created',
         render: (value) => new Date(value).toLocaleString('vi-VN'),
+        align: 'center'
+
     },
     {
         title: "Trạng thái",
         dataIndex: "isLocked",
         key: "isLocked",
         render: (value: boolean) => (value ? "Bị khóa" : "Hoạt động"),
+        align: 'center'
     }
-
 ];
 
 export default function SellerManagement() {
@@ -44,17 +48,18 @@ export default function SellerManagement() {
     const [pageSize, setPageSize] = useState(5);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [keyword, setKeyword] = useState('');
     const navigate = useNavigate();
 
-    const fetchSellers = async (page: number) => {
+    // Hàm gọi API
+    const fetchSellers = async (page: number, key: string) => {
         try {
             setLoading(true);
             const body = {
                 pageInfo: { page, pageSize },
-                keyWord: '',
+                keyWord: key,
             };
             const res: any = await getAllSeller(body);
-            console.log("🚀 ~ fetchSellers ~ res:", res)
             if (res?.success) {
                 setData(res?.data);
                 setTotal(res?.totalRecord);
@@ -70,16 +75,23 @@ export default function SellerManagement() {
         }
     };
 
-    useEffect(() => {
-        fetchSellers(currentPage);
-    }, []);
+    // Debounce để giảm số lần gọi API khi gõ liên tục
+    const debouncedFetch = debounce((value: string) => {
+        fetchSellers(1, value); // luôn bắt đầu từ trang 1 khi search
+    }, 500); // 500ms
 
-    const handlePageChange = (page: number) => fetchSellers(page);
+    // Lắng nghe keyword thay đổi
+    useEffect(() => {
+        debouncedFetch(keyword);
+        return () => debouncedFetch.cancel(); // hủy debounce khi unmount
+    }, [keyword]);
+
+    const handlePageChange = (page: number) => fetchSellers(page, keyword);
     const handleAdd = () => navigate('/admin/seller/create');
     const handleView = (record: Seller) => navigate(`/admin/seller/edit/${record.id}`);
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         try {
-            deleteSeller(id);
+            await deleteSeller(id);
             setData((prev) => prev.filter((s) => s.id !== id));
             showSuccess('Đã xoá người bán');
         } catch (error) {
@@ -90,7 +102,15 @@ export default function SellerManagement() {
 
     return (
         <div>
-            <h2>Danh sách người bán</h2>
+            <Flex align='center' justify='space-between' style={{ marginBottom: 16 }}>
+                <h2>Danh sách người bán</h2>
+                <Search
+                    placeholder="Tìm kiếm theo tên, email..."
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    style={{ marginBottom: 16, width: 300 }}
+                />
+            </Flex>
             {loading ? (
                 <LoadingDefault />
             ) : (

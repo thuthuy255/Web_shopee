@@ -23,8 +23,10 @@ export const toggleCartItemSelection = (productId: string, isSelected: boolean, 
         productVariantId: productVariantId || null,
     });
 };
-
-
 export const toggleSelectAllCart = () => {
     return axiosClient.post('/CartItem/toggle-select-all');
+};
+export const updateCartItem = (body: any) => {
+    const url = '/CartItem/updateCartItem';
+    return axiosClient.put(url, body);
 };

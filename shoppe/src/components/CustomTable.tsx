@@ -48,7 +48,7 @@ function CustomTable<T>({
         render: (_, record) => {
             const id = String(record[rowKey as keyof T]);
             return (
-                <Space size="middle">
+                <Space size="middle" style={{ justifyContent: 'center', display: 'flex' }}>
                     {onView && (
                         <Tooltip title="Chỉnh sửa">
                             <Button
@@ -116,6 +116,7 @@ function CustomTable<T>({
                 }}
                 scroll={{ y: scrollY }}
                 rowClassName={() => 'custom-table-row'}
+
             />
         </Card>
     );

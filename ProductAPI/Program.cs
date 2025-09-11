@@ -95,6 +95,7 @@ builder.Services.AddMemoryCache();
 // DI
 builder.Services.AddScoped<IUserPrincipalService, UserPrincipalService>();
 builder.Services.AddScoped<IAuthServices, AuthService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
@@ -109,6 +110,7 @@ builder.Services.AddScoped<IBannerService, BannerService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IProductVariantService, ProductVariantService>();
 builder.Services.AddScoped<CloudinaryService>();
+builder.Services.AddScoped<IPaymentServices, PaymentServices>();
 
 // DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

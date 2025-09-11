@@ -1,0 +1,135 @@
+import { useState, useEffect } from "react";
+import { Modal, Typography, Spin, Tag, Image } from "antd";
+import { getPromotionsOfSeller } from "../../api/promotion/promotion.api";
+const { Text } = Typography;
+import logo_voucher from '../../assets/img/voucher.png';
+
+interface Voucher {
+    code: string;
+    name: string;
+    description?: string;
+    discountPercent?: number;
+    minOrderValue?: number;
+    discountAmount?: number;
+    startDate: string;
+    endDate: string;
+}
+
+interface VoucherModalProps {
+    visible: boolean;
+    onClose: () => void;
+    onApply: (voucher: Voucher | null) => void;
+}
+
+const VoucherModal = ({ visible, onClose, onApply }: VoucherModalProps) => {
+    const [vouchers, setVouchers] = useState<Voucher[]>([]);
+    const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (visible) fetchVouchers();
+    }, [visible]);
+
+    const fetchVouchers = async () => {
+        setLoading(true);
+        try {
+            const res: any = await getPromotionsOfSeller({ pageInfo: { page: 1, pageSize: 50 } });
+            setVouchers(res.data || []);
+        } catch (err) {
+            console.error("Lỗi load voucher:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleApply = () => {
+        // Voucher có thể null (bỏ chọn)
+        onApply(selectedVoucher);
+        onClose();
+    };
+
+    return (
+        <Modal
+            title="Chọn Shopee Voucher"
+            open={visible}
+            onCancel={onClose}
+            onOk={handleApply}
+            okText="OK"
+            cancelText="Trở lại"
+        >
+            {loading ? (
+                <Spin />
+            ) : (
+                <div style={{ maxHeight: 400, overflowY: "auto" }}>
+                    {vouchers.map((item) => (
+                        <div
+                            key={item.code}
+                            onClick={() =>
+                                setSelectedVoucher(
+                                    selectedVoucher?.code === item.code ? null : item
+                                )
+                            }
+                            style={{
+                                border: "1px solid #f0f0f0",
+                                borderRadius: 6,
+                                marginBottom: 12,
+                                padding: 12,
+                                display: "flex",
+                                cursor: "pointer",
+                                backgroundColor:
+                                    selectedVoucher?.code === item.code ? "#e6f7ff" : "#fff",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: 80,
+                                    minWidth: 80,
+                                    height: 40,
+                                    background: "#f5f5f5",
+                                    borderRadius: 4,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontWeight: "bold",
+                                    color: "#1890ff",
+                                    marginRight: 12,
+                                }}
+                            >
+                                <Image src={logo_voucher} style={{ width: '100%' }} />
+                            </div>
+
+                            <div style={{ flex: 1 }}>
+                                <Text strong style={{ fontSize: 15, display: "block" }}>
+                                    {item.discountPercent
+                                        ? `Giảm ${item.discountPercent}%`
+                                        : item.discountAmount
+                                            ? `Giảm ${item.discountAmount.toLocaleString()}đ`
+                                            : ""}
+                                </Text>
+                                <Text type="secondary" style={{ fontSize: 13 }}>
+                                    Đơn tối thiểu {item.minOrderValue?.toLocaleString()}đ
+                                </Text>
+
+                                {item.description && (
+                                    <Tag
+                                        color="red"
+                                        style={{ marginTop: 6, display: "inline-block" }}
+                                    >
+                                        {item.description}
+                                    </Tag>
+                                )}
+
+                                <div style={{ marginTop: 6, fontSize: 12 }}>
+                                    <Text type="secondary">HSD: {item.endDate}</Text>{" "}
+                                    <a href="#">Điều kiện</a>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </Modal>
+    );
+};
+
+export default VoucherModal;

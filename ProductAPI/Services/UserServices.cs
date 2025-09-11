@@ -36,7 +36,10 @@ namespace ProductAPI.Services
 
             // Đếm tổng bản ghi
             var totalRecord = await query.CountAsync();
-
+            if (totalRecord == 0)
+            {
+                return MethodResult<List<UserDto>>.ResultWithError("Không tìm thấy người dùng nào");
+            }
             // Truy vấn và ánh xạ sang DTO
             var result = await query
                 .OrderByDescending(u => u.Created)
@@ -67,8 +70,13 @@ namespace ProductAPI.Services
                 var keyword = grid.KeyWord.ToLower();
                 query = query.Where(u =>
                     u.Username.ToLower().Contains(keyword) ||
-                    u.Email.ToLower().Contains(keyword));
+                    u.Email.ToLower().Contains(keyword) ||
+                    u.FullName.ToLower().Contains(keyword) ||
+                    u.Phone.ToLower().Contains(keyword) ||
+                    u.Role.ToLower().Contains(keyword));
+               
             }
+
 
             // Lọc Role = "User"
             query = query.Where(u => u.Role == Constant.Constants.ROLE_SELLER);

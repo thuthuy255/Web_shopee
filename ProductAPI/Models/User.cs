@@ -6,8 +6,8 @@ namespace ProductAPI.Models
 {
     public class User : BaseEntity
     {
-        [Required, StringLength(50)]
-        public string Username { get; set; } = string.Empty;
+        [StringLength(50)]
+        public string? Username { get; set; }   // cho phép null
 
         [Required, EmailAddress, StringLength(100)]
         public string Email { get; set; } = string.Empty;
@@ -15,20 +15,20 @@ namespace ProductAPI.Models
         [Required, StringLength(255)]
         public string PasswordHash { get; set; } = string.Empty;
 
-        [StringLength(100)]
-        public string FullName { get; set; } = string.Empty;
-
-        [StringLength(20)]
-        public string Phone { get; set; } = string.Empty;
         [StringLength(255)]
-        public string ?Avatar { get; set; } 
+        public string? FullName { get; set; }   // cho phép null
 
         [Required, StringLength(20)]
-        public string Role { get; set; } = "Customer"; // Có thể là Customer / Seller / Admin
+        public string Phone { get; set; } = string.Empty;
 
-        public bool IsLocked { get; set; } // 0: Đang hoạt động, 1: Đã khóa, v.v.
+        [StringLength(255)]
+        public string? Avatar { get; set; }     // cho phép null
 
-        // 🔁 Quan hệ
+        [Required, StringLength(20)]
+        public string Role { get; set; } = "Customer";
+
+        public bool IsLocked { get; set; }
+
         public ICollection<Address>? Addresses { get; set; }
         public ICollection<Product>? Products { get; set; }
         public ICollection<CartItem>? CartItems { get; set; }

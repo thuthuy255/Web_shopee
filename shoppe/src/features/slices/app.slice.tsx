@@ -10,7 +10,6 @@ const initialState: AppState = {
   token: null,
   role_id: null,
 };
-
 const appSlice = createSlice({
   name: "app",
   initialState,

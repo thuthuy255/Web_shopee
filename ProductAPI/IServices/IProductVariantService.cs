@@ -8,6 +8,7 @@ namespace ProductAPI.IServices
     {
         Task<IMethodResult<List<ProductVariantDto>>> GetByProductIdAsync(Guid productId);
         Task<IMethodResult<List<ProductVariantDto>>> AddVariantsAsync(List<CreateProductVariantDto> variants);
-        Task<IMethodResult<bool>> DeleteVariantAsync(Guid variantId);
+        Task<IMethodResult<ProductVariantDto>> UpdateVariantAsync(UpdateProductVariantDto dto);
+        
     }
 }

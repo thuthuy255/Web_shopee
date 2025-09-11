@@ -14,6 +14,7 @@ namespace ProductAPI.Services
         private readonly IRepository<ProductVariant> _productVariantRepos;
         private readonly IRepository<User> _userRepos;
         private readonly IUserPrincipalService _userPrincipal;
+
         public CartItemService(
             IRepository<CartItem> cartItemRepos,
             IRepository<Product> productRepos,
@@ -31,7 +32,8 @@ namespace ProductAPI.Services
 
         public async Task<MethodResult<List<SellerCartItemsDto>>> GetUserCartAsync(SearchCartItem request)
         {
-            var currentUser =  _userPrincipal.GetUserId();
+            var currentUser = _userPrincipal.GetUserId();
+
             var query = from c in _cartItemRepos.TableNoTracking
                         join p in _productRepos.TableNoTracking on c.ProductId equals p.Id
                         join pr in _productVariantRepos.TableNoTracking on c.ProductVariantId equals pr.Id into prj
@@ -49,12 +51,14 @@ namespace ProductAPI.Services
                             Thumbnail = p.Thumbnail,
 
                             ProductVariantId = pr != null ? pr.Id : (Guid?)null,
-                            StockQuantity = pr != null ? pr.StockQuantity : p.StockQuantity,
-                            Color = pr != null ? pr.Color : null,
-                            Size = pr != null ? pr.Size : null,
+                            VariantName = pr != null ? pr.VariantName : null,
+                            VariantValue = pr != null ? pr.VariantValue : null,
+                            VariantImage = pr != null ? pr.ImageUrl : null,
                             Price = pr != null ? pr.Price : p.Price,
-                            FullName = u.FullName, // tên seller
-                            SellerId = u.Id
+                            StockQuantity = pr != null ? pr.StockQuantity : p.StockQuantity,
+
+                            SellerId = u.Id,
+                            FullName = u.FullName
                         };
 
             var resultGroup = query
@@ -65,12 +69,14 @@ namespace ProductAPI.Services
                     SellerName = g.Key.FullName,
                     Items = g.ToList()
                 });
+
             var totalRecords = await resultGroup.CountAsync();
 
             var result = await resultGroup
                 .Skip((request.PageInfo.Page - 1) * request.PageInfo.PageSize)
                 .Take(request.PageInfo.PageSize)
                 .ToListAsync();
+
             return MethodResult<List<SellerCartItemsDto>>.ResultWithData(result, "Danh sách sản phẩm theo người bán.", totalRecords);
         }
 
@@ -89,7 +95,7 @@ namespace ProductAPI.Services
         public async Task RemoveAllItemsAsync(Guid userId)
         {
             var items = await _cartItemRepos.Table
-                .Where(c => c.UserId == userId )
+                .Where(c => c.UserId == userId)
                 .ToListAsync();
 
             if (items.Any())
@@ -109,8 +115,6 @@ namespace ProductAPI.Services
             {
                 existingItem.Quantity += dto.Quantity;
                 existingItem.MarkDirty(nameof(existingItem.Quantity));
-                existingItem.IsSelected = true;
-                existingItem.MarkDirty(nameof(existingItem.IsSelected));
                 await _cartItemRepos.UpdateAsync(existingItem);
             }
             else
@@ -121,7 +125,6 @@ namespace ProductAPI.Services
                     ProductId = dto.ProductId,
                     ProductVariantId = dto.ProductVariantId,
                     Quantity = dto.Quantity,
-                    IsSelected = true
                 };
 
                 await _cartItemRepos.AddAsync(newItem);
@@ -143,12 +146,13 @@ namespace ProductAPI.Services
                 ProductName = product?.ProductName ?? string.Empty,
                 Thumbnail = product?.Thumbnail,
                 ProductVariantId = existingItem.ProductVariantId,
-                Color = variant?.Color,
-                Size = variant?.Size,
+                VariantName = variant?.VariantName,
+                VariantValue = variant?.VariantValue,
+                VariantImage = variant?.ImageUrl,
                 Price = variant?.Price ?? product?.Price ?? 0,
+                StockQuantity = variant?.StockQuantity ?? product?.StockQuantity ?? 0,
                 SellerId = seller?.Id ?? Guid.Empty,
-                FullName = seller?.FullName,
-
+                FullName = seller?.FullName
             };
 
             return MethodResult<CartItemDetailDto>.ResultWithData(resultDto, "Sản phẩm đã được thêm vào giỏ hàng.");
@@ -193,9 +197,11 @@ namespace ProductAPI.Services
                 ProductName = fullItem.Product?.ProductName ?? string.Empty,
                 Thumbnail = fullItem.Product?.Thumbnail,
                 ProductVariantId = fullItem.ProductVariantId,
-                Color = fullItem.ProductVariant?.Color,
-                Size = fullItem.ProductVariant?.Size,
-                Price = fullItem.ProductVariant?.Price ?? fullItem.Product?.Price ?? 0
+                VariantName = fullItem.ProductVariant?.VariantName,
+                VariantValue = fullItem.ProductVariant?.VariantValue,
+                VariantImage = fullItem.ProductVariant?.ImageUrl,
+                Price = fullItem.ProductVariant?.Price ?? fullItem.Product?.Price ?? 0,
+                StockQuantity = fullItem.ProductVariant?.StockQuantity ?? fullItem.Product?.StockQuantity ?? 0
             };
 
             return MethodResult<CartItemDetailDto>.ResultWithData(resultDto, "Đã cập nhật sản phẩm thành công.");

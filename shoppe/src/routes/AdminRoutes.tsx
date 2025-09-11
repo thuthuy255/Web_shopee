@@ -12,7 +12,6 @@ import BannerManagement from "../pages/admin/banner/BannerManagement";
 import BannerCreate from "../pages/admin/banner/BannerCreate";
 import BannerEdit from "../pages/admin/banner/BannerEdit";
 import CategoryManagement from "../pages/admin/category/CategoryManagement";
-import CategoryCreate from "../pages/admin/category/CategoryCreate";
 
 const AdminRoutes = [
   {

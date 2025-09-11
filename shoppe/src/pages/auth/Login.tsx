@@ -16,7 +16,7 @@ import logo from "../../assets/img/logo.png";
 import backgroundImg from "../../assets/img/background.jpg";
 import { LoginAPI } from "../../api/auth.api";
 import { DEFAULT_TEXT, DEFAULT_TEXT_DARK } from "../../constants/Color";
-import { showError } from "../../untils/ShowToast";
+import { showError, showSuccess } from "../../untils/ShowToast";
 import { jwtDecode } from "jwt-decode";
 import { ROLE } from "../../constants";
 import { useDispatch } from "react-redux";
@@ -48,7 +48,7 @@ const Login = () => {
             token,
           })
         );
-
+        showSuccess("Đăng nhập thành công");
         // 👉 Điều hướng theo role
         switch (role) {
           case ROLE.ADMIN:

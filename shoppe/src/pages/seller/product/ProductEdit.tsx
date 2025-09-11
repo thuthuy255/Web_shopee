@@ -6,6 +6,8 @@ import { useGetDetailProductQuery } from '../../../api/product/product.query';
 import { updateProduct } from '../../../api/product/product.api';
 import { getAllCategories } from '../../../api/category/category.api';
 import { showError, showSuccess } from '../../../untils/ShowToast';
+import VariantsForm from '../../../components/VariantsForm';
+import LoadingDefault from '../../../components/loading/LoadingDefault';
 
 export default function ProductEdit() {
     const { id } = useParams();
@@ -14,7 +16,7 @@ export default function ProductEdit() {
     const [categoryOptions, setCategoryOptions] = useState<{ label: string; value: string }[]>([]);
     const formRef = useRef<any>(null);
     const navigate = useNavigate();
-
+    const [variants, setVariants] = useState<any[]>([]);
     const { data, isLoading } = useGetDetailProductQuery({ params: id });
 
     useEffect(() => {
@@ -23,8 +25,6 @@ export default function ProductEdit() {
                 const body = {
                     pageInfo: { page: 1, pageSize: 100 },
                     keyWord: '',
-                    filter: {},
-                    sorts: {},
                 };
                 const res: any = await getAllCategories(body);
                 if (res.success && Array.isArray(res.data)) {
@@ -39,7 +39,6 @@ export default function ProductEdit() {
                 console.error(err);
             }
         };
-
         fetchCategories();
     }, []);
 
@@ -55,11 +54,56 @@ export default function ProductEdit() {
                 isActive: product.isActive || false,
                 sellerStatus: product.sellerStatus || false,
                 categoryId: product.categoryId || '',
-                Thumbnail: product.thumbnail,
-                ProductImages: product.imageListJson
-                    ? product.imageListJson.split(';').map((url: string) => ({ url }))
-                    : [],
+
+                // Thumbnail
+                Thumbnail: product.thumbnail
+                    ? {
+                        url: product.thumbnail,
+                        uid: 'thumb',
+                        name: product.productName,
+                        status: 'done',
+                    }
+                    : null,
+                ProductImages:
+                    product.productImages?.map((url: string, idx: number) => ({
+                        url,
+                        uid: idx.toString(),
+                        name: `image-${idx}`,
+                        status: 'done',
+                    })) || [],
+
+                // Variants
+                // variants:
+                //     product.variants?.map((v: any) => ({
+                //         id: v.id,
+                //         variantName: v.variantName,
+                //         variantValue: v.variantValue,
+                //         price: v.price,
+                //         stockQuantity: v.stockQuantity,
+                //         imageUrl: v.imageUrl,
+                //         imageFile: v.imageUrl
+                //             ? [
+                //                 {
+                //                     url: v.imageUrl,
+                //                     uid: v.id,
+                //                     name: `variant-${v.variantValue}`,
+                //                     status: 'done',
+                //                 },
+                //             ]
+                //             : [],
+                //         isDeleted: false,
+                //     })) || [],
             });
+            setVariants(
+                product.productVariants?.map((v: any) => ({
+                    id: v.id,
+                    variantName: v.variantName,
+                    variantValue: v.variantValue,
+                    price: v.price,
+                    stockQuantity: v.stockQuantity,
+                    imageUrl: v.imageUrl,
+                    imageFile: null,
+                })) || []);
         }
     }, [data]);
 
@@ -94,68 +138,109 @@ export default function ProductEdit() {
             name: 'ProductImages',
             label: 'Ảnh chi tiết (có thể chọn nhiều)',
             type: 'file',
-        }
+        },
+
     ];
 
-    const handleSubmit = (values: any) => {
+    const handleSubmit = async (values: any) => {
         setLoadingSubmit(true);
-        const formData = new FormData();
+        try {
+            const formData = new FormData();
 
-        formData.append('productName', values.productName);
-        formData.append('description', values.description);
-        formData.append('Price', values.Price.toString());
-        formData.append('StockQuantity', values.StockQuantity.toString());
-        formData.append('sellerStatus', values.sellerStatus.toString());
-        formData.append('categoryId', values.categoryId);
+            // Basic fields
+            formData.append('Id', values.Id);
+            formData.append('ProductName', values.productName);
+            formData.append('Description', values.description);
+            formData.append('Price', values.Price.toString());
+            formData.append('StockQuantity', values.StockQuantity.toString());
+            formData.append('SellerStatus', values.sellerStatus.toString());
+            formData.append('CategoryId', values.categoryId);
 
-        if (values.Thumbnail?.file instanceof File) {
-            formData.append('Thumbnail', values.Thumbnail.file);
-        }
-
-        if (Array.isArray(values.productImages)) {
-            values.productImages.forEach((imgWrapper: any) => {
-                if (imgWrapper.file instanceof File) {
-                    formData.append('productImages', imgWrapper.file);
+            // Thumbnail
+            if (values.Thumbnail) {
+                const file = values.Thumbnail.originFileObj || values.Thumbnail.file;
+                if (file instanceof File) {
+                    formData.append('Thumbnail', file);
+                } else if (values.Thumbnail.url) {
+                    formData.append('ExistingThumbnail', values.Thumbnail.url);
                 }
-            });
-        }
+            }
 
+            // ProductImages
 
-        updateProduct(values.Id, formData)
-            .then((res) => {
-                if (res.data) {
-                    showSuccess('Cập nhật sản phẩm thành công');
-                    navigate('/seller/products');
-                } else {
-                    message.error(res.data.message || 'Cập nhật sản phẩm thất bại');
+            if (values.ProductImages && Array.isArray(values.ProductImages.fileList)) {
+                const fileList = values.ProductImages.fileList;
+
+                // File mới
+                const newFiles = fileList.filter((f: any) => f.originFileObj);
+                newFiles.forEach((f: any) => {
+                    formData.append('ProductImages', f.originFileObj);
+                });
+
+                // Ảnh cũ (url)
+                const existingUrls = fileList
+                    .filter((f: any) => !f.originFileObj && f.url)
+                    .map((f: any) => f.url);
+
+                if (existingUrls.length > 0) {
+                    formData.append('ExistingProductImages', JSON.stringify(existingUrls));
                 }
-            })
-            .catch(() => {
-                message.error('Đã xảy ra lỗi khi cập nhật sản phẩm');
-            })
-            .finally(() => {
-                setLoadingSubmit(false);
-            });
+            }
+
+
+            if (Array.isArray(variants)) {
+                variants.forEach((v, i) => {
+                    if (v.id) formData.append(`Variants[${i}].Id`, v.id);
+                    formData.append(`Variants[${i}].VariantName`, v.variantName);
+                    formData.append(`Variants[${i}].VariantValue`, v.variantValue);
+                    formData.append(`Variants[${i}].Price`, v.price.toString());
+                    formData.append(`Variants[${i}].StockQuantity`, v.stockQuantity.toString());
+                    if (v.imageFile instanceof File) {
+                        formData.append(`Variants[${i}].ImageFile`, v.imageFile);
+                    } else if (v.imageUrl) {
+                        formData.append(`Variants[${i}].ExistingImageUrl`, v.imageUrl);
+                    }
+                });
+            }
+
+            const res = await updateProduct(values.Id, formData);
+
+            if (res.data) {
+                showSuccess('Cập nhật sản phẩm thành công');
+                navigate('/seller/products');
+            } else {
+                message.error(res.data?.message || 'Cập nhật sản phẩm thất bại');
+            }
+        } catch (err) {
+            console.error(err);
+            message.error('Đã xảy ra lỗi khi cập nhật sản phẩm');
+        } finally {
+            setLoadingSubmit(false);
+        }
     };
 
     return (
         <div>
             <h2 style={{ marginBottom: 16 }}>Cập nhật sản phẩm</h2>
             {!isLoading ? (
-                <DynamicForm
-                    formRef={formRef}
-                    fields={fields}
-                    initialValues={initialValues}
-                    onSubmit={handleSubmit}
-                    submitText="Cập nhật"
-                    isEdit
-                    loading={loadingSubmit}
-                />
+                <>
+                    <DynamicForm
+                        formRef={formRef}
+                        fields={fields}
+                        initialValues={initialValues}
+                        onSubmit={handleSubmit}
+                        submitText="Cập nhật"
+                        isEdit
+                        loading={loadingSubmit}
+                    />
+                    <VariantsForm value={variants} onChange={setVariants} />
+                </>
             ) : (
-                <Flex justify="center" style={{ marginTop: '5%' }}>
-                    <Spin />
+                <Flex justify="center" style={{ marginTop: "5%" }}>
+                    <LoadingDefault />
                 </Flex>
             )}
         </div>
     );
+
 }

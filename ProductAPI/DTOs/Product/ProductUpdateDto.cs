@@ -9,5 +9,6 @@
         public string Status { get; set; } = null!;
         public string Thumbnail { get; set; } = null!;
         public List<string>? ProductImages { get; set; } = new(); // ảnh chi tiết nếu cần
+        public List<ProductVariantDto>? Variants { get; set; }
     }
 }

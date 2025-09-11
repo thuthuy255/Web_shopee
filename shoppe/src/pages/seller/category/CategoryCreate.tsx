@@ -83,7 +83,6 @@ export default function CategoryCreate() {
             const formData = new FormData();
             formData.append('name', values.name);
             formData.append('description', values.description);
-
             if (values.parentCategoryId) {
                 formData.append('parentCategoryId', values.parentCategoryId);
             }
@@ -93,7 +92,7 @@ export default function CategoryCreate() {
             }
             await createCategory(formData);
             showSuccess('Thêm danh mục thành công');
-            navigate('/admin/category');
+            navigate('/seller/category');
         } catch (error) {
             showError('Lỗi khi thêm danh mục');
             console.error(error);

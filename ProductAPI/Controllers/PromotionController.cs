@@ -58,14 +58,11 @@ namespace ProductAPI.Controllers
 
 
         [HttpPost("getPromotionOfSeller")]
-        [Authorize(Roles = "Seller")]
         public async Task<IActionResult> GetMyPromotions([FromBody] GridInfo grid)
         {
-            var sellerId = _userService.GetUserId();
-            if (!sellerId.HasValue)
-                return Unauthorized("Không xác định được người dùng.");
+          
 
-            var result = await _promotionService.GetAllBySellerWithGridAsync(sellerId.Value, grid);
+            var result = await _promotionService.GetAllBySellerWithGridAsync(grid);
             if (result.Success)
             {
                 return Ok(new

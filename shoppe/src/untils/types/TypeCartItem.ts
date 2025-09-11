@@ -12,8 +12,8 @@ export interface ICartItem {
     thumbnail: string;
     productVariantId: string | null;
     stockQuantity: number;
-    color: string | null;
-    size: string | null;
+    variantName: string | null;
+    variantValue: string | null;
     price: number;
     fullName: string;
     sellerId: string;

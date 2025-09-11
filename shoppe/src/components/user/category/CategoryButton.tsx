@@ -39,7 +39,7 @@ function CategoryButton() {
 
     return (
         <div style={{
-            backgroundColor: '#fff', padding: '24px 16px',
+            backgroundColor: '#fff', padding: '24px 16px', width: '100%'
         }}>
             <p>DANH MỤC </p>
 

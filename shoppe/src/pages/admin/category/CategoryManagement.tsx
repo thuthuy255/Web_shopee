@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import type { TableColumnsType } from 'antd';
+import { Flex, type TableColumnsType } from 'antd';
 import CustomTable from '../../../components/CustomTable';
 import { useNavigate } from 'react-router-dom';
 import { showError, showSuccess } from '../../../untils/ShowToast';
 import { deleteCategory, getAllCategories } from '../../../api/category/category.api';
 import LoadingDefault from '../../../components/loading/LoadingDefault';
+import { debounce } from 'lodash';
+import Search from 'antd/es/input/Search';
 
 interface Category {
     id: string;
@@ -21,12 +23,14 @@ const columns: TableColumnsType<Category> = [
         title: 'Tên danh mục',
         dataIndex: 'name',
         key: 'name',
+        align: 'center'
     },
     {
         title: 'Mô tả',
         dataIndex: 'description',
         key: 'description',
         ellipsis: true,
+        align: 'center'
     },
     {
         title: 'Ảnh',
@@ -35,12 +39,21 @@ const columns: TableColumnsType<Category> = [
         render: (url) => (
             <img src={url} alt="category" style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4 }} />
         ),
+        align: 'center'
+    },
+    {
+        title: 'Người bán',
+        dataIndex: 'sellerName',
+        key: 'sellerName',
+        ellipsis: true,
+        align: 'center'
     },
     {
         title: 'Thuộc danh mục',
         dataIndex: 'parentCategoryId',
         key: 'parentCategoryId',
         render: (value) => value ? value : 'Không có',
+        align: 'center'
     },
 ];
 
@@ -52,8 +65,10 @@ export default function CategoryManagement() {
     const [total, setTotal] = useState(0);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [keyword, setKeyword] = useState('');
+    const handlePageChange = (page: number) => fetchCategory(page, keyword);
 
-    const fetchCategory = async (page: number) => {
+    const fetchCategory = async (page: number, key: string) => {
         setLoading(true);
         try {
             const body = {
@@ -61,9 +76,8 @@ export default function CategoryManagement() {
                     page: page,
                     pageSize: pageSize,
                 },
-                keyWord: '',
-                filter: {},
-                sorts: {},
+                keyWord: key,
+
             };
             const res: any = await getAllCategories(body);
             if (res?.success) {
@@ -81,14 +95,15 @@ export default function CategoryManagement() {
             setLoading(false);
         }
     };
+    const debouncedFetch = debounce((value: string) => {
+        fetchCategory(1, value); // luôn bắt đầu từ trang 1 khi search
+    }, 500); // 500ms
 
+    // Lắng nghe keyword thay đổi
     useEffect(() => {
-        fetchCategory(currentPage);
-    }, []);
-
-    const handlePageChange = (page: number) => {
-        fetchCategory(page);
-    };
+        debouncedFetch(keyword);
+        return () => debouncedFetch.cancel(); // hủy debounce khi unmount
+    }, [keyword]);
 
 
     const handleDelete = async (id: string) => {
@@ -109,7 +124,15 @@ export default function CategoryManagement() {
 
     return (
         <div>
-            <h2>Danh sách người bán</h2>
+            <Flex align='center' justify='space-between' style={{ marginBottom: 16 }}>
+                <h2>Danh sách danh mục </h2>
+                <Search
+                    placeholder="Tìm kiếm theo tiêu đề, loại,..."
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    style={{ marginBottom: 16, width: 300 }}
+                />
+            </Flex>
             {loading ? (
                 <LoadingDefault />
             ) : (

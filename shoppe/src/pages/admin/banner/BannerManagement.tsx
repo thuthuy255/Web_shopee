@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { message } from 'antd';
+import { Flex, message } from 'antd';
 import type { TableColumnsType } from 'antd';
 import CustomTable from '../../../components/CustomTable';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,8 @@ import { deleteSeller, getAllSeller } from '../../../api/seller/seller.api';
 import { showError, showSuccess } from '../../../untils/ShowToast';
 import { deleteBanner, getAllBanner } from '../../../api/banner/banner.api';
 import LoadingDefault from '../../../components/loading/LoadingDefault';
+import { debounce } from 'lodash';
+import Search from 'antd/es/input/Search';
 
 interface Banner {
     id: string;
@@ -14,25 +16,33 @@ interface Banner {
     imageUrl?: string;
     linkTo?: string;
     isActive: boolean;
+    Type?: string;
 }
 
 const columns: TableColumnsType<Banner> = [
-    { title: 'Tiêu đề', dataIndex: 'title', key: 'title' },
+    { title: 'Tiêu đề', dataIndex: 'title', key: 'title', align: 'center' },
     {
         title: 'Ảnh',
         dataIndex: 'imageUrl',
         key: 'imageUrl',
+        align: 'center',
         render: (url: string) => (
             <img src={url} alt="banner" style={{ width: 120, height: 'auto', objectFit: 'cover' }} />
         ),
     },
-
-    { title: 'Liên kết', dataIndex: 'linkTo', key: 'linkTo' },
+    {
+        title: 'Loại',
+        dataIndex: "type",
+        key: 'Type',
+        align: 'center'
+    },
+    { title: 'Liên kết', dataIndex: 'linkTo', key: 'linkTo', align: 'center' },
     {
         title: 'Trạng thái',
         dataIndex: 'isActive',
         key: 'isActive',
         render: (value: boolean) => (value ? 'Hiển thị' : 'Ẩn'),
+        align: 'center'
     },
 ];
 
@@ -44,8 +54,11 @@ export default function BannerManagement() {
     const [total, setTotal] = useState(0);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [keyword, setKeyword] = useState('');
+    const handlePageChange = (page: number) => fetchBanner(page, keyword);
 
-    const fetchBanner = async (page: number) => {
+
+    const fetchBanner = async (page: number, key: string) => {
         setLoading(true);
         try {
             const body = {
@@ -53,7 +66,7 @@ export default function BannerManagement() {
                     page,
                     pageSize,
                 },
-                keyWord: '',
+                keyWord: key,
             };
             const res: any = await getAllBanner(body);
             if (res?.success) {
@@ -72,13 +85,15 @@ export default function BannerManagement() {
         }
     };
 
-    useEffect(() => {
-        fetchBanner(currentPage);
-    }, []);
+    const debouncedFetch = debounce((value: string) => {
+        fetchBanner(1, value); // luôn bắt đầu từ trang 1 khi search
+    }, 500); // 500ms
 
-    const handlePageChange = (page: number) => {
-        fetchBanner(page);
-    };
+    // Lắng nghe keyword thay đổi
+    useEffect(() => {
+        debouncedFetch(keyword);
+        return () => debouncedFetch.cancel(); // hủy debounce khi unmount
+    }, [keyword]);
     const handleAdd = () => {
         navigate('/admin/banner/create');
     };
@@ -101,7 +116,15 @@ export default function BannerManagement() {
 
     return (
         <div>
-            <h2>Danh sách người bán</h2>
+            <Flex align='center' justify='space-between' style={{ marginBottom: 16 }}>
+                <h2>Danh sách Banner </h2>
+                <Search
+                    placeholder="Tìm kiếm theo tiêu đề, loại,..."
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    style={{ marginBottom: 16, width: 300 }}
+                />
+            </Flex>
             {loading ? (
                 <LoadingDefault />
             ) : (

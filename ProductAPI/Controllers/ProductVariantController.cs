@@ -19,16 +19,14 @@ namespace ProductAPI.Controllers
             _userPrincipalService = userPrincipalService;
         }
 
-        // Lấy danh sách biến thể của 1 sản phẩm
-        [HttpGet("by-product")]
+        [HttpGet("GetVarianByProduct")]
         public async Task<IActionResult> GetByProduct([FromQuery] Guid productId)
         {
             var result = await _variantService.GetByProductIdAsync(productId);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
-        // Thêm danh sách biến thể cho sản phẩm
-        [HttpPost("add-single")]
+        [HttpPost("AddSingleVariant")]
         [Authorize(Roles = "Seller")]
         public async Task<IActionResult> AddSingleVariant([FromForm] CreateProductVariantDto variant)
         {
@@ -39,18 +37,20 @@ namespace ProductAPI.Controllers
             var result = await _variantService.AddVariantsAsync(new List<CreateProductVariantDto> { variant });
             return result.Success ? Ok(result) : BadRequest(result);
         }
-
-
-        [HttpDelete("delete")]
-        [Authorize(Roles = "Seller")]
-        public async Task<IActionResult> DeleteVariant([FromQuery] Guid variantId)
+        [HttpPost("UpdateVariant/{id}")]
+        public async Task<IActionResult> UpdateVariant(Guid id, [FromBody] UpdateProductVariantDto dto)
         {
-            var sellerId = _userPrincipalService.GetUserId();
-            if (!sellerId.HasValue)
-                return Unauthorized("Bạn chưa đăng nhập.");
+            if (id != dto.Id)
+                return BadRequest("Id không khớp");
 
-            var result = await _variantService.DeleteVariantAsync(variantId);
-            return result.Success ? Ok(result) : BadRequest(result);
+            var result = await _variantService.UpdateVariantAsync(dto);
+            if (!result.Success)
+                return BadRequest(result.Message);
+
+            return Ok(result);
         }
+
+
+        
     }
 }

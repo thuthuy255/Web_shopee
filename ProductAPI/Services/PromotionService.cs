@@ -38,7 +38,7 @@ namespace ProductAPI.Services
                 UsedQuantity = 0,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
-                Status = "Active"
+                Status = PromotionStatus.Active.ToString(),
             };
 
             await _promoRepo.AddAsync(newPromo);
@@ -84,10 +84,10 @@ namespace ProductAPI.Services
             return MethodResult<Promotion>.ResultWithData(promo, "Lấy chi tiết thành công.");
         }
 
-        public async Task<MethodResult<List<Promotion>>> GetAllBySellerWithGridAsync(Guid sellerId, GridInfo grid)
+        public async Task<MethodResult<List<Promotion>>> GetAllBySellerWithGridAsync( GridInfo grid)
         {
-            var query = _promoRepo.TableNoTracking
-                .Where(p => p.SellerId == sellerId);
+            var query = _promoRepo.TableNoTracking;
+                
 
             // Tìm kiếm theo Code hoặc Description nếu có từ khóa
             if (!string.IsNullOrEmpty(grid.KeyWord))

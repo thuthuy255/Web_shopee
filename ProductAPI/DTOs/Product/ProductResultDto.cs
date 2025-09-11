@@ -14,13 +14,13 @@
         public string Thumbnail { get; set; } = null!;
         public Guid? CategoryId { get; set; }
         public Guid SellerId { get; set; }
-
-        public string? ImageListJson { get; set; }
+        public string SellerName { get; set; }
         public DateTime Created { get; set; }
         public string? CreatedBy { get; set; }
         public DateTime? Modified { get; set; }
         public string? ModifiedBy { get; set; }
         public bool IsDeleted { get; set; }
+        public string CategoryName { get; set; }
 
         public List<string>? ProductImages { get; set; } = new();
         public List<ProductVariantDto> ProductVariants { get; set; } = new();

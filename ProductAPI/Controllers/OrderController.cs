@@ -18,29 +18,49 @@ namespace ProductAPI.Controllers
             _userPrincipal = userPrincipal;
         }
 
-        [HttpPost("create")]
-        public async Task<IActionResult> Create([FromBody] OrderCreateDto dto)
+        // Tạo order tạm thời
+        [HttpPost("create-temp")]
+        public async Task<IActionResult> CreateTemporary()
         {
             var userId = _userPrincipal.GetUserId();
-            var result = await _orderService.CreateOrderAsync(userId.Value, dto);
-            return Ok(result);
+            if (!userId.HasValue) return Unauthorized();
+
+            var order = await _orderService.CreateTemporaryOrderAsync(userId.Value);
+            return Ok(order);
+        }
+        [HttpPost("{orderId}/update-info")]
+        public async Task<IActionResult> UpdateOrderInfo(Guid orderId, [FromBody] OrderUpdateDto dto)
+        {
+            var userId = _userPrincipal.GetUserId();
+            if (!userId.HasValue) return Unauthorized();
+
+            // Truyền dto trực tiếp thay vì tách từng trường
+            var result = await _orderService.UpdateOrderInfoAsync(orderId, userId.Value, dto);
+
+            return result.Success ? Ok(result.Data) : BadRequest(result.Message);
         }
 
+
+        // Lấy danh sách order của user
         [HttpGet("my-orders")]
         public async Task<IActionResult> MyOrders()
         {
             var userId = _userPrincipal.GetUserId();
+            if (!userId.HasValue) return Unauthorized();
+
             var orders = await _orderService.GetUserOrdersAsync(userId.Value);
             return Ok(orders);
         }
 
+        // Lấy chi tiết order
         [HttpGet("{id}")]
         public async Task<IActionResult> GetDetail(Guid id)
         {
             var userId = _userPrincipal.GetUserId();
+            if (!userId.HasValue) return Unauthorized();
+
             var order = await _orderService.GetOrderDetailAsync(id, userId.Value);
             return order != null ? Ok(order) : NotFound();
         }
     }
-
 }

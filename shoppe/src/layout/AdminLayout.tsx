@@ -3,7 +3,7 @@ import React from 'react';
 import MainLayout from './MainLayout';
 
 const AdminLayout = () => {
-    return <MainLayout basePath="admin" defaultRole="admin" />;
+    return <MainLayout basePath="Admin" defaultRole="Admin" />;
 };
 
 export default AdminLayout;

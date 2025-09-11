@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import type { TableColumnsType } from 'antd';
-import { message } from 'antd';
+import { Flex, message } from 'antd';
 import CustomTable from '../../../components/CustomTable';
 import { useNavigate } from 'react-router-dom';
 import { deleteProduct, getAllProduct } from '../../../api/product/product.api';
 import LoadingDefault from '../../../components/loading/LoadingDefault';
+import { debounce } from 'lodash';
+import Search from 'antd/es/input/Search';
 
 interface Product {
     id: string; // tương đương Id
@@ -25,51 +27,78 @@ const columns: TableColumnsType<Product> = [
         title: 'Tên sản phẩm',
         dataIndex: 'productName',
         key: 'productName',
+        align: 'center',
+        render: (text: string) => (
+            <div
+                style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,      // 👈 giới hạn 2 dòng
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'normal',
+                    maxWidth: 250,          // 👈 nên set chiều rộng cố định
+                }}
+            >
+                {text}
+            </div>
+        ),
     },
+
     {
         title: 'Danh mục',
         dataIndex: 'categoryName',
         key: 'categoryName',
+        align: 'center',
     },
     {
         title: 'Mô tả',
         dataIndex: 'description',
         key: 'description',
         ellipsis: true,
+        align: 'center',
     },
     {
         title: 'Giá',
         dataIndex: 'price',
         key: 'price',
         render: (price) => `${price.toLocaleString()} ₫`,
+        align: 'center',
     },
     {
         title: 'Tồn kho',
         dataIndex: 'stockQuantity',
         key: 'stockQuantity',
+        width: '7%',
+        align: 'center'
     },
     {
         title: 'Hoạt động',
         dataIndex: 'isActive',
         key: 'isActive',
-        render: (value) => (value ? 'Hoạt động' : 'Hết hàng')
+        render: (value) => (value ? 'Hoạt động' : 'Hết hàng'),
+        align: 'center',
     },
     {
         title: 'Trạng thái người bán',
         dataIndex: 'sellerStatus',
         key: 'sellerStatus',
-        render: (value) => (value ? 'Hoạt động' : 'Ngưng bán ')
+        render: (value) => (value ? 'Hoạt động' : 'Ngưng bán '),
+        align: 'center',
     },
     {
         title: 'Người bán',
         dataIndex: 'sellerName',
         key: 'sellerName',
+        align: 'center',
 
     },
     {
         title: 'Ảnh',
         dataIndex: 'thumbnail',
         key: 'thumbnail',
+        width: '5%',
+        align: 'center',
         render: (src: string) =>
             src ? (
                 <img
@@ -89,12 +118,14 @@ const columns: TableColumnsType<Product> = [
 export default function ProductManagement() {
     const [data, setData] = useState<Product[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(10);
+    const [pageSize] = useState(5);
     const [total, setTotal] = useState(0);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [keyword, setKeyword] = useState('');
+    const handlePageChange = (page: number) => fetchProduct(page, keyword);
 
-    const fetchProduct = async (page: number) => {
+    const fetchProduct = async (page: number, key: string) => {
         try {
             setLoading(true);
             const body = {
@@ -102,10 +133,9 @@ export default function ProductManagement() {
                     page,
                     pageSize,
                 },
-                keyWord: '',
+                keyWord: key,
             };
             const res: any = await getAllProduct(body);
-            console.log("🚀 ~ fetchProduct ~ res:", res)
             if (res?.success) {
                 setData(res?.data);
                 setTotal(res?.totalRecord);
@@ -122,13 +152,16 @@ export default function ProductManagement() {
         }
     };
 
-    useEffect(() => {
-        fetchProduct(currentPage);
-    }, []);
+    const debouncedFetch = debounce((value: string) => {
+        fetchProduct(1, value); // luôn bắt đầu từ trang 1 khi search
+    }, 500); // 500ms
 
-    const handlePageChange = (page: number) => {
-        fetchProduct(page);
-    };
+    // Lắng nghe keyword thay đổi
+    useEffect(() => {
+        debouncedFetch(keyword);
+        return () => debouncedFetch.cancel(); // hủy debounce khi unmount
+    }, [keyword]);
+
     const handleDelete = async (id: string) => {
         try {
             setLoading(true);
@@ -145,7 +178,15 @@ export default function ProductManagement() {
 
     return (
         <div>
-            <h2>Danh sách sản phẩm</h2>
+            <Flex align='center' justify='space-between' style={{ marginBottom: 16 }}>
+                <h2>Danh sách sản phẩm </h2>
+                <Search
+                    placeholder="Tìm kiếm theo tên, danh mục,..."
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    style={{ marginBottom: 16, width: 300 }}
+                />
+            </Flex>
             {loading ? (
                 <LoadingDefault />
             ) : (

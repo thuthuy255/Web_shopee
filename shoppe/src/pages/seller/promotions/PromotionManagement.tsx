@@ -22,24 +22,30 @@ export default function PromotionManagement() {
         productName?: string;
         thumbnail?: string;
     }
-
+    const statusMap: Record<string, string> = {
+        Active: 'Hoạt động',
+        Expired: 'Hết hạn',
+        Inactive: 'Không hoạt động',
+    };
     const columns: TableColumnsType<Promotion> = [
-        { title: 'Mã khuyến mãi', dataIndex: 'code', key: 'code' },
-        { title: 'Mô tả', dataIndex: 'description', key: 'description', ellipsis: true },
+        { title: 'Mã khuyến mãi', dataIndex: 'code', key: 'code', align: 'center' },
+        { title: 'Mô tả', dataIndex: 'description', key: 'description', ellipsis: true, align: 'center' },
         {
             title: 'Giảm (%)',
             dataIndex: 'discountPercent',
             key: 'discountPercent',
             render: (value) => `${value}%`,
+            align: 'center'
         },
         {
             title: 'Đơn tối thiểu',
             dataIndex: 'minOrderValue',
             key: 'minOrderValue',
             render: (value) => `${value.toLocaleString()} ₫`,
+            align: 'center'
         },
-        { title: 'Số lượng giới hạn', dataIndex: 'quantityLimit', key: 'quantityLimit' },
-        { title: 'Đã dùng', dataIndex: 'usedQuantity', key: 'usedQuantity' },
+        { title: 'Số lượng giới hạn', dataIndex: 'quantityLimit', key: 'quantityLimit', align: 'center' },
+        { title: 'Đã dùng', dataIndex: 'usedQuantity', key: 'usedQuantity', align: 'center' },
         {
             title: 'Hiệu lực',
             key: 'dateRange',
@@ -48,8 +54,15 @@ export default function PromotionManagement() {
                 const end = new Date(record.endDate).toLocaleDateString();
                 return `${start} - ${end}`;
             },
+            align: 'center'
         },
-        { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+        {
+            title: 'Trạng thái',
+            dataIndex: 'status',
+            key: 'status',
+            align: 'center',
+            render: (status: string) => statusMap[status] || status,
+        }
 
     ];
 

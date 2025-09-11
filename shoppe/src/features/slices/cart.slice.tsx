@@ -39,25 +39,8 @@ const cartSlice = createSlice({
             }
         },
 
-        // addCartItem: (state, action: PayloadAction<SellerCart>) => {
-        //     const sellerIndex = state.data.findIndex(s => s.sellerId === action.payload.sellerId);
-        //     if (sellerIndex >= 0) {
-        //         action.payload.items.forEach(newItem => {
-        //             const existing = state.data[sellerIndex].items.find(i => i.productVariantId === newItem.productVariantId);
-        //             if (existing) {
-        //                 existing.quantity = newItem.quantity; // ✅ luôn đồng bộ theo BE
-        //             } else {
-        //                 state.data[sellerIndex].items.push(newItem);
-        //             }
-        //         });
-        //     } else {
-        //         state.data.push(action.payload);
-        //     }
-        //     state.totalCartItem = state.data.reduce((sum, s) => sum + s.items.length, 0);
-        // },
-
-
     },
+
 });
 
 export const { setCart, updateItemQuantity } = cartSlice.actions;

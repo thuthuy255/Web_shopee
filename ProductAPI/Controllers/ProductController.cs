@@ -65,12 +65,19 @@ namespace ProductAPI.Controllers
         public async Task<IActionResult> InsertProduct([FromForm] ProductFormDataDto dto)
         {
             var sellerId = _userPrincipalService.GetUserId();
-
             if (!sellerId.HasValue)
                 return Unauthorized("Bạn chưa đăng nhập.");
-            var result = await _productServices.InsertProductFromFormAsync(dto);
+
+            var result = await _productServices.CreateProductFromFormAsync(dto, sellerId.Value);
             return result.Success ? Ok(result) : BadRequest(result);
         }
+        [HttpPost("GetInfoShop")]
+        public async Task<IActionResult> GetShopWithProducts(Guid sellerId, [FromBody] GridInfo grid)
+        {
+            var result = await _productServices.GetShopWithProductsAsync(sellerId, grid);
+            return Ok(result);
+        }
+
 
         [HttpPut("updateProduct")]
         public async Task<IActionResult> UpdateProduct([FromQuery] Guid productId, [FromForm] ProductFormDataDto dto)
@@ -93,6 +100,17 @@ namespace ProductAPI.Controllers
             if (!sellerId.HasValue)
                 return Unauthorized("Bạn chưa đăng nhập.");
             var result = await _productServices.DeleteProductAsync(productId);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+        [HttpDelete("deleteVariants")]
+        [Authorize(Roles = "Seller")]
+        public async Task<IActionResult> DeleteVariant([FromQuery] Guid variantId)
+        {
+            var sellerId = _userPrincipalService.GetUserId();
+            if (!sellerId.HasValue)
+                return Unauthorized("Bạn chưa đăng nhập.");
+
+            var result = await _productServices.DeleteVariantAsync(variantId);
             return result.Success ? Ok(result) : BadRequest(result);
         }
     }

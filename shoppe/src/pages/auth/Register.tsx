@@ -6,10 +6,11 @@ import backgroundImg from '../../assets/img/background.jpg';
 import { RegisterUser } from '../../api/auth.api';
 import { showError, showSuccess } from '../../untils/ShowToast';
 import { useNavigate } from 'react-router-dom';
+import { message } from 'antd';
 
 const { Title } = Typography;
 
-const Register: React.FC = () => {
+const Register = () => {
     const navigate = useNavigate();
     const [form] = Form.useForm();
 
@@ -18,17 +19,23 @@ const Register: React.FC = () => {
             const payload = {
                 email: values.email,
                 password: values.password,
-                username: values.username,
-                fullName: values.fullName,
+                // username: values.username,
+                // fullName: values.fullName,
                 phone: values.phone,
-                avatar: '', // mặc định nếu chưa cho upload avatar
+                // avatar: '', // mặc định nếu chưa cho upload avatar
             };
+            const res: any = await RegisterUser(payload);
+            if (res.success == true) {
+                showSuccess('Đăng ký thành công');
+                navigate('/auth/login');
+            }
+            else {
+                showError(res.error)
+            }
 
-            await RegisterUser(payload);
-            showSuccess('Đăng ký thành công');
-            navigate('/auth/login');
-        } catch (error) {
-            showError('Tạo tài khoản thất bại');
+        } catch (message: any) {
+            showError(message?.error);
+            console.log("🚀 ~ handleRegister ~ error:", message)
         }
     };
 
@@ -50,7 +57,7 @@ const Register: React.FC = () => {
                         onFinish={handleRegister}
                         initialValues={{ email: '', password: '', phone: '', username: '', fullName: '' }}
                     >
-                        <Form.Item
+                        {/* <Form.Item
                             label="Tên đăng nhập"
                             name="username"
                             rules={[{ required: true, message: 'Vui lòng nhập tên đăng nhập' }]}
@@ -64,7 +71,7 @@ const Register: React.FC = () => {
                             rules={[{ required: true, message: 'Vui lòng nhập họ và tên' }]}
                         >
                             <Input size="large" placeholder="Họ và tên" />
-                        </Form.Item>
+                        </Form.Item> */}
 
                         <Form.Item
                             label="Email"
@@ -80,7 +87,13 @@ const Register: React.FC = () => {
                         <Form.Item
                             label="Số điện thoại"
                             name="phone"
-                            rules={[{ required: true, message: 'Vui lòng nhập số điện thoại' }]}
+                            rules={[
+                                { required: true, message: 'Vui lòng nhập số điện thoại' },
+                                {
+                                    pattern: /^[0-9]{10}$/,
+                                    message: 'Số điện thoại phải gồm đúng 10 chữ số',
+                                },
+                            ]}
                         >
                             <Input size="large" placeholder="Số điện thoại" />
                         </Form.Item>
@@ -88,10 +101,19 @@ const Register: React.FC = () => {
                         <Form.Item
                             label="Mật khẩu"
                             name="password"
-                            rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
+                            rules={[
+                                { required: true, message: 'Vui lòng nhập mật khẩu' },
+                                // { min: 8, message: 'Mật khẩu phải có ít nhất 8 ký tự' },
+                                {
+                                    pattern: /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/,
+                                    message: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm tối thiểu 1 chữ cái viết hoa, 1 chữ số và 1 ký tự đặc biệt',
+                                }
+
+                            ]}
                         >
                             <Input.Password size="large" placeholder="Mật khẩu" />
                         </Form.Item>
+
 
                         <Form.Item>
                             <Button type="primary" htmlType="submit" block size="large">

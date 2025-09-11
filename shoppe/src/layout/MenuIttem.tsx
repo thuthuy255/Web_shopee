@@ -9,18 +9,10 @@ import type { MenuProps } from "antd";
 import { BiCategory } from "react-icons/bi";
 import { PiFlagBanner } from "react-icons/pi";
 import { ROLE } from "../constants";
-import { parseToken } from "../untils/ParseToken";
 
-export const getMenuByRole = (): MenuProps["items"] => {
-    const token = localStorage.getItem("access_token");
-    if (!token) return [];
-
-    const userInfo = parseToken(token);
-    const roleId = userInfo?.role ?? null;
-
+export const getMenuByRole = (roleId: string | null): MenuProps["items"] => {
     if (!roleId) return [];
 
-    // Menu cho Admin
     const adminItems: MenuProps["items"] = [
         { key: "dashboard", icon: <PieChartOutlined />, label: "Bảng điều khiển" },
         { key: "seller", icon: <UserOutlined />, label: "Quản lý người bán" },
@@ -29,9 +21,10 @@ export const getMenuByRole = (): MenuProps["items"] => {
         { key: "category", icon: <BiCategory />, label: "Quản lý danh mục" },
     ];
 
-    // Menu cho Seller
     const sellerItems: MenuProps["items"] = [
-        { key: "products", icon: <ProductOutlined />, label: "Sản phẩm" },
+        { key: "category", icon: <BiCategory />, label: "Quản lý danh mục" },
+        { key: "products", icon: <ProductOutlined />, label: "Quản lý sản phẩm" },
+        // { key: "productVariants", icon: <ProductOutlined />, label: "Quản lý biến thể sản phẩm" },
         { key: "promotions", icon: <PiFlagBanner />, label: "Quản lý khuyến mãi" },
         { key: "orders", icon: <UploadOutlined />, label: "Đơn hàng" },
         { key: "analytics", icon: <PieChartOutlined />, label: "Thống kê" },
@@ -46,3 +39,4 @@ export const getMenuByRole = (): MenuProps["items"] => {
             return [];
     }
 };
+

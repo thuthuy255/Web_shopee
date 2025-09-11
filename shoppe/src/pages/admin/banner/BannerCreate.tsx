@@ -23,6 +23,13 @@ export default function BannerCreate() {
             rules: []
         },
         {
+            name: 'type',
+            label: 'Loại banner',
+            type: 'text',
+            rules: [{ required: true, message: 'Vui lòng chọn loại banner' }],
+
+        },
+        {
             name: 'imageFile',
             label: 'Ảnh banner',
             type: 'file',
@@ -45,9 +52,10 @@ export default function BannerCreate() {
         try {
             setLoading(true);
             const formData = new FormData();
-            formData.append('title', values.title || '');
-            formData.append('linkTo', values.linkTo || '');
-            formData.append('isActive', values.isActive ? 'true' : 'false');
+            formData.append('title', values?.title || '');
+            formData.append('linkTo', values?.linkTo || '');
+            formData.append('isActive', values?.isActive ? 'true' : 'false');
+            formData.append('type', values?.type || '');
 
             if (values.imageFile?.file instanceof File) {
                 formData.append('imageFile', values.imageFile.file);

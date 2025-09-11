@@ -41,6 +41,13 @@ export default function BannerEdit() {
             rules: []
         },
         {
+            name: 'type',
+            label: 'Loại banner',
+            type: 'text',
+            fullWidth: false,
+            rules: [{ required: true, message: 'Vui lòng chọn loại banner' }],
+        },
+        {
             name: 'isActive',
             label: 'Trạng thái',
             type: 'select',
@@ -61,6 +68,7 @@ export default function BannerEdit() {
                 title: banner?.title || '',
                 linkTo: banner?.linkTo || '',
                 isActive: banner?.isActive ?? true,
+                type: banner?.type || '',
                 imageFile: banner?.imageUrl ? { url: banner.imageUrl } : null // ✅ preview ảnh nếu có
             });
         }
@@ -73,6 +81,7 @@ export default function BannerEdit() {
         formData.append('Id', values.id);
         formData.append('Title', values.title);
         formData.append('LinkTo', values.linkTo);
+        formData.append('type', values.type);
         formData.append('IsActive', values.isActive);
 
         if (values.imageFile?.file instanceof File) {

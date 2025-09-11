@@ -9,7 +9,7 @@ namespace ProductAPI.IServices
         Task<MethodResult<Promotion>> CreateAsync(Guid sellerId, PromotionDto dto);
         Task<MethodResult<Promotion>> UpdateAsync(Guid sellerId, PromotionDto dto);
         Task<MethodResult<Promotion>> GetByIdAsync(Guid id);
-        Task<MethodResult<List<Promotion>>> GetAllBySellerWithGridAsync(Guid sellerId, GridInfo grid);
+        Task<MethodResult<List<Promotion>>> GetAllBySellerWithGridAsync( GridInfo grid);
         Task<MethodResult<bool>> DeleteAsync(Guid sellerId, Guid id);
     }
 }

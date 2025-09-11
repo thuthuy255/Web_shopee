@@ -13,6 +13,9 @@
        
 
         public IFormFile? Thumbnail { get; set; }  // Ảnh đại diện
-        public List<IFormFile>? ProductImages { get; set; }  // Ảnh chi tiết
+        public List<IFormFile>? ProductImages { get; set; }  // Ảnh chi tiết 
+        public string? ExistingProductImages { get; set; } // JSON list giữ ảnh cũ
+
+        public List<ProductVariantFormDto>? Variants { get; set; }
     }
 }

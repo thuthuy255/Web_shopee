@@ -83,7 +83,7 @@ namespace ProductAPI.Controllers
             return BadRequest(result);
         }
 
-        [HttpPut("update")]
+        [HttpPut("updateCartItem")]
         public async Task<IActionResult> UpdateCartItem([FromBody] CartItemDto dto)
         {
             var userId = _userPrincipal.GetUserId();

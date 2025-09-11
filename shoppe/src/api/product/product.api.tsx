@@ -24,3 +24,24 @@ export const getDetailProduct = (id: string) => {
     const url = `/Product/getDetailProduct?productId=${id}`;
     return axiosClientNoAuth.get(url);
 }
+export const getVariantsByProduct = (productId: string) => {
+    const url = `/Variant/GetVarianByProduct?productId=${productId}`;
+    return axiosClient.get(url);
+};
+export const addSingleVariant = (body: any) => {
+    const url = `/Variant/AddSingleVariant`;
+    return axiosClientFile.post(url, body);
+};
+export const updateVariant = (id: string, body: any) => {
+    const url = `/Variant/UpdateVariant/${id}`;
+    return axiosClientFile.put(url, body);
+};
+
+export const deleteVariant = (variantId: string) => {
+    const url = `/Product/deleteVariants?variantId=${variantId}`;
+    return axiosClient.delete(url);
+};
+export const getInfoShop = (id: string, body: any) => {
+    const url = `/Product/GetInfoShop?sellerId=${id}`;
+    return axiosClientNoAuth.post(url, body);
+}

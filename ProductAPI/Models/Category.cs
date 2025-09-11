@@ -18,5 +18,8 @@ namespace ProductAPI.Models
         public ICollection<Category>? SubCategories { get; set; }
 
         public ICollection<Product>? Products { get; set; }
+        public Guid? SellerId { get; set; }
+        [ForeignKey(nameof(SellerId))]
+        public User? Seller { get; set; }
     }
 }

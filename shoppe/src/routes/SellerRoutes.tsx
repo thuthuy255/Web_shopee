@@ -11,6 +11,10 @@ import PromotionManagement from "../pages/seller/promotions/PromotionManagement"
 import PromotionCreate from "../pages/seller/promotions/PromotionCreate";
 import PromotionEdit from "../pages/seller/promotions/PromotionEdit";
 import ProfileForm from "../pages/admin/Profile";
+import CategoryManagement from "../pages/seller/category/CategoryManagement";
+import CategoryCreate from "../pages/seller/category/CategoryCreate";
+import CategoryEdit from "../pages/seller/category/CategoryEdit";
+import ProductVariantManagerment from "../pages/seller/product/ProductVariantManagerment";
 
 const SellerRoutes = [
   {
@@ -38,6 +42,10 @@ const SellerRoutes = [
         path: "products/edit/:id",
         element: <ProductEdit />,
       },
+      // {
+      //   path: "productVariants",
+      //   element: <ProductVariantManagerment />,
+      // },
       {
         path: "promotions",
         element: <PromotionManagement />,
@@ -50,6 +58,19 @@ const SellerRoutes = [
         path: "promotions/edit/:id",
         element: <PromotionEdit />,
       },
+      {
+        path: "category",
+        element: <CategoryManagement />,
+      },
+      {
+        path: "category/create",
+        element: <CategoryCreate />,
+      },
+      {
+        path: "category/edit/:id",
+        element: <CategoryEdit />,
+      },
+
       {
         path: "profile",
         element: <ProfileForm />,

@@ -9,12 +9,14 @@ namespace ProductAPI.IServices
     {
         Task<MethodResult<List<ProductWithCategoryDto>>> FilterProductAsync(GridInfo grid);
         Task<IMethodResult<List<ProductWithCategoryDto>>> FilterProductBySellerAsync(Guid sellerId, GridInfo grid);
+        Task<IMethodResult<SellerProductListDto>> GetShopWithProductsAsync(Guid sellerId, GridInfo grid);
 
-        Task<IMethodResult<ProductResultDto>> InsertProductFromFormAsync(ProductFormDataDto dto);
+        Task<IMethodResult<ProductResultDto>> CreateProductFromFormAsync(ProductFormDataDto dto, Guid sellerId);
         Task<IMethodResult<ProductResultDto>> UpdateProductFromFormAsync(Guid productId, ProductFormDataDto dto);
         Task<MethodResult<List<ProductWithCategoryDto>>> GetProductsByCategoryAsync(Guid categoryId, GridInfo grid);
 
         Task<IMethodResult<bool>> DeleteProductAsync(Guid productId);
         Task<IMethodResult<ProductResultDto>> GetByIdAsync(Guid productId);
+        Task<IMethodResult<bool>> DeleteVariantAsync(Guid variantId);
     }
 }

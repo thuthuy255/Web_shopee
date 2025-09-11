@@ -75,11 +75,11 @@ export default function SellerEdit() {
                     showSuccess('Cập nhật người bán thành công');
                     navigate('/admin/seller');
                 } else {
-                    showError(res.data.message || 'Cập nhật thất bại');
+                    showError(res.data.error || 'Cập nhật thất bại');
                 }
             })
-            .catch(() => {
-                message.error('Có lỗi xảy ra khi cập nhật');
+            .catch((res) => {
+                showError('Có lỗi xảy ra khi cập nhật');
             })
             .finally(() => {
                 setLoadingSubmit(false);

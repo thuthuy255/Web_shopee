@@ -15,10 +15,11 @@ import type { MenuProps } from 'antd';
 
 import type { RootState } from '../features/store';
 import { getMenuByRole } from './MenuIttem';
-import { getTokenState, resetLogin } from '../features/slices/app.slice';
+import { getRoleIdState, getTokenState, resetLogin } from '../features/slices/app.slice';
 import logo from '../assets/img/logo.png';
 import person from '../assets/img/person.png';
 import { ROLE } from '../constants';
+import { resetUserState } from '../features/slices/user.slice';
 
 const { Header, Sider, Content } = Layout;
 const { Search } = Input;
@@ -38,11 +39,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ basePath, defaultRole = ROLE.US
     const navigate = useNavigate();
     const location = useLocation();
 
-    const roleId = useSelector(getTokenState);
-    const role = roleId;
-    const menuItems = getMenuByRole(role);
-
+    const roleId = useSelector(getRoleIdState);
+    const menuItems = getMenuByRole(roleId);
     const handleLogout = () => {
+        localStorage.removeItem('access_token');
+        dispatch(resetUserState());
         dispatch(resetLogin());
         navigate('/auth/login');
     };
@@ -115,13 +116,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ basePath, defaultRole = ROLE.US
                                     height: 64,
                                 }}
                             />
-                            <Search style={{ width: '60%' }} />
+                            {/* <Search style={{ width: '60%' }} /> */}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
                             <Tooltip title="Thông báo">
                                 <BellOutlined style={{ fontSize: '20px' }} />
                             </Tooltip>
-                            {role === 'Admin' && (
+                            {roleId === 'Admin' && (
                                 <Tooltip title="Cài đặt">
                                     <SettingOutlined style={{ fontSize: '20px' }} />
                                 </Tooltip>

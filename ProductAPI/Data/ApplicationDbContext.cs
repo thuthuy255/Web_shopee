@@ -21,6 +21,7 @@ namespace ProductAPI.Data
         public DbSet<Banner> Banners { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<ProductVariant> ProductVariants { get; set; }
+        public DbSet<Payment> Payments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -143,15 +144,30 @@ namespace ProductAPI.Data
             modelBuilder.Entity<ProductVariant>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Color).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.Size).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.VariantName)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.VariantValue)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.Price)
+                    .HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.StockQuantity)
+                    .IsRequired();
+
+                entity.Property(e => e.ImageUrl)
+                    .HasMaxLength(500);
 
                 entity.HasOne(e => e.Product)
                     .WithMany(p => p.ProductVariants)
                     .HasForeignKey(e => e.ProductId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
 
         }
     }

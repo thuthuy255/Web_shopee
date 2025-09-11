@@ -1,6 +1,8 @@
 ﻿using ProductAPI.Models;
 using System.ComponentModel.DataAnnotations;
 
+
+
 public class Promotion : BaseEntity
 {
     public Guid SellerId { get; set; }
@@ -23,9 +25,13 @@ public class Promotion : BaseEntity
     public DateTime EndDate { get; set; }
 
     [StringLength(20)]
-    public string Status { get; set; } = "Active"; // Active, Expired, Inactive
+    public string Status { get; set; } = PromotionStatus.Active.ToString();
 
-    // 🔗 Quan hệ
     public User? Seller { get; set; }
-
+}
+public enum PromotionStatus
+{
+    Active,     // Hoạt động
+    Expired,    // Hết hạn
+    Inactive    // Không hoạt động
 }

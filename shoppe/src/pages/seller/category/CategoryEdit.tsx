@@ -1,0 +1,135 @@
+import React, { useEffect, useRef, useState } from 'react';
+import DynamicForm, { type Field } from '../../../components/DynamicForm';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Flex, message, Spin } from 'antd';
+import { getCategoryOfSeller, updateCategory } from '../../../api/category/category.api';
+import { showError, showSuccess } from '../../../untils/ShowToast';
+import { useGetDetailCategoryQuery } from '../../../api/category/category.query';
+import LoadingDefault from '../../../components/loading/LoadingDefault';
+
+export default function CategoryEdit() {
+    const { id } = useParams();
+    const [initialValues, setInitialValues] = useState<any>(null);
+    const [loadingSubmit, setLoadingSubmit] = useState(false);
+    const [categoryOptions, setCategoryOptions] = useState<{ label: string; value: string }[]>([]);
+    const formRef = useRef<any>(null);
+    const navigate = useNavigate();
+
+    // Lấy chi tiết category
+    const { data, isLoading } = useGetDetailCategoryQuery({ params: id });
+
+    const fetchCategories = async () => {
+        try {
+            const body = {
+                pageInfo: { page: 1, pageSize: 10 },
+                keyWord: '',
+            };
+            const res: any = await getCategoryOfSeller(body);
+
+            if (res?.success && Array.isArray(res.data)) {
+                const options = res.data.map((item: any) => ({
+                    label: item.name,
+                    value: item.id,
+                }));
+
+                setCategoryOptions([{ label: 'Không có', value: '' }, ...options]);
+            }
+        } catch (err) {
+            showError('Không thể tải danh mục');
+            console.error(err);
+        }
+    };
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    useEffect(() => {
+        if (data) {
+            const category = data.data;
+            setInitialValues({
+                id: category.id,
+                name: category.name || '',
+                description: category.description || '',
+                parentCategoryId: category.parentCategoryId || '',
+                imageUrl: category.imageUrl
+                    ? {
+                        url: category.imageUrl,
+                        uid: 'thumb',
+                        name: category.name,
+                        status: 'done',
+                    }
+                    : null,
+            });
+        }
+    }, [data]);
+
+    const fields: Field[] = [
+        { name: 'id', type: 'hidden' },
+        { name: 'name', label: 'Tên danh mục', type: 'text' },
+        { name: 'description', label: 'Mô tả', type: 'text' },
+        {
+            name: 'parentCategoryId',
+            label: 'Danh mục cha',
+            type: 'select',
+            rules: [],
+            options: categoryOptions,
+        },
+        {
+            name: 'imageUrl',
+            label: 'Ảnh đại diện',
+            type: 'file',
+        },
+    ];
+
+    const handleSubmit = (values: any) => {
+        setLoadingSubmit(true);
+        const formData = new FormData();
+        formData.append('Id', values.id);
+        formData.append('name', values.name);
+        formData.append('description', values.description || '');
+        formData.append('parentCategoryId', values.parentCategoryId || '');
+
+        // Nếu user upload file mới
+        if (values.imageUrl && values.imageUrl.file instanceof File) {
+            formData.append('imageFile', values.imageUrl.file);
+        }
+
+        updateCategory(values.id, formData)
+            .then((res) => {
+                if (res?.data) {
+                    showSuccess('Cập nhật danh mục thành công');
+                    navigate('/seller/category');
+                } else {
+                    message.error(res.data?.message || 'Cập nhật danh mục thất bại');
+                }
+            })
+            .catch(() => {
+                message.error('Đã xảy ra lỗi khi cập nhật danh mục');
+            })
+            .finally(() => {
+                setLoadingSubmit(false);
+            });
+    };
+
+    return (
+        <div>
+            <h2 style={{ marginBottom: 16 }}>Cập nhật danh mục</h2>
+            {!isLoading ? (
+                <DynamicForm
+                    formRef={formRef}
+                    fields={fields}
+                    initialValues={initialValues}
+                    onSubmit={handleSubmit}
+                    submitText="Cập nhật"
+                    isEdit
+                    loading={loadingSubmit}
+                />
+            ) : (
+                <Flex justify="center" style={{ marginTop: '5%' }}>
+                    <LoadingDefault />
+                </Flex>
+            )}
+        </div>
+    );
+}

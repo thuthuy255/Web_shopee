@@ -103,10 +103,9 @@ export default function ProductsCreate() {
             rules: [{ required: true, message: 'Vui lòng chọn ảnh đại diện' }],
         },
         {
-            name: 'productImages',
+            name: 'ProductImages',
             label: 'Ảnh chi tiết (có thể chọn nhiều)',
             type: 'file',
-            rules: [{ required: true, message: 'Vui lòng chọn ảnh chi tiết' }],
         },
     ];
 
@@ -126,13 +125,24 @@ export default function ProductsCreate() {
                 formData.append('thumbnail', values.thumbnail.file);
             }
 
-            if (Array.isArray(values.productImages)) {
-                values.productImages.forEach((imgWrapper: any) => {
-                    if (imgWrapper.file instanceof File) {
-                        formData.append('productImages', imgWrapper.file);
+            if (values.ProductImages) {
+                // Trường hợp là mảng fileList
+                const files = Array.isArray(values.ProductImages)
+                    ? values.ProductImages
+                    : values.ProductImages.fileList || [];
+
+                files.forEach((f: any) => {
+                    const fileObj = f.originFileObj || f.file;
+                    if (fileObj instanceof File) {
+                        formData.append("ProductImages", fileObj);
                     }
                 });
             }
+
+            console.log("ProductImages values:", values.ProductImages);
+
+
+
 
             await inserProduct(formData);
             showSuccess('Thêm sản phẩm thành công');

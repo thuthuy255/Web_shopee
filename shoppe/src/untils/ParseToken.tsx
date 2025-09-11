@@ -18,7 +18,6 @@ interface ParsedUserInfo {
 export const parseToken = (token: string): ParsedUserInfo | null => {
     try {
         const decoded = jwtDecode<DecodedToken>(token);
-        console.log("🚀 ~ decoded:", decoded)
 
         const userId =
             decoded[

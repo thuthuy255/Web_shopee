@@ -1,8 +1,10 @@
-﻿using ProductAPI.DTOs.Order;
+﻿using ProductAPI.Core;
+using ProductAPI.DTOs.Order;
+using ProductAPI.Models;
 using ProductAPI.IRepository;
 using ProductAPI.IServices;
-using ProductAPI.Models;
 using Microsoft.EntityFrameworkCore;
+using static ProductAPI.Data.Enums.Enums;
 
 namespace ProductAPI.Services
 {
@@ -14,11 +16,12 @@ namespace ProductAPI.Services
         private readonly IRepository<OrderItem> _orderItemRepo;
         private readonly IRepository<Promotion> _promoRepo;
 
-        public OrderService(IRepository<CartItem> cartRepo,
-                            IRepository<Product> productRepo,
-                            IRepository<Order> orderRepo,
-                            IRepository<OrderItem> orderItemRepo,
-                            IRepository<Promotion> promoRepo)
+        public OrderService(
+            IRepository<CartItem> cartRepo,
+            IRepository<Product> productRepo,
+            IRepository<Order> orderRepo,
+            IRepository<OrderItem> orderItemRepo,
+            IRepository<Promotion> promoRepo)
         {
             _cartRepo = cartRepo;
             _productRepo = productRepo;
@@ -27,7 +30,8 @@ namespace ProductAPI.Services
             _promoRepo = promoRepo;
         }
 
-        public async Task<Order> CreateOrderAsync(Guid userId, OrderCreateDto dto)
+        // Tạo đơn tạm từ Cart
+        public async Task<MethodResult<OrderDto>> CreateTemporaryOrderAsync(Guid userId)
         {
             var cartItems = await _cartRepo.Table
                 .Include(c => c.Product)
@@ -35,98 +39,178 @@ namespace ProductAPI.Services
                 .ToListAsync();
 
             if (!cartItems.Any())
-                throw new Exception("Bạn chưa chọn sản phẩm nào để đặt hàng.");
+                return MethodResult<OrderDto>.ResultWithError("Bạn chưa chọn sản phẩm nào.");
 
-            decimal totalBeforeDiscount = 0m;
+            decimal totalAmount = 0m;
+            var orderItems = new List<OrderItem>();
+            var orderItemsDto = new List<OrderItemDto>();
 
             foreach (var cart in cartItems)
             {
                 if (cart.Product.StockQuantity < cart.Quantity)
-                    throw new Exception($"Sản phẩm '{cart.Product.ProductName}' không đủ hàng.");
+                    return MethodResult<OrderDto>.ResultWithError($"Sản phẩm '{cart.Product.ProductName}' không đủ hàng.");
 
-                totalBeforeDiscount += cart.Quantity * cart.Product.Price;
+                totalAmount += cart.Quantity * cart.Product.Price;
+
+                var orderItem = new OrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = cart.ProductId,
+                    Quantity = cart.Quantity,
+                    Price = cart.Product.Price
+                };
+                orderItems.Add(orderItem);
+
+                orderItemsDto.Add(new OrderItemDto
+                {
+                    Id = orderItem.Id,
+                    ProductId = cart.ProductId,
+                    ProductName = cart.Product.ProductName,
+                    ProductImage = cart.Product.Thumbnail ?? "",
+                    Quantity = cart.Quantity,
+                    Price = cart.Product.Price
+                });
             }
 
-            // Kiểm tra khuyến mãi nếu có
-            decimal discountAmount = 0m;
-            Promotion? promotion = null;
-
-            if (!string.IsNullOrEmpty(dto.PromotionCode))
-            {
-                promotion = await _promoRepo.Table
-                    .FirstOrDefaultAsync(p =>
-                        p.Code == dto.PromotionCode &&
-                        p.Status == "Active" &&
-                        DateTime.UtcNow >= p.StartDate &&
-                        DateTime.UtcNow <= p.EndDate &&
-                        (p.MinOrderValue == null || totalBeforeDiscount >= p.MinOrderValue) &&
-                        (p.QuantityLimit == null || p.UsedQuantity < p.QuantityLimit)
-                    );
-
-                if (promotion == null)
-                    throw new Exception("Mã khuyến mãi không hợp lệ hoặc đã hết hạn.");
-
-                discountAmount = totalBeforeDiscount * (promotion.DiscountPercent / 100m);
-                promotion.UsedQuantity += 1;
-
-                if (promotion.QuantityLimit.HasValue && promotion.UsedQuantity >= promotion.QuantityLimit)
-                    promotion.Status = "Inactive";
-            }
-
-            // Tạo đơn hàng
             var order = new Order
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                AddressId = dto.AddressId,
-                TotalAmount = totalBeforeDiscount - discountAmount,
-                Status = "Pending",
-                OrderItems = new List<OrderItem>()
+                TotalAmount = totalAmount,
+                PaymentStatus = PaymentStatus.Pending,
+                OrderItems = orderItems
             };
 
-            foreach (var cart in cartItems)
-            {
-                order.OrderItems.Add(new OrderItem
-                {
-                    Id = Guid.NewGuid(),
-                    OrderId = order.Id,
-                    ProductId = cart.ProductId,
-                    Quantity = cart.Quantity,
-                    Price = cart.Product.Price
-                });
-
-                cart.Product.StockQuantity -= cart.Quantity;
-            }
-
             await _orderRepo.AddAsync(order);
-            await _orderItemRepo.AddRangeAsync(order.OrderItems.ToList());
-            await _productRepo.UpdateRangeAsync(cartItems.Select(c => c.Product).ToList());
-            if (promotion != null)
-                await _promoRepo.UpdateAsync(promotion);
+            await _orderItemRepo.AddRangeAsync(orderItems);
 
-            await _cartRepo.DeleteRangeAsync(cartItems);
+            var orderDto = new OrderDto
+            {
+                Id = order.Id,
+                TotalAmount = order.TotalAmount,
+                PaymentStatus = PaymentStatus.Pending,
+                OrderItems = orderItemsDto
+            };
 
-            return order;
+            return MethodResult<OrderDto>.ResultWithData(orderDto, "Tạo đơn hàng tạm thời thành công.");
         }
 
-        public async Task<List<Order>> GetUserOrdersAsync(Guid userId)
+        // Cập nhật thông tin Order theo DTO
+        public async Task<MethodResult<OrderDto>> UpdateOrderInfoAsync(Guid orderId, Guid userId, OrderUpdateDto dto)
         {
-            return await _orderRepo
-                .TableNoTracking
+            var order = await _orderRepo.Table
                 .Include(o => o.OrderItems)
-                .ThenInclude(i => i.Product)
+                .ThenInclude(oi => oi.Product)
+                .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId);
+
+            if (order == null)
+                return MethodResult<OrderDto>.ResultWithError("Đơn hàng không tồn tại.");
+
+            // Cập nhật địa chỉ
+            if (dto.AddressId.HasValue)
+                order.AddressId = dto.AddressId;
+
+            // Tính tổng tiền trước giảm giá
+            decimal totalBeforeDiscount = order.OrderItems.Sum(i => i.Price * i.Quantity);
+            decimal discountAmount = 0m;
+
+            // Xử lý voucher
+            if (!string.IsNullOrEmpty(dto.PromotionCode))
+            {
+                var promo = await _promoRepo.Table
+                    .FirstOrDefaultAsync(p => p.Code == dto.PromotionCode && p.Status == "Active");
+
+                if (promo == null)
+                    return MethodResult<OrderDto>.ResultWithError("Voucher không hợp lệ hoặc đã hết hạn.");
+
+                discountAmount = totalBeforeDiscount * (promo.DiscountPercent / 100m);
+
+                promo.UsedQuantity += 1;
+                if (promo.QuantityLimit.HasValue && promo.UsedQuantity >= promo.QuantityLimit)
+                    promo.Status = "Inactive";
+
+                await _promoRepo.UpdateAsync(promo);
+
+                order.PromotionCode = dto.PromotionCode;
+            }
+
+            // Cập nhật tổng tiền
+            order.TotalAmount = totalBeforeDiscount - discountAmount;
+
+            await _orderRepo.UpdateAsync(order);
+
+            // Mapping sang DTO
+            var orderDto = new OrderDto
+            {
+                Id = order.Id,
+                TotalAmount = order.TotalAmount,
+                PaymentStatus = order.PaymentStatus,
+                OrderItems = order.OrderItems.Select(oi => new OrderItemDto
+                {
+                    Id = oi.Id,
+                    ProductId = oi.ProductId,
+                    ProductName = oi.Product?.ProductName ?? "",
+                    ProductImage = oi.Product?.Thumbnail ?? "",
+                    Quantity = oi.Quantity,
+                    Price = oi.Price
+                }).ToList()
+            };
+
+            return MethodResult<OrderDto>.ResultWithData(orderDto, "Cập nhật thông tin đơn hàng thành công.");
+        }
+
+        // Lấy danh sách Order của user
+        public async Task<List<OrderDto>> GetUserOrdersAsync(Guid userId)
+        {
+            var orders = await _orderRepo.TableNoTracking
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
                 .Where(o => o.UserId == userId)
                 .OrderByDescending(o => o.Created)
                 .ToListAsync();
+
+            return orders.Select(o => new OrderDto
+            {
+                Id = o.Id,
+                TotalAmount = o.TotalAmount,
+                PaymentStatus = o.PaymentStatus,
+                OrderItems = o.OrderItems.Select(oi => new OrderItemDto
+                {
+                    Id = oi.Id,
+                    ProductId = oi.ProductId,
+                    ProductName = oi.Product?.ProductName ?? "",
+                    ProductImage = oi.Product?.Thumbnail ?? "",
+                    Quantity = oi.Quantity,
+                    Price = oi.Price
+                }).ToList()
+            }).ToList();
         }
 
-        public async Task<Order?> GetOrderDetailAsync(Guid orderId, Guid userId)
+        // Lấy chi tiết Order
+        public async Task<OrderDto?> GetOrderDetailAsync(Guid orderId, Guid userId)
         {
-            return await _orderRepo
-                .TableNoTracking
+            var order = await _orderRepo.TableNoTracking
                 .Include(o => o.OrderItems)
-                .ThenInclude(i => i.Product)
+                .ThenInclude(oi => oi.Product)
                 .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId);
+
+            if (order == null) return null;
+
+            return new OrderDto
+            {
+                Id = order.Id,
+                TotalAmount = order.TotalAmount,
+                PaymentStatus = order.PaymentStatus,
+                OrderItems = order.OrderItems.Select(oi => new OrderItemDto
+                {
+                    Id = oi.Id,
+                    ProductId = oi.ProductId,
+                    ProductName = oi.Product?.ProductName ?? "",
+                    ProductImage = oi.Product?.Thumbnail ?? "",
+                    Quantity = oi.Quantity,
+                    Price = oi.Price
+                }).ToList()
+            };
         }
     }
 }

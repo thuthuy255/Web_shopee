@@ -4,6 +4,9 @@ import CartPage from "../pages/user/CartPage";
 import ProtectedRoute from "./ProtectedRoute";
 import { ROLE } from "../constants";
 import ProductDetailPage from "../pages/user/ProductDetailPage";
+import ShopPage from "../pages/user/ShopPage";
+import OrderList from "../pages/user/OrderList";
+import OrderDetail from "../pages/user/OrderDetailPage";
 
 const UserRoutes = [
   {
@@ -23,8 +26,20 @@ const UserRoutes = [
         ),
       },
       {
-        path: "products/:id", // Đường dẫn đầy đủ là /user/products/:id
+        path: "products/:id",
         element: <ProductDetailPage />,
+      },
+      {
+        path: "shop/:sellerId",
+        element: <ShopPage />,
+      },
+      {
+        path: "order",
+        element: <OrderList />,
+      },
+      {
+        path: "order/:orderId",
+        element: <OrderDetail />,
       },
     ],
   },

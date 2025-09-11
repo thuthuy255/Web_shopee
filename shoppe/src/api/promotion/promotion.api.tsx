@@ -2,7 +2,7 @@ import { axiosClient, axiosClientNoAuth } from "../../services/axiosConfig";
 
 export const getPromotionsOfSeller = (body: any) => {
     const url = '/Promotion/getPromotionOfSeller';
-    return axiosClient.post(url, body);
+    return axiosClientNoAuth.post(url, body);
 };
 export const createPromotion = (body: any) => {
     const url = '/Promotion/createPromotion';

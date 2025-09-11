@@ -62,11 +62,21 @@ namespace ProductAPI.Services
         public async Task<IMethodResult<bool>> RegisterUserAsync(RegisterRequestDTO request)
         {
             var existingUser = await _userRepo.TableNoTracking
-                .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Email);
+                            .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Email);
+
             if (existingUser != null)
             {
-                return MethodResult<bool>.ResultWithError(Constants.MESS_AlreadyExists);
+
+                if (existingUser.Email == request.Email)
+                {
+                    return MethodResult<bool>.ResultWithError("Email đã được sử dụng");
+                }
+                if (existingUser.Phone == request.Phone)
+                {
+                    return MethodResult<bool>.ResultWithError("Số điện thoại đã được sử dụng");
+                }
             }
+
 
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
