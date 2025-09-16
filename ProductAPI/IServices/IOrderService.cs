@@ -6,7 +6,7 @@ namespace ProductAPI.IServices
 {
     public interface IOrderService 
     {
-        Task<MethodResult<OrderDto>> CreateTemporaryOrderAsync(Guid userId);
+        Task<MethodResult<OrderDto>> CreateOrderAsync(Guid userId, OrderCreateDto body);
         Task<MethodResult<OrderDto>> UpdateOrderInfoAsync(Guid orderId, Guid userId, OrderUpdateDto dto);
         Task<List<OrderDto>> GetUserOrdersAsync(Guid userId);
         Task<OrderDto?> GetOrderDetailAsync(Guid orderId, Guid userId);

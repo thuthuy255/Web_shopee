@@ -29,7 +29,7 @@ namespace ProductAPI.Helpers
             vnpay.AddRequestData("vnp_CurrCode", "VND");
             vnpay.AddRequestData("vnp_IpAddr", context.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1");
             vnpay.AddRequestData("vnp_Locale", "vn");
-            vnpay.AddRequestData("vnp_OrderInfo", $"Thanh toan don hang");
+            vnpay.AddRequestData("vnp_OrderInfo", "Thanh toan don hang");
             vnpay.AddRequestData("vnp_OrderType", "other");
             vnpay.AddRequestData("vnp_ReturnUrl", vnp_ReturnUrl);
             vnpay.AddRequestData("vnp_TxnRef", txnRef);

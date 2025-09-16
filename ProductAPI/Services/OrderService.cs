@@ -30,70 +30,80 @@ namespace ProductAPI.Services
             _promoRepo = promoRepo;
         }
 
-        // Tạo đơn tạm từ Cart
-        public async Task<MethodResult<OrderDto>> CreateTemporaryOrderAsync(Guid userId)
+        public async Task<MethodResult<OrderDto>> CreateOrderAsync(Guid userId, OrderCreateDto body)
         {
             var cartItems = await _cartRepo.Table
                 .Include(c => c.Product)
-                .Where(c => c.UserId == userId && c.IsSelected)
+                .Where(c => c.UserId == userId)
                 .ToListAsync();
 
             if (!cartItems.Any())
                 return MethodResult<OrderDto>.ResultWithError("Bạn chưa chọn sản phẩm nào.");
 
-            decimal totalAmount = 0m;
             var orderItems = new List<OrderItem>();
             var orderItemsDto = new List<OrderItemDto>();
+            decimal totalAmount = 0m;
 
             foreach (var cart in cartItems)
             {
                 if (cart.Product.StockQuantity < cart.Quantity)
-                    return MethodResult<OrderDto>.ResultWithError($"Sản phẩm '{cart.Product.ProductName}' không đủ hàng.");
+                    return MethodResult<OrderDto>.ResultWithError(
+                        $"Sản phẩm '{cart.Product.ProductName}' không đủ hàng.");
 
                 totalAmount += cart.Quantity * cart.Product.Price;
 
-                var orderItem = new OrderItem
+                var item = new OrderItem
                 {
                     Id = Guid.NewGuid(),
                     ProductId = cart.ProductId,
                     Quantity = cart.Quantity,
                     Price = cart.Product.Price
                 };
-                orderItems.Add(orderItem);
+                orderItems.Add(item);
 
                 orderItemsDto.Add(new OrderItemDto
                 {
-                    Id = orderItem.Id,
+                    Id = item.Id,
                     ProductId = cart.ProductId,
                     ProductName = cart.Product.ProductName,
                     ProductImage = cart.Product.Thumbnail ?? "",
                     Quantity = cart.Quantity,
                     Price = cart.Product.Price
                 });
+
+                cart.Product.StockQuantity -= cart.Quantity;
             }
 
             var order = new Order
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                TotalAmount = totalAmount,
+                AddressId = body.AddressId,
+                PromotionCode = body.PromotionCode,
+                PaymentMethod = body.PaymentMethod,
                 PaymentStatus = PaymentStatus.Pending,
-                OrderItems = orderItems
+                TotalAmount = totalAmount,
+                OrderItems = orderItems,
+                Created = DateTime.UtcNow
             };
 
             await _orderRepo.AddAsync(order);
             await _orderItemRepo.AddRangeAsync(orderItems);
+            await _cartRepo.DeleteRangeAsync(cartItems);
 
-            var orderDto = new OrderDto
+            return MethodResult<OrderDto>.ResultWithData(new OrderDto
             {
                 Id = order.Id,
+                UserId = order.UserId,
+                AddressId = order.AddressId,
+                PromotionCode = order.PromotionCode,
+                PaymentMethod = order.PaymentMethod,
+                PaymentStatus = order.PaymentStatus,
                 TotalAmount = order.TotalAmount,
-                PaymentStatus = PaymentStatus.Pending,
                 OrderItems = orderItemsDto
-            };
-
-            return MethodResult<OrderDto>.ResultWithData(orderDto, "Tạo đơn hàng tạm thời thành công.");
+            }, "Tạo đơn hàng thành công.");
         }
+
 
         // Cập nhật thông tin Order theo DTO
         public async Task<MethodResult<OrderDto>> UpdateOrderInfoAsync(Guid orderId, Guid userId, OrderUpdateDto dto)

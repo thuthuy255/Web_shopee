@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import {
     Card,
     Row,
@@ -10,16 +10,56 @@ import {
     message,
     Divider,
     Button,
+    Flex,
 } from "antd";
-import { getOrderDetail } from "../../api/order/order.api";
+import { createOrder, getOrderDetail, paymentOrder } from "../../api/order/order.api";
 import { getUserAddresses } from "../../api/address/address.api";
 import AddressManagement from "./AddressManagement";
 import { formatCurrency } from "../../untils/FormatPrice";
+import VoucherModal from "./VoucherModal";
+import { BarcodeOutlined } from '@ant-design/icons';
+import { COLOR_DEFAULT } from "../../constants/Color";
 
 const { Text, Title } = Typography;
 
+// ------------------ Types ------------------
+interface OrderItem {
+    id?: string;
+    productId: string;
+    productName: string;
+    price: number;
+    quantity: number;
+    thumbnail: string;
+}
 
+interface Order {
+    id: string;
+    status: string;
+    orderItems: OrderItem[];
+    totalAmount: number;
+    originalAmount: number;
+    addressId?: string;
+    promotionCode?: string | null;
+    paymentMethod?: string;
+}
 
+interface Address {
+    id: string;
+    fullName: string;
+    phoneNumber: string;
+    addressDetail: string;
+    city?: string;
+    province?: string;
+    isDefault?: boolean;
+}
+
+interface Voucher {
+    code: string;
+    discountAmount?: number;
+    discountPercent?: number;
+}
+
+// ------------------ Helper ------------------
 const statusColor = (status: string) => {
     switch (status) {
         case "Pending":
@@ -35,22 +75,45 @@ const statusColor = (status: string) => {
 
 const OrderDetail = () => {
     const { orderId } = useParams<{ orderId: string }>();
-    const [order, setOrder] = useState<any>(null);
-    const [addresses, setAddresses] = useState<any[]>([]);
+    const location = useLocation();
+    const selectedItems: OrderItem[] = location.state?.items || [];
+
+    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+    const [order, setOrder] = useState<Order | null>(null);
+    const [addresses, setAddresses] = useState<Address[]>([]);
+    const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+
     const [loading, setLoading] = useState(false);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+    const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
 
     useEffect(() => {
-        if (orderId) fetchOrderDetail(orderId);
+        if (orderId) {
+            fetchOrderDetail(orderId);
+        } else if (selectedItems.length > 0) {
+            const totalAmount = selectedItems.reduce(
+                (sum, item) => sum + item.price * item.quantity,
+                0
+            );
+            setOrder({
+                id: "TEMP-CHECKOUT",
+                status: "Pending",
+                orderItems: selectedItems,
+                totalAmount,
+                originalAmount: totalAmount,
+            });
+        }
         fetchAddresses();
     }, [orderId]);
 
     const fetchOrderDetail = async (id: string) => {
         setLoading(true);
         try {
-            const res = await getOrderDetail(id);
-            console.log("🚀 ~ fetchOrderDetail ~ res:", res)
-            setOrder(res);
+            const res: any = await getOrderDetail(id);
+            setOrder({
+                ...res,
+                originalAmount: res.totalAmount,
+            });
         } catch (error) {
             console.error(error);
             message.error("Không thể tải chi tiết đơn hàng.");
@@ -62,19 +125,111 @@ const OrderDetail = () => {
     const fetchAddresses = async () => {
         try {
             const res: any = await getUserAddresses();
-            setAddresses(Array.isArray(res) ? res : res.data || []);
+            const list: Address[] = Array.isArray(res) ? res : res.data || [];
+            setAddresses(list);
+
+            if (!selectedAddressId) {
+                const defaultAddr = list.find((a) => a.isDefault);
+                if (defaultAddr) {
+                    setSelectedAddressId(defaultAddr.id);
+                }
+            }
         } catch (error) {
             console.error(error);
             message.error("Không thể tải địa chỉ.");
         }
     };
 
-    // Tìm địa chỉ theo addressId
-    const orderAddress = order?.addressId
-        ? addresses.find((a) => a.id === order.addressId)
-        : null;
+    // Khi chọn voucher
+    const handleApplyVoucher = (voucher: Voucher | null) => {
+        if (!order) return;
 
-    if (loading || !order) {
+        if (!voucher) {
+            setSelectedVoucher(null);
+            setOrder({
+                ...order,
+                promotionCode: null,
+                totalAmount: order.originalAmount,
+            });
+            return;
+        }
+
+        let newTotal = order.originalAmount;
+
+        if (voucher.discountAmount) {
+            newTotal -= voucher.discountAmount;
+        } else if (voucher.discountPercent) {
+            newTotal -= (order.originalAmount * voucher.discountPercent) / 100;
+        }
+
+        if (newTotal < 0) newTotal = 0;
+
+        setSelectedVoucher(voucher);
+        setOrder({
+            ...order,
+            promotionCode: voucher.code,
+            totalAmount: newTotal,
+        });
+    };
+
+    // ------------------ Thanh toán ------------------
+    const handlePayment = async () => {
+        if (!order) return;
+        if (!selectedAddressId) {
+            message.warning("Vui lòng chọn địa chỉ giao hàng trước.");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            let orderIdToPay = order.id;
+
+            // Nếu chỉ là checkout tạm thì tạo order mới
+            if (orderIdToPay === "TEMP-CHECKOUT") {
+                const payload = {
+                    addressId: selectedAddressId,
+                    promotionCode: order.promotionCode,
+                    paymentMethod: "VNPay", // có thể đổi thành COD, Paypal...
+                    items: order.orderItems.map((i) => ({
+                        productId: i.productId,
+                        quantity: i.quantity,
+                    })),
+                };
+
+                const res: any = await createOrder(payload);
+                if (!res || !res.data) {
+                    message.error("Không thể tạo đơn hàng.");
+                    return;
+                }
+                orderIdToPay = res.data.id;
+                setOrder({ ...order, id: orderIdToPay });
+            }
+
+            // Gọi API thanh toán
+            const payReq = {
+                orderId: orderIdToPay,
+                amount: order.totalAmount,
+            };
+            const payRes: any = await paymentOrder(payReq);
+
+            if (payRes?.data?.paymentUrl) {
+                window.location.href = payRes.data.paymentUrl;
+            } else {
+                message.error("Không lấy được link thanh toán.");
+            }
+        } catch (err) {
+            console.error(err);
+            message.error("Thanh toán thất bại.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const orderAddress: Address | null =
+        addresses.find((a) => a.id === selectedAddressId) ||
+        (order?.addressId ? addresses.find((a) => a.id === order.addressId) || null : null);
+
+    if (loading && !order) {
         return (
             <div style={{ textAlign: "center", padding: 50 }}>
                 <Spin size="large" />
@@ -83,9 +238,7 @@ const OrderDetail = () => {
     }
 
     return (
-        <div
-            style={{ padding: "24px 16px", maxWidth: "80%", margin: "0 auto" }}
-        >
+        <div style={{ padding: "24px 16px", maxWidth: "80%", margin: "0 auto" }}>
             <Card
                 style={{
                     borderRadius: 12,
@@ -97,12 +250,12 @@ const OrderDetail = () => {
                 <Row justify="space-between" align="middle">
                     <Col>
                         <Title level={4}>
-                            Mã đơn: <Text code>{order.id}</Text>
+                            Mã đơn: <Text code>{order?.id}</Text>
                         </Title>
                     </Col>
                     <Col>
                         <Tag
-                            color={statusColor(order.status)}
+                            color={statusColor(order?.status || "")}
                             style={{
                                 fontWeight: 600,
                                 fontSize: 14,
@@ -110,7 +263,7 @@ const OrderDetail = () => {
                                 borderRadius: 6,
                             }}
                         >
-                            {order.status}
+                            {order?.status}
                         </Tag>
                     </Col>
                 </Row>
@@ -118,27 +271,35 @@ const OrderDetail = () => {
                 <Divider />
 
                 {/* Địa chỉ giao hàng */}
-                <Card
-                    type="inner"
-                    title="Địa chỉ giao hàng"
-                    style={{ marginBottom: 16 }}
-                >
+                <Card type="inner" title="Địa chỉ giao hàng" style={{ marginBottom: 16 }}>
                     {orderAddress ? (
                         <>
-                            <Text strong>{orderAddress.fullName}</Text> -{" "}
-                            <Text>{orderAddress.phoneNumber}</Text>
-                            <div>
-                                {orderAddress.detail}, {orderAddress.ward},{" "}
-                                {orderAddress.district}, {orderAddress.city}
+                            <div style={{ marginBottom: 4 }}>
+                                <Text strong>
+                                    {orderAddress.fullName} - {orderAddress.phoneNumber}
+                                </Text>
                             </div>
-                            <div style={{ marginTop: 8 }}>
-                                <Button
-                                    type="link"
-                                    onClick={() => setIsAddressModalOpen(true)}
-                                >
-                                    Thêm/Sửa địa chỉ
-                                </Button>
-                            </div>
+                            <Flex gap={16} justify="space-between" align="center">
+                                <div style={{ marginBottom: 8, color: "rgba(0,0,0,0.75)" }}>
+                                    {orderAddress.addressDetail}
+                                    {orderAddress.city ? `, ${orderAddress.city}` : ""}
+                                    {orderAddress.province ? `, ${orderAddress.province}` : ""}
+                                </div>
+
+                                <div>
+                                    {orderAddress.isDefault && (
+                                        <Tag color="blue" style={{ marginRight: 8 }}>
+                                            Mặc định
+                                        </Tag>
+                                    )}
+                                    <Button
+                                        type="link"
+                                        onClick={() => setIsAddressModalOpen(true)}
+                                    >
+                                        Chọn/Sửa địa chỉ
+                                    </Button>
+                                </div>
+                            </Flex>
                         </>
                     ) : (
                         <div
@@ -161,9 +322,9 @@ const OrderDetail = () => {
                 </Card>
 
                 {/* Danh sách sản phẩm */}
-                {order.orderItems?.map((item: any) => (
+                {order?.orderItems?.map((item, idx) => (
                     <Card
-                        key={item.id}
+                        key={item.id || idx}
                         hoverable
                         style={{ marginBottom: 16, borderRadius: 10 }}
                         bodyStyle={{ padding: 16 }}
@@ -171,10 +332,10 @@ const OrderDetail = () => {
                         <Row gutter={16} align="middle">
                             <Col span={6}>
                                 <img
-                                    src={item.productImage}
+                                    src={item.thumbnail}
                                     alt={item.productName}
                                     style={{
-                                        width: "100%",
+                                        width: 100,
                                         height: 100,
                                         objectFit: "cover",
                                         borderRadius: 8,
@@ -182,7 +343,9 @@ const OrderDetail = () => {
                                 />
                             </Col>
                             <Col span={12}>
-                                <Title level={5}>{item.productName}</Title>
+                                <Title level={5}>
+                                    {item.productName || "Tên sản phẩm"}
+                                </Title>
                                 <Text type="secondary">Số lượng: {item.quantity}</Text>
                             </Col>
                             <Col span={6} style={{ textAlign: "right" }}>
@@ -196,22 +359,45 @@ const OrderDetail = () => {
 
                 <Divider />
 
-                {/* Tổng tiền và mã giảm giá */}
-                <Row justify="space-between" align="middle">
-                    <Col>
-                        {order.promotionCode && (
-                            <Tag color="cyan" style={{ fontWeight: 600 }}>
-                                Mã giảm giá: {order.promotionCode}
-                            </Tag>
-                        )}
+                {/* Voucher */}
+                <Row style={{ marginBottom: 16 }}>
+                    <Col span={24}>
+                        <Flex justify="space-between" align="center">
+                            <Flex align="center">
+                                <BarcodeOutlined style={{ fontSize: "23px", color: COLOR_DEFAULT }} />
+                                <Text style={{ marginLeft: 8, fontSize: "16px" }}>Shopping Voucher</Text>
+                            </Flex>
+                            <Button type="link" onClick={() => setIsVoucherModalOpen(true)}>
+                                {selectedVoucher
+                                    ? `Đã áp dụng: ${selectedVoucher.code}`
+                                    : "Chọn voucher"}
+                            </Button>
+                        </Flex>
                     </Col>
+                </Row>
+
+                {/* Tổng tiền + Thanh toán */}
+                <Row justify="space-between" align="middle">
+                    <Col></Col>
                     <Col style={{ textAlign: "right" }}>
                         <Title level={3} style={{ color: "#1890ff" }}>
-                            Tổng: {formatCurrency(order.totalAmount)}
+                            Tổng: {formatCurrency(order?.totalAmount || 0)}
                         </Title>
-                        {order.paymentMethod && (
-                            <Text type="secondary">Thanh toán: {order.paymentMethod}</Text>
+                        {order?.paymentMethod && (
+                            <Text type="secondary">
+                                Thanh toán: {order.paymentMethod}
+                            </Text>
                         )}
+                        <div style={{ marginTop: 16 }}>
+                            <Button
+                                type="primary"
+                                size="large"
+                                onClick={handlePayment}
+                                loading={loading}
+                            >
+                                Thanh toán
+                            </Button>
+                        </div>
                     </Col>
                 </Row>
             </Card>
@@ -220,7 +406,16 @@ const OrderDetail = () => {
             <AddressManagement
                 visible={isAddressModalOpen}
                 onClose={() => setIsAddressModalOpen(false)}
-                onSaved={fetchAddresses} // reload địa chỉ sau khi thêm/sửa
+                onSaved={fetchAddresses}
+                selectedId={selectedAddressId || order?.addressId || null}
+                onSelect={(id) => setSelectedAddressId(id)}
+            />
+
+            {/* Modal chọn voucher */}
+            <VoucherModal
+                visible={isVoucherModalOpen}
+                onClose={() => setIsVoucherModalOpen(false)}
+                onApply={handleApplyVoucher}
             />
         </div>
     );

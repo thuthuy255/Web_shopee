@@ -17,7 +17,6 @@ import {
     getUserCartItems,
     updateCartItem,
 } from "../../api/cartitem/cartitem.api";
-import { createTemporaryOrder, updateOrderInfo } from "../../api/order/order.api";
 import LoadingDefault from "../../components/loading/LoadingDefault";
 import { COLOR_DEFAULT } from "../../constants/Color";
 import VoucherModal from "./VoucherModal";
@@ -72,12 +71,14 @@ function CartPage() {
         checked: boolean,
         productVariantId: string | null,
         quantity: number,
-        price: number
+        price: number,
+        productName: string,
+        thumbnail: string,
     ) => {
         if (checked) {
             setSelectedItems((prev) => [
                 ...prev,
-                { productId, productVariantId, quantity, price },
+                { productId, productVariantId, quantity, price, productName, thumbnail },
             ]);
         } else {
             setSelectedItems((prev) =>
@@ -105,7 +106,7 @@ function CartPage() {
             setSelectedItems((prev) =>
                 prev.map((item) =>
                     item.productId === productId &&
-                    (item.productVariantId ?? null) === (productVariantId ?? null)
+                        (item.productVariantId ?? null) === (productVariantId ?? null)
                         ? { ...item, quantity }
                         : item
                 )
@@ -182,35 +183,12 @@ function CartPage() {
         return Math.max(0, total - (appliedVoucher.discount || 0));
     };
 
-    // --- Checkout ---
-    const handleCheckout = async () => {
-        try {
-            if (selectedItems.length === 0) {
-                message.warning("Vui lòng chọn sản phẩm để thanh toán!");
-                return;
-            }
-
-            setLoading(true);
-
-            const tempOrderRes: any = await createTemporaryOrder({
-                items: selectedItems,
-            });
-            const orderId = tempOrderRes.data.id;
-
-            if (appliedVoucher) {
-                await updateOrderInfo(orderId, {
-                    addressId: null,
-                    promotionCode: appliedVoucher.code,
-                });
-            }
-
-            navigate(`/user/order/${orderId}`);
-        } catch (err) {
-            console.error(err);
-            message.error("Tạo đơn hàng thất bại!");
-        } finally {
-            setLoading(false);
+    const handleCheckout = () => {
+        if (selectedItems.length === 0) {
+            alert("Bạn chưa chọn sản phẩm nào!");
+            return;
         }
+        navigate("/user/checkout", { state: { items: selectedItems } });
     };
 
     if (loading) {
@@ -281,7 +259,9 @@ function CartPage() {
                                             e.target.checked,
                                             item.productVariantId,
                                             item.quantity,
-                                            item.price
+                                            item.price,
+                                            item.productName,
+                                            item.thumbnail
                                         )
                                     }
                                 />

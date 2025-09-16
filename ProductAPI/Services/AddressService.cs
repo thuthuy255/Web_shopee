@@ -18,19 +18,28 @@ namespace ProductAPI.Services
 
         public async Task<MethodResult<Address>> CreateAsync(Guid userId, AddressDto dto)
         {
+            // Lấy tất cả địa chỉ hiện có của user
+            var existingAddresses = await _addressRepo.Table
+                .Where(a => a.UserId == userId)
+                .ToListAsync();
+
+            // Nếu user chưa có địa chỉ nào thì auto set mặc định
+            if (!existingAddresses.Any())
+            {
+                dto.IsDefault = true;
+            }
+
+            // Nếu user có tick "Đặt làm mặc định" thì clear mặc định cũ
             if (dto.IsDefault)
             {
-                var existingDefaults = await _addressRepo.Table
-                    .Where(a => a.UserId == userId && a.IsDefault)
-                    .ToListAsync();
-
-                foreach (var a in existingDefaults)
+                foreach (var a in existingAddresses.Where(a => a.IsDefault))
                 {
                     a.IsDefault = false;
                     await _addressRepo.UpdateAsync(a);
                 }
             }
 
+            // Tạo địa chỉ mới
             var address = new Address
             {
                 Id = Guid.NewGuid(),
@@ -38,12 +47,16 @@ namespace ProductAPI.Services
                 AddressDetail = dto.AddressDetail,
                 City = dto.City,
                 Province = dto.Province,
-                IsDefault = dto.IsDefault
+                IsDefault = dto.IsDefault,
+                FullName = dto.FullName,
+                PhoneNumber = dto.PhoneNumber,
             };
 
             await _addressRepo.AddAsync(address);
+
             return MethodResult<Address>.ResultWithData(address, "Tạo địa chỉ thành công");
         }
+
 
         public async Task<MethodResult<Address>> UpdateAsync(Guid userId, AddressDto dto)
         {
@@ -68,6 +81,13 @@ namespace ProductAPI.Services
             address.City = dto.City;
             address.Province = dto.Province;
             address.IsDefault = dto.IsDefault;
+            address.FullName = dto.FullName;
+            address.PhoneNumber = dto.PhoneNumber;
+            address.MarkDirty(nameof(address.AddressDetail));
+            address.MarkDirty(nameof(address.City));
+            address.MarkDirty(nameof(address.Province));
+            address.MarkDirty(nameof(address.FullName));
+            address.MarkDirty(nameof(address.PhoneNumber));
 
             await _addressRepo.UpdateAsync(address);
             return MethodResult<Address>.ResultWithData(address, "Cập nhật địa chỉ thành công");

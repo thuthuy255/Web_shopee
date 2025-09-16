@@ -34,8 +34,8 @@ const UserRoutes = [
         element: <ShopPage />,
       },
       {
-        path: "order",
-        element: <OrderList />,
+        path: "checkout",
+        element: <OrderDetail />,
       },
       {
         path: "order/:orderId",
