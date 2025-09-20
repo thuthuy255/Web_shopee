@@ -2,14 +2,14 @@ import type { TableColumnsType } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { showError, showSuccess } from '../../../untils/ShowToast';
-import { deletePromotion, getPromotionsOfSeller } from '../../../api/promotion/promotion.api';
+import { deletePromotion, getPromotions } from '../../../api/promotion/promotion.api';
 import CustomTable from '../../../components/CustomTable';
 import LoadingDefault from '../../../components/loading/LoadingDefault';
 
 export default function PromotionManagement() {
     interface Promotion {
         id: string;
-        sellerId: string;
+        userId: string;
         code: string;
         description: string;
         discountPercent: number;
@@ -84,7 +84,7 @@ export default function PromotionManagement() {
                 keyWord: '',
             };
 
-            const res: any = await getPromotionsOfSeller(body);
+            const res: any = await getPromotions(body);
             console.log("🚀 ~ fetchPromotion ~ res:", res)
             if (res?.success) {
                 setData(res?.data);
@@ -110,11 +110,11 @@ export default function PromotionManagement() {
     };
 
     const handleAdd = () => {
-        navigate('/seller/promotions/create');
+        navigate('/admin/promotions/create');
     };
 
     const handleView = (record: Promotion) => {
-        navigate(`/seller/promotions/edit/${record.id}`);
+        navigate(`/admin/promotions/edit/${record.id}`);
     };
     const handleDelete = async (id: string) => {
         try {
@@ -139,7 +139,7 @@ export default function PromotionManagement() {
                     rowKey="id"
                     columns={columns}
                     dataSource={data}
-                    scrollY={window.innerHeight - 300}
+                    // scrollY={window.innerHeight - 300}
                     loading={loading}
                     onAdd={handleAdd}
                     onView={handleView}

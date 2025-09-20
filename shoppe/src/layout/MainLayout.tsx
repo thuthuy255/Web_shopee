@@ -8,7 +8,7 @@ import {
     UserOutlined,
     LogoutOutlined,
 } from '@ant-design/icons';
-import { Layout, Menu, Dropdown, Tooltip, Image, Button, theme, Input } from 'antd';
+import { Layout, Menu, Dropdown, Tooltip, Image, Button, theme, Input, Flex } from 'antd';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { MenuProps } from 'antd';
@@ -19,7 +19,7 @@ import { getRoleIdState, getTokenState, resetLogin } from '../features/slices/ap
 import logo from '../assets/img/logo.png';
 import person from '../assets/img/person.png';
 import { ROLE } from '../constants';
-import { resetUserState } from '../features/slices/user.slice';
+import { InfoUserState, resetUserState } from '../features/slices/user.slice';
 
 const { Header, Sider, Content } = Layout;
 const { Search } = Input;
@@ -34,7 +34,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ basePath, defaultRole = ROLE.US
     const {
         token: { colorBgContainer, borderRadiusLG },
     } = theme.useToken();
-
+    const user = useSelector(InfoUserState);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
@@ -127,19 +127,26 @@ const MainLayout: React.FC<MainLayoutProps> = ({ basePath, defaultRole = ROLE.US
                                     <SettingOutlined style={{ fontSize: '20px' }} />
                                 </Tooltip>
                             )}
-                            <Dropdown menu={{ items: dropdownItems }} placement="bottomRight" arrow>
-                                <Image
-                                    src={person}
-                                    alt="avatar"
-                                    preview={false}
-                                    style={{
-                                        width: 45,
-                                        height: 45,
-                                        borderRadius: '50%',
-                                        cursor: 'pointer',
-                                    }}
-                                />
-                            </Dropdown>
+                            {user && (
+                                <Flex gap={20}>
+                                    <span>Xin chào, {user?.fullName || 'User'}</span>
+                                    <Dropdown menu={{ items: dropdownItems }} placement="bottomRight" arrow>
+                                        <Image
+                                            src={user.avatar || person}
+                                            alt="avatar"
+                                            preview={false}
+                                            style={{
+                                                width: 45,
+                                                height: 45,
+                                                borderRadius: '50%',
+                                                objectFit: 'cover',
+                                                cursor: 'pointer',
+                                            }}
+                                        />
+                                    </Dropdown>
+                                </Flex>
+                            )}
+
                         </div>
                     </div>
                 </Header>

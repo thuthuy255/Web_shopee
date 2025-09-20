@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { getAllCategories } from '../../../api/category/category.api';
-import { Image, Spin } from 'antd';
+import { Spin } from 'antd';
+import { useNavigate } from 'react-router-dom';
 
 function CategoryButton() {
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [currentPage] = useState(1);
     const [pageSize] = useState(10);
+    const navigate = useNavigate();
 
     const fetchCategory = async () => {
         setLoading(true);
@@ -37,10 +39,18 @@ function CategoryButton() {
         fetchCategory();
     }, []);
 
+    const handleCategoryClick = (categoryId: string) => {
+        navigate(`/user/products?category=${categoryId}`);
+    };
+
     return (
-        <div style={{
-            backgroundColor: '#fff', padding: '24px 16px', width: '100%'
-        }}>
+        <div
+            style={{
+                backgroundColor: '#fff',
+                padding: '24px 16px',
+                width: '100%'
+            }}
+        >
             <p>DANH MỤC </p>
 
             <div
@@ -49,10 +59,9 @@ function CategoryButton() {
                     gridTemplateColumns: 'repeat(8, 1fr)',
                     gap: '24px 12px',
                     backgroundColor: '#fff',
-                    width: ' 100%',
+                    width: '100%',
                 }}
             >
-
                 {loading ? (
                     <Spin />
                 ) : (
@@ -68,6 +77,7 @@ function CategoryButton() {
                                 transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                                 padding: '20px'
                             }}
+                            onClick={() => handleCategoryClick(category.id)}
                             onMouseEnter={(e) => {
                                 const target = e.currentTarget;
                                 target.style.transform = 'translateY(-4px)';
@@ -84,7 +94,6 @@ function CategoryButton() {
                                     style={{
                                         width: 85,
                                         height: 85,
-                                        // backgroundColor: '#f5f5f5',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -119,8 +128,6 @@ function CategoryButton() {
             </div>
         </div>
     );
-
-
 }
 
 export default CategoryButton;

@@ -44,8 +44,13 @@ function Header() {
         },
         {
             key: '2',
+            label: <span onClick={() => navigate('/user/orderstatus')}>Đơn mua</span>
+        },
+        {
+            key: '3',
             label: <span onClick={handleLogout}>Đăng xuất</span>
-        }
+        },
+
     ];
 
 

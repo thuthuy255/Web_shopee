@@ -7,14 +7,14 @@ import ProductsCreate from "../pages/seller/product/ProductCreate";
 import { Navigate } from "react-router-dom";
 import { ROLE } from "../constants";
 import ProductEdit from "../pages/seller/product/ProductEdit";
-import PromotionManagement from "../pages/seller/promotions/PromotionManagement";
-import PromotionCreate from "../pages/seller/promotions/PromotionCreate";
-import PromotionEdit from "../pages/seller/promotions/PromotionEdit";
+import PromotionManagement from "../pages/admin/promotions/PromotionManagement";
+import PromotionCreate from "../pages/admin/promotions/PromotionCreate";
+import PromotionEdit from "../pages/admin/promotions/PromotionEdit";
 import ProfileForm from "../pages/admin/Profile";
 import CategoryManagement from "../pages/seller/category/CategoryManagement";
 import CategoryCreate from "../pages/seller/category/CategoryCreate";
 import CategoryEdit from "../pages/seller/category/CategoryEdit";
-import ProductVariantManagerment from "../pages/seller/product/ProductVariantManagerment";
+import OrderManagerment from "../pages/seller/orders/OrderManagerment";
 
 const SellerRoutes = [
   {
@@ -46,18 +46,7 @@ const SellerRoutes = [
       //   path: "productVariants",
       //   element: <ProductVariantManagerment />,
       // },
-      {
-        path: "promotions",
-        element: <PromotionManagement />,
-      },
-      {
-        path: "promotions/create",
-        element: <PromotionCreate />,
-      },
-      {
-        path: "promotions/edit/:id",
-        element: <PromotionEdit />,
-      },
+
       {
         path: "category",
         element: <CategoryManagement />,
@@ -75,6 +64,10 @@ const SellerRoutes = [
         path: "profile",
         element: <ProfileForm />,
       },
+      {
+        path: "orders",
+        element: <OrderManagerment />
+      }
     ],
   },
 ];

@@ -17,8 +17,7 @@ interface CustomTableProps<T> {
     pageSize: number;
     currentPage: number;
     total: number;
-    scrollY?: number;
-    loading?: boolean; // ✅ Thêm loading prop
+    loading?: boolean;
     onPageChange?: (page: number, pageSize: number) => void;
     onAdd?: () => void;
     onView?: (record: T) => void;
@@ -33,7 +32,6 @@ function CustomTable<T>({
     pageSize = 10,
     currentPage = 1,
     total = 0,
-    scrollY = 400,
     loading = false,
     onAdd,
     onView,
@@ -41,54 +39,67 @@ function CustomTable<T>({
     onPageChange,
     title = 'Danh sách',
 }: CustomTableProps<T>) {
-    const actionColumn = useMemo<TableColumnsType<T>[number]>(() => ({
-        title: 'Thao tác',
-        key: 'action',
-        align: 'center',
-        render: (_, record) => {
-            const id = String(record[rowKey as keyof T]);
-            return (
-                <Space size="middle" style={{ justifyContent: 'center', display: 'flex' }}>
-                    {onView && (
-                        <Tooltip title="Chỉnh sửa">
-                            <Button
-                                icon={<EditOutlined />}
-                                shape="circle"
-                                style={{
-                                    backgroundColor: '#faad14',
-                                    borderColor: '#faad14',
-                                    color: '#fff',
-                                }}
-                                onClick={() => onView(record)}
-                            />
-                        </Tooltip>
-                    )}
+    // ✅ Cột thao tác chỉ tạo khi có onView hoặc onDelete
+    const actionColumn = useMemo<TableColumnsType<T>[number] | null>(() => {
+        if (!onView && !onDelete) return null;
 
-                    {onDelete && (
-                        <Tooltip title="Xoá">
-                            <Popconfirm
-                                title="Bạn có chắc muốn xoá mục này không?"
-                                onConfirm={() => onDelete(id)}
-                                okText="Xoá"
-                                cancelText="Huỷ"
-                            >
+        return {
+            title: 'Thao tác',
+            key: 'action',
+            align: 'center',
+            render: (_, record) => {
+                const id = String(record[rowKey as keyof T]);
+                return (
+                    <Space
+                        size="middle"
+                        style={{ justifyContent: 'center', display: 'flex' }}
+                    >
+                        {onView && (
+                            <Tooltip title="Chỉnh sửa">
                                 <Button
-                                    icon={<DeleteOutlined />}
-                                    danger
+                                    icon={<EditOutlined />}
                                     shape="circle"
                                     style={{
-                                        backgroundColor: '#ff4d4f',
-                                        borderColor: '#ff4d4f',
+                                        backgroundColor: '#faad14',
+                                        borderColor: '#faad14',
                                         color: '#fff',
                                     }}
+                                    onClick={() => onView(record)}
                                 />
-                            </Popconfirm>
-                        </Tooltip>
-                    )}
-                </Space>
-            );
-        }
-    }), [onView, onDelete, rowKey]);
+                            </Tooltip>
+                        )}
+
+                        {onDelete && (
+                            <Tooltip title="Xoá">
+                                <Popconfirm
+                                    title="Bạn có chắc muốn xoá mục này không?"
+                                    onConfirm={() => onDelete(id)}
+                                    okText="Xoá"
+                                    cancelText="Huỷ"
+                                >
+                                    <Button
+                                        icon={<DeleteOutlined />}
+                                        danger
+                                        shape="circle"
+                                        style={{
+                                            backgroundColor: '#ff4d4f',
+                                            borderColor: '#ff4d4f',
+                                            color: '#fff',
+                                        }}
+                                    />
+                                </Popconfirm>
+                            </Tooltip>
+                        )}
+                    </Space>
+                );
+            },
+        };
+    }, [onView, onDelete, rowKey]);
+
+    // ✅ Nếu có actionColumn thì thêm vào cuối
+    const finalColumns = useMemo(() => {
+        return actionColumn ? [...columns, actionColumn] : columns;
+    }, [columns, actionColumn]);
 
     return (
         <Card
@@ -104,9 +115,9 @@ function CustomTable<T>({
         >
             <Table<T>
                 rowKey={rowKey}
-                columns={[...columns, actionColumn]}
+                columns={finalColumns}
                 dataSource={dataSource}
-                loading={loading} // ✅ Truyền loading vào bảng
+                loading={loading}
                 pagination={{
                     current: currentPage,
                     pageSize: pageSize,
@@ -114,9 +125,7 @@ function CustomTable<T>({
                     onChange: onPageChange,
                     showSizeChanger: false,
                 }}
-                scroll={{ y: scrollY }}
                 rowClassName={() => 'custom-table-row'}
-
             />
         </Card>
     );

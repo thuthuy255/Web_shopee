@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import DynamicForm, { type Field } from '../../../components/DynamicForm';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Flex, message, Spin } from 'antd';
-import { updateProduct } from '../../../api/product/product.api';
 import { showSuccess } from '../../../untils/ShowToast';
 import { useGetDetailPromotionQuery } from '../../../api/promotion/promotion.query';
 import { updatePromotion } from '../../../api/promotion/promotion.api';
@@ -20,7 +19,7 @@ export default function PromotionEdit() {
 
     const fields: Field[] = [
         { name: 'id', type: 'hidden' },
-        { name: 'sellerId', type: 'hidden' },
+        { name: 'userId', type: 'hidden' },
 
         {
             name: 'code',
@@ -94,7 +93,7 @@ export default function PromotionEdit() {
             const promotion = data.data;
             setInitialValues({
                 id: promotion.id,
-                sellerId: promotion.sellerId,
+                userId: promotion.userId,
                 code: promotion.code || '',
                 description: promotion.description || '',
                 discountPercent: promotion.discountPercent || 0,
@@ -120,9 +119,9 @@ export default function PromotionEdit() {
 
         updatePromotion(body)
             .then((res) => {
-                if (res.data?.success) {
+                if (res?.data) {
                     showSuccess("Cập nhật mã khuyến mãi thành công");
-                    navigate('/seller/promotions');
+                    navigate('/admin/promotions');
                 } else {
                     message.error(res.data?.message || 'Cập nhật mã khuyến mãi thất bại');
                 }

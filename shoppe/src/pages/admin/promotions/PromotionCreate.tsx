@@ -85,7 +85,7 @@ export default function PromotionCreate() {
             await createPromotion(values);
             showSuccess('Tạo mã giảm giá thành công');
             formRef.current?.resetFields(); // ✅
-            navigate('/seller/promotions')
+            navigate('/admin/promotions')
         } catch (error) {
             console.log("🚀 ~ handleSubmit ~ error:", error)
             showError('Tạo mã giảm giá thất bại');

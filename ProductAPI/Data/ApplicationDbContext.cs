@@ -88,9 +88,9 @@ namespace ProductAPI.Data
 
             // Promotion Relationships
             modelBuilder.Entity<Promotion>()
-                .HasOne(p => p.Seller)
+                .HasOne(p => p.User)
                 .WithMany(u => u.Promotions)
-                .HasForeignKey(p => p.SellerId)
+                .HasForeignKey(p => p.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Product Relationships

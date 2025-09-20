@@ -110,35 +110,40 @@ namespace ProductAPI.Services
             var vnpay = new VnPayLibrary();
             var random = new Random();
             string txnRef = DateTime.Now.ToString("yyyyMMddHHmmss") + random.Next(1000, 9999);
+
             vnpay.AddRequestData("vnp_Version", "2.1.0");
             vnpay.AddRequestData("vnp_Command", "pay");
             vnpay.AddRequestData("vnp_TmnCode", vnp_TmnCode);
-            vnpay.AddRequestData("vnp_Amount", ((int)(request.Amount * 100)).ToString()); // VNPay yêu cầu *100
+            vnpay.AddRequestData("vnp_Amount", ((int)(request.Amount * 100)).ToString());
             vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
             vnpay.AddRequestData("vnp_CurrCode", "VND");
-            vnpay.AddRequestData("vnp_IpAddr", "192.168.27.104"); // TODO: lấy IP thật
+            vnpay.AddRequestData("vnp_IpAddr", "192.168.27.104");
             vnpay.AddRequestData("vnp_Locale", "vn");
             vnpay.AddRequestData("vnp_OrderInfo", "Thanh toan don hang");
             vnpay.AddRequestData("vnp_OrderType", "other");
             vnpay.AddRequestData("vnp_ReturnUrl", vnp_ReturnUrl);
-            vnpay.AddRequestData("vnp_TxnRef", txnRef); // Mã giao dịch
+            vnpay.AddRequestData("vnp_TxnRef", txnRef);
 
-            // Lưu thông tin đơn hàng
-            var order = new Order()
+            // ✅ Update order hiện có với txnRef và trạng thái Pending
+            var order = await _orderRepos.Table.FirstOrDefaultAsync(o => o.Id == request.OrderId && o.UserId == currentUser);
+            if (order == null)
+                throw new Exception("Order không tồn tại");
+
+            // Chỉ tạo txnRef nếu chưa có
+            if (string.IsNullOrEmpty(order.TxnRef))
             {
-                Id = request.OrderId,
-                UserId = currentUser.Value,
-                TotalAmount = request.Amount,
-                TxnRef = txnRef,
-                PaymentStatus = PaymentStatus.Pending,
-                PaymentMethod = "VNPay",
-                Created = DateTime.UtcNow
-            };
-            await _orderRepos.AddAsync(order);
+                order.TxnRef = DateTime.Now.ToString("yyyyMMddHHmmss") + random.Next(1000, 9999);
+                order.Modified = DateTime.UtcNow;
+                await _orderRepos.UpdateAsync(order);
+            }
 
-            // Tạo URL VNPay chuẩn với chữ ký
+            // Dùng order.TxnRef hiện tại cho VNPay
+            vnpay.AddRequestData("vnp_TxnRef", order.TxnRef);
+
+
             return vnpay.CreateRequestUrl(vnp_Url, vnp_HashSecret);
         }
+
 
 
 
@@ -155,17 +160,22 @@ namespace ProductAPI.Services
                 string txnRef = query["vnp_TxnRef"];
                 string responseCode = query["vnp_ResponseCode"]; // 00 = thành công
 
+                // Lấy order theo txnRef
                 var orderPayment = await _orderRepos.Table.FirstOrDefaultAsync(p => p.TxnRef == txnRef);
                 if (orderPayment != null)
                 {
                     orderPayment.PaymentStatus = responseCode == "00" ? PaymentStatus.Paid : PaymentStatus.Failed;
+                    orderPayment.MarkDirty(nameof(orderPayment.PaymentStatus));
+                    orderPayment.Modified = DateTime.UtcNow;
                     await _orderRepos.UpdateAsync(orderPayment);
                 }
+
 
                 return responseCode == "00";
             }
 
             return false;
         }
+
     }
 }

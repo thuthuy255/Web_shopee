@@ -3,8 +3,8 @@
 public class PromotionDto
 {
     public Guid? Id { get; set; }
+    public Guid UserId { get; set; }
 
-    [Required(ErrorMessage = "Code là bắt buộc")]
     public string Code { get; set; }
 
     public string? Description { get; set; }

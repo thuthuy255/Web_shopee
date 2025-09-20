@@ -12,6 +12,9 @@ import BannerManagement from "../pages/admin/banner/BannerManagement";
 import BannerCreate from "../pages/admin/banner/BannerCreate";
 import BannerEdit from "../pages/admin/banner/BannerEdit";
 import CategoryManagement from "../pages/admin/category/CategoryManagement";
+import PromotionManagement from "../pages/admin/promotions/PromotionManagement";
+import PromotionCreate from "../pages/admin/promotions/PromotionCreate";
+import PromotionEdit from "../pages/admin/promotions/PromotionEdit";
 
 const AdminRoutes = [
   {
@@ -67,10 +70,18 @@ const AdminRoutes = [
         path: "category",
         element: <CategoryManagement />,
       },
-      // {
-      //   path: "category/create",
-      //   element: <CategoryCreate />,
-      // },
+      {
+        path: "promotions",
+        element: <PromotionManagement />,
+      },
+      {
+        path: "promotions/create",
+        element: <PromotionCreate />,
+      },
+      {
+        path: "promotions/edit/:id",
+        element: <PromotionEdit />,
+      },
     ],
   },
 ];

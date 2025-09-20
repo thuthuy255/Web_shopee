@@ -108,7 +108,11 @@ namespace ProductAPI.Services
 
             return MethodResult<List<ProductWithCategoryDto>>.ResultWithData(result, "Lấy danh sách sản phẩm thành công", total);
         }
-
+        public async Task<MethodResult<int>> GetTotalProductAsync()
+        {
+            var total = await _productRepo.TableNoTracking.CountAsync();
+            return MethodResult<int>.ResultWithData(total, $"Tổng số sản phẩm: {total}");
+        }
         public async Task<IMethodResult<ProductResultDto>> GetByIdAsync(Guid productId)
         {
             var product = await _productRepo

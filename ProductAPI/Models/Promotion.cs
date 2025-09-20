@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 public class Promotion : BaseEntity
 {
-    public Guid SellerId { get; set; }
+    public Guid UserId { get; set; }
 
     [Required, StringLength(50)]
     public string Code { get; set; } = string.Empty;
@@ -27,7 +27,7 @@ public class Promotion : BaseEntity
     [StringLength(20)]
     public string Status { get; set; } = PromotionStatus.Active.ToString();
 
-    public User? Seller { get; set; }
+    public User? User { get; set; }
 }
 public enum PromotionStatus
 {

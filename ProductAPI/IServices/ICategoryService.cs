@@ -9,6 +9,7 @@ namespace ProductAPI.IServices
     {
         Task<MethodResult<List<CategoryDto>>> GetAllAsync(GridInfo gridInfo);
         Task<IMethodResult<List<CategoryDto>>> GetBySellerAsync(GridInfo grid);
+        Task<MethodResult<int>> GetTotalCategoryAsync();
 
         Task<IMethodResult<CategoryDto>> CreateAsync(CreateCategoryDto dto);
         Task<IMethodResult<CategoryDto>> UpdateAsync(Guid id, UpdateCategoryDto dto);

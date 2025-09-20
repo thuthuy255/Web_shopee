@@ -19,8 +19,12 @@ namespace ProductAPI.Services
             _promoRepo = promoRepo;
         }
 
-        public async Task<MethodResult<Promotion>> CreateAsync(Guid sellerId, PromotionDto dto)
+        public async Task<MethodResult<Promotion>> CreateAsync( Guid userId,PromotionDto dto)
         {
+            //var promo = await _promoRepo.GetByIdAsync(dto.Id.Value);
+            //if (promo == null || promo.UserId != userId)
+            //    return MethodResult<Promotion>.ResultWithError("Không tìm thấy hoặc bạn không có quyền sửa mã khuyến mãi này.");
+
             if (string.IsNullOrWhiteSpace(dto.Code))
             {
                 return MethodResult<Promotion>.ResultWithError("Mã khuyến mãi (Code) là bắt buộc.");
@@ -29,7 +33,7 @@ namespace ProductAPI.Services
             var newPromo = new Promotion
             {
                 Id = Guid.NewGuid(),
-                SellerId = sellerId,
+                UserId = userId,
                 Code = dto.Code,
                 Description = dto.Description,
                 DiscountPercent = dto.DiscountPercent,
@@ -45,14 +49,18 @@ namespace ProductAPI.Services
             return MethodResult<Promotion>.ResultWithData(newPromo, "Tạo mã khuyến mãi thành công.");
         }
 
-
-        public async Task<MethodResult<Promotion>> UpdateAsync(Guid sellerId, PromotionDto dto)
+        public async Task<MethodResult<int>> GetTotalPromotionAsync()
+        {
+            var total = await _promoRepo.TableNoTracking.CountAsync();
+            return MethodResult<int>.ResultWithData(total, $"Tổng số khuyến mãi: {total}");
+        }
+        public async Task<MethodResult<Promotion>> UpdateAsync(Guid userId, PromotionDto dto)
         {
             if (dto.Id == null)
                 return MethodResult<Promotion>.ResultWithError("Id không hợp lệ.");
 
             var promo = await _promoRepo.GetByIdAsync(dto.Id.Value);
-            if (promo == null || promo.SellerId != sellerId)
+            if (promo == null || promo.UserId != userId)
                 return MethodResult<Promotion>.ResultWithError("Không tìm thấy hoặc bạn không có quyền sửa mã khuyến mãi này.");
 
             promo.Code = dto.Code;
@@ -112,10 +120,10 @@ namespace ProductAPI.Services
         }
 
 
-        public async Task<MethodResult<bool>> DeleteAsync(Guid sellerId, Guid id)
+        public async Task<MethodResult<bool>> DeleteAsync(Guid userId, Guid id)
         {
             var promo = await _promoRepo.GetByIdAsync(id);
-            if (promo == null || promo.SellerId != sellerId)
+            if (promo == null || promo.UserId != userId)
                 return MethodResult<bool>.ResultWithError("Không tìm thấy hoặc bạn không có quyền xóa mã này.");
 
             await _promoRepo.DeleteAsync(promo);

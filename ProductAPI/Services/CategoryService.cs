@@ -67,7 +67,11 @@ namespace ProductAPI.Services
                 total
             );
         }
-
+        public async Task<MethodResult<int>> GetTotalCategoryAsync()
+        {
+            var total = await _categoryRepo.TableNoTracking.CountAsync();
+            return MethodResult<int>.ResultWithData(total, $"Tổng số danh mục : {total}");
+        }
         public async Task<IMethodResult<List<CategoryDto>>> GetBySellerAsync(GridInfo grid)
         {
             var sellerId = _userPrincipalService.GetUserId();

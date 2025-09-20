@@ -40,6 +40,23 @@ namespace ProductAPI.Controllers
             }
             return BadRequest(result);
         }
+        [HttpGet("getTotalCategory")]
+        public async Task<IActionResult> getTotalCategory()
+        {
+            var result = await _categoryService.GetTotalCategoryAsync();
+            if (result.Success)
+            {
+                return Ok(new
+                {
+                    success = true,
+                    message = result.Message,
+                    data = result.Data,
+                    totalRecord = result.TotalRecord,
+
+                });
+            }
+            return BadRequest(result);
+        }
         [Authorize(Roles = Constant.Constants.ROLE_SELLER)]
         [HttpPost("GetCategoryOfSeller")]
         public async Task<IActionResult> GetCategoryOfSeller([FromBody] GridInfo gridInfo)

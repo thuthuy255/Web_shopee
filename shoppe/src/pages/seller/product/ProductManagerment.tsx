@@ -51,13 +51,13 @@ const columns: TableColumnsType<Product> = [
         key: 'categoryName',
         align: 'center',
     },
-    {
-        title: 'Mô tả',
-        dataIndex: 'description',
-        key: 'description',
-        ellipsis: true,
-        align: 'center',
-    },
+    // {
+    //     title: 'Mô tả',
+    //     dataIndex: 'description',
+    //     key: 'description',
+    //     ellipsis: true,
+    //     align: 'center',
+    // },
     {
         title: 'Giá',
         dataIndex: 'price',
@@ -79,13 +79,13 @@ const columns: TableColumnsType<Product> = [
         render: (value) => (value ? 'Hoạt động' : 'Hết hàng'),
         align: 'center',
     },
-    {
-        title: 'Trạng thái người bán',
-        dataIndex: 'sellerStatus',
-        key: 'sellerStatus',
-        render: (value) => (value ? 'Hoạt động' : 'Ngưng bán'),
-        align: 'center',
-    },
+    // {
+    //     title: 'Trạng thái người bán',
+    //     dataIndex: 'sellerStatus',
+    //     key: 'sellerStatus',
+    //     render: (value) => (value ? 'Hoạt động' : 'Ngưng bán'),
+    //     align: 'center',
+    // },
     {
         title: 'Ảnh',
         dataIndex: 'thumbnail',
@@ -236,7 +236,7 @@ export default function ProductManagement() {
                     pageSize={pageSize}
                     currentPage={currentPage}
                     total={total}                  // dùng total từ server
-                    scrollY={window.innerHeight - 300}
+                    // scrollY={window.innerHeight - 300}
                     onPageChange={handlePageChange}
                     onAdd={handleAdd}
                     onView={handleView}

@@ -5,8 +5,10 @@ import ProtectedRoute from "./ProtectedRoute";
 import { ROLE } from "../constants";
 import ProductDetailPage from "../pages/user/ProductDetailPage";
 import ShopPage from "../pages/user/ShopPage";
-import OrderList from "../pages/user/OrderList";
 import OrderDetail from "../pages/user/OrderDetailPage";
+import ProductsPage from "../pages/user/ProductsPage";
+import PaymentResultPage from "../pages/user/PaymentResultPage";
+import MyPaidOrders from "../pages/user/MyPaidOrders";
 
 const UserRoutes = [
   {
@@ -30,6 +32,10 @@ const UserRoutes = [
         element: <ProductDetailPage />,
       },
       {
+        path: "products", // 👈 chỉ cần /user/products, query lấy bằng useSearchParams
+        element: <ProductsPage />,
+      },
+      {
         path: "shop/:sellerId",
         element: <ShopPage />,
       },
@@ -41,6 +47,15 @@ const UserRoutes = [
         path: "order/:orderId",
         element: <OrderDetail />,
       },
+      {
+        path: "payment-result",
+        element: <PaymentResultPage />,
+      },
+      {
+        path: "orderstatus",
+        element: <MyPaidOrders />,
+      }
+
     ],
   },
 ];

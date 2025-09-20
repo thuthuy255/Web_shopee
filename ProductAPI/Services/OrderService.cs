@@ -5,6 +5,7 @@ using ProductAPI.IRepository;
 using ProductAPI.IServices;
 using Microsoft.EntityFrameworkCore;
 using static ProductAPI.Data.Enums.Enums;
+using ProductAPI.DTOs.Common;
 
 namespace ProductAPI.Services
 {
@@ -34,7 +35,7 @@ namespace ProductAPI.Services
         {
             var cartItems = await _cartRepo.Table
                 .Include(c => c.Product)
-                .Where(c => c.UserId == userId)
+                .Where(c => c.UserId == userId && body.CartItemIds.Contains(c.Id))
                 .ToListAsync();
 
             if (!cartItems.Any())
@@ -74,6 +75,26 @@ namespace ProductAPI.Services
                 cart.Product.StockQuantity -= cart.Quantity;
             }
 
+            //// 🟢 Áp dụng khuyến mãi (nếu có)
+            //if (!string.IsNullOrEmpty(body.PromotionCode))
+            //{
+            //    var promotion = await _promoRepo.Table
+            //        .FirstOrDefaultAsync(p => p.Code == body.PromotionCode);
+
+            //    if (promotion != null)
+            //    {
+            //        if (promotion.DiscountAmount > 0)
+            //            totalAmount -= promotion.DiscountAmount;
+            //        else if (promotion.DiscountPercent > 0)
+            //            totalAmount -= (totalAmount * promotion.DiscountPercent) / 100;
+
+            //        if (totalAmount < 0) totalAmount = 0;
+            //    }
+            //}
+
+            var random = new Random();
+            var txnRef = DateTime.Now.ToString("yyyyMMddHHmmss") + random.Next(1000, 9999);
+
             var order = new Order
             {
                 Id = Guid.NewGuid(),
@@ -82,13 +103,13 @@ namespace ProductAPI.Services
                 PromotionCode = body.PromotionCode,
                 PaymentMethod = body.PaymentMethod,
                 PaymentStatus = PaymentStatus.Pending,
-                TotalAmount = totalAmount,
+                TotalAmount = totalAmount,   // ✅ chỉ BE tính
+                TxnRef = txnRef,
                 OrderItems = orderItems,
                 Created = DateTime.UtcNow
             };
 
             await _orderRepo.AddAsync(order);
-            await _orderItemRepo.AddRangeAsync(orderItems);
             await _cartRepo.DeleteRangeAsync(cartItems);
 
             return MethodResult<OrderDto>.ResultWithData(new OrderDto
@@ -100,8 +121,51 @@ namespace ProductAPI.Services
                 PaymentMethod = order.PaymentMethod,
                 PaymentStatus = order.PaymentStatus,
                 TotalAmount = order.TotalAmount,
-                OrderItems = orderItemsDto
+                OrderItems = orderItemsDto,
+                TxnRef = order.TxnRef
             }, "Tạo đơn hàng thành công.");
+        }
+        public async Task<MethodResult<int>> GetTotalOrderAsync()
+        {
+            var total = await _orderRepo.TableNoTracking.CountAsync();
+            return MethodResult<int>.ResultWithData(total, $"Tổng số đơn hàng: {total}");
+        }
+
+
+        public async Task<MethodResult<List<OrderDto>>> GetPaidOrdersByUserAsync(Guid userId)
+        {
+            var orders = await _orderRepo.TableNoTracking
+                .Where(o => o.UserId == userId && o.PaymentStatus == PaymentStatus.Paid)
+                .Include(o => o.OrderItems) // load OrderItems
+                    .ThenInclude(oi => oi.Product) // load Product cho mỗi OrderItem
+                .OrderByDescending(o => o.Created)
+                .ToListAsync();
+
+            var orderDtos = orders.Select(o => new OrderDto
+            {
+                Id = o.Id,
+                UserId = o.UserId,
+                UserName = o.User?.Username ?? "", // nếu User có null
+                PaymentStatus = o.PaymentStatus,
+                Created = o.Created,
+                TotalAmount = o.TotalAmount,
+                AddressId = o.AddressId,
+                AddressDetail = o.Address?.AddressDetail,
+                OrderItems = (o.OrderItems ?? new List<OrderItem>())
+                    .Where(oi => oi.Product != null) // lọc các item có Product
+                    .Select(oi => new OrderItemDto
+                    {
+                        Id = oi.Id,
+                        ProductId = oi.ProductId,
+                        ProductName = oi.Product!.ProductName,
+                        ProductImage = oi.Product!.Thumbnail,
+                        Quantity = oi.Quantity,
+                        Price = oi.Price
+                    })
+                    .ToList()
+            }).ToList();
+
+            return MethodResult<List<OrderDto>>.ResultWithData(orderDtos, "Lấy danh sách đơn đã thanh toán thành công");
         }
 
 
@@ -195,6 +259,52 @@ namespace ProductAPI.Services
                 }).ToList()
             }).ToList();
         }
+        public async Task<MethodResult<List<OrderDto>>> GetOrdersBySellerAsync(Guid sellerId, GridInfo grid)
+        {
+            var query = _orderRepo.Table
+                .Include(o => o.Address) // ✅ join sang Address
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .Include(o=>o.User)
+                .Where(o => o.OrderItems.Any(oi => oi.Product.SellerId == sellerId));
+
+            // Tổng số bản ghi (trước phân trang)
+            var total = await query.CountAsync();
+
+            // Áp dụng sort + phân trang + mapping DTO
+            var data = await query
+                .OrderByDescending(o => o.Created) // sort theo ngày tạo
+                .Skip((grid.PageInfo.Page - 1) * grid.PageInfo.PageSize)
+                .Take(grid.PageInfo.PageSize)
+                .Select(o => new OrderDto
+                {
+                    Id = o.Id,
+                    UserId = o.UserId,
+                    UserName =o.User.Username,
+                    Created= o.Created,
+                    AddressId = o.AddressId,
+                    AddressDetail = o.Address != null ? o.Address.AddressDetail : null, // ✅ lấy từ Address
+                    TotalAmount = o.TotalAmount,
+                    PaymentStatus = o.PaymentStatus,
+                    PromotionCode = o.PromotionCode,
+                    PaymentMethod = o.PaymentMethod,
+                    TxnRef = o.TxnRef,
+                    OrderItems = o.OrderItems.Select(oi => new OrderItemDto
+                    {
+                        Id = oi.Id,
+                        ProductId = oi.ProductId,
+                        ProductName = oi.Product.ProductName,
+                        ProductImage = oi.Product.Thumbnail ?? "",
+                        Quantity = oi.Quantity,
+                        Price = oi.Price
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            return MethodResult<List<OrderDto>>.ResultWithData(data, "Lấy đơn hàng thành công", total);
+        }
+
+
 
         // Lấy chi tiết Order
         public async Task<OrderDto?> GetOrderDetailAsync(Guid orderId, Guid userId)

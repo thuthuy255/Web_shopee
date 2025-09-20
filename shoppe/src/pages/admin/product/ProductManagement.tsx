@@ -37,7 +37,7 @@ const columns: TableColumnsType<Product> = [
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'normal',
-                    maxWidth: 250,          // 👈 nên set chiều rộng cố định
+                    maxWidth: 200,          // 👈 nên set chiều rộng cố định
                 }}
             >
                 {text}
@@ -50,26 +50,28 @@ const columns: TableColumnsType<Product> = [
         dataIndex: 'categoryName',
         key: 'categoryName',
         align: 'center',
+        width: '10%'
     },
-    {
-        title: 'Mô tả',
-        dataIndex: 'description',
-        key: 'description',
-        ellipsis: true,
-        align: 'center',
-    },
+    // {
+    //     title: 'Mô tả',
+    //     dataIndex: 'description',
+    //     key: 'description',
+    //     ellipsis: true,
+    //     align: 'center',
+    // },
     {
         title: 'Giá',
         dataIndex: 'price',
         key: 'price',
         render: (price) => `${price.toLocaleString()} ₫`,
         align: 'center',
+        width: '9%'
     },
     {
         title: 'Tồn kho',
         dataIndex: 'stockQuantity',
         key: 'stockQuantity',
-        width: '7%',
+        width: '10%',
         align: 'center'
     },
     {
@@ -78,6 +80,7 @@ const columns: TableColumnsType<Product> = [
         key: 'isActive',
         render: (value) => (value ? 'Hoạt động' : 'Hết hàng'),
         align: 'center',
+        width: '15%',
     },
     {
         title: 'Trạng thái người bán',
@@ -97,7 +100,7 @@ const columns: TableColumnsType<Product> = [
         title: 'Ảnh',
         dataIndex: 'thumbnail',
         key: 'thumbnail',
-        width: '5%',
+        width: '10%',
         align: 'center',
         render: (src: string) =>
             src ? (
@@ -197,7 +200,7 @@ export default function ProductManagement() {
                     pageSize={pageSize}
                     currentPage={currentPage}
                     total={total}
-                    scrollY={window.innerHeight - 300}
+                    // scrollY={window.innerHeight - 300}
                     onPageChange={handlePageChange}
                     // onAdd={handleAdd}
                     // onView={handleView}

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ProductAPI.DTOs.Common;
 using ProductAPI.IServices;
+using ProductAPI.Services;
 
 namespace ProductAPI.Controllers
 {
@@ -20,31 +21,46 @@ namespace ProductAPI.Controllers
 
         
         [HttpPost("createPromotion")]
-        [Authorize(Roles = "Seller")]
+        [Authorize(Roles = Constant.Constants.ROLE_ADMIN)]
         public async Task<IActionResult> CreatePromotion([FromBody] PromotionDto dto)
         {
-            var sellerId = _userService.GetUserId();
-
-            if (!sellerId.HasValue)
+            var userId = _userService.GetUserId();
+            if (!userId.HasValue)
                 return Unauthorized("Bạn chưa đăng nhập.");
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var result = await _promotionService.CreateAsync(sellerId.Value, dto);
+            var result = await _promotionService.CreateAsync(userId.Value, dto);
             return Ok(result);
         }
 
-    
+        [HttpGet("getTotalPromotion")]
+        public async Task<IActionResult> getTotalPromotion()
+        {
+            var result = await _promotionService.GetTotalPromotionAsync();
+            if (result.Success)
+            {
+                return Ok(new
+                {
+                    success = true,
+                    message = result.Message,
+                    data = result.Data,
+                    totalRecord = result.TotalRecord,
+
+                });
+            }
+            return BadRequest(result);
+        }
         [HttpPut("updatePromotion")]
-        [Authorize(Roles = "Seller")]
+        [Authorize(Roles = Constant.Constants.ROLE_ADMIN)]
         public async Task<IActionResult> UpdatePromotion([FromBody] PromotionDto dto)
         {
-            var sellerId = _userService.GetUserId();
-            if (!sellerId.HasValue)
-                return Unauthorized("Bạn chưa đăng nhập.");
 
-            var result = await _promotionService.UpdateAsync(sellerId.Value, dto);
+            var userId = _userService.GetUserId();
+            if (!userId.HasValue)
+                return Unauthorized("Bạn chưa đăng nhập.");
+            var result = await _promotionService.UpdateAsync(userId.Value, dto);
             return Ok(result);
         }
 
@@ -57,7 +73,7 @@ namespace ProductAPI.Controllers
         }
 
 
-        [HttpPost("getPromotionOfSeller")]
+        [HttpPost("getPromotion")]
         public async Task<IActionResult> GetMyPromotions([FromBody] GridInfo grid)
         {
           
@@ -77,14 +93,14 @@ namespace ProductAPI.Controllers
         }
 
         [HttpDelete("delete/{id}")]
-        [Authorize(Roles = "Seller")]
+        [Authorize(Roles = Constant.Constants.ROLE_ADMIN)]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var sellerId = _userService.GetUserId();
-            if (!sellerId.HasValue)
+            var userId = _userService.GetUserId();
+            if (!userId.HasValue)
                 return Unauthorized("Bạn chưa đăng nhập.");
 
-            var result = await _promotionService.DeleteAsync(sellerId.Value, id);
+            var result = await _promotionService.DeleteAsync(userId.Value,id);
             return Ok(result);
         }
     }

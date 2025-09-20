@@ -45,3 +45,7 @@ export const getInfoShop = (id: string, body: any) => {
     const url = `/Product/GetInfoShop?sellerId=${id}`;
     return axiosClientNoAuth.post(url, body);
 }
+export const getProductsByCategory = async (categoryId: string, body: any) => {
+    const url = `Product/by-category/${categoryId}`
+    return axiosClientNoAuth.post(url, body);
+};

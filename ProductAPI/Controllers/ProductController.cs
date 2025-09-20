@@ -35,6 +35,23 @@ namespace ProductAPI.Controllers
             }
             return BadRequest(result);
         }
+        [HttpGet("getTotalProduct")]
+        public async Task<IActionResult> getTotalProduct()
+        {
+            var result = await _productServices.GetTotalProductAsync();
+            if (result.Success)
+            {
+                return Ok(new
+                {
+                    success = true,
+                    message = result.Message,
+                    data = result.Data,
+                    totalRecord = result.TotalRecord,
+
+                });
+            }
+            return BadRequest(result);
+        }
         [HttpPost("by-category/{categoryId}")]
         public async Task<IActionResult> GetProductsByCategory(Guid categoryId, [FromBody] GridInfo grid)
         {
@@ -91,7 +108,7 @@ namespace ProductAPI.Controllers
         }
 
         [HttpDelete("deleteProduct")]
-        [Authorize(Roles = "Seller")]
+        [Authorize(Roles = $"{Constant.Constants.ROLE_SELLER},{Constant.Constants.ROLE_ADMIN}")]
 
         public async Task<IActionResult> DeleteProduct([FromQuery] Guid productId)
         {

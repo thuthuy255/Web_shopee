@@ -72,7 +72,11 @@ namespace ProductAPI.Services
 
             return MethodResult<BannerDTO>.ResultWithData(dto, "Lấy banner thành công");
         }
-
+        public async Task<MethodResult<int>> GetTotalBannersAsync()
+        {
+            var total = await _bannerRepo.TableNoTracking.CountAsync();
+            return MethodResult<int>.ResultWithData(total, $"Tổng số banner: {total}");
+        }
         public async Task<MethodResult<BannerDTO>> CreateAsync(CreateBannerDTO dto, Guid adminId)
         {
             string? imageUrl = null;

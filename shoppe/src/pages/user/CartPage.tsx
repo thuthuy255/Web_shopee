@@ -66,27 +66,12 @@ function CartPage() {
     }, []);
 
     // --- Toggle item ---
-    const handleToggleItem = (
-        productId: string,
-        checked: boolean,
-        productVariantId: string | null,
-        quantity: number,
-        price: number,
-        productName: string,
-        thumbnail: string,
-    ) => {
+    const handleToggleItem = (item: any, checked: boolean) => {
         if (checked) {
-            setSelectedItems((prev) => [
-                ...prev,
-                { productId, productVariantId, quantity, price, productName, thumbnail },
-            ]);
+            setSelectedItems((prev) => [...prev, item]);
         } else {
             setSelectedItems((prev) =>
-                prev.filter(
-                    (item) =>
-                        item.productId !== productId ||
-                        (item.productVariantId ?? null) !== (productVariantId ?? null)
-                )
+                prev.filter((i) => i.id !== item.id)
             );
         }
     };
@@ -119,14 +104,7 @@ function CartPage() {
     // --- Toggle all ---
     const handleToggleAll = (checked: boolean) => {
         if (checked) {
-            const allItems = data.flatMap((seller) =>
-                seller.items.map((item) => ({
-                    productId: item.productId,
-                    productVariantId: item.productVariantId,
-                    quantity: item.quantity,
-                    price: item.price,
-                }))
-            );
+            const allItems = data.flatMap((seller) => seller.items);
             setSelectedItems(allItems);
         } else {
             setSelectedItems([]);
@@ -138,11 +116,7 @@ function CartPage() {
         selectedItems.length > 0 &&
         data.every((seller) =>
             seller.items.every((item) =>
-                selectedItems.some(
-                    (sel) =>
-                        sel.productId === item.productId &&
-                        (sel.productVariantId ?? null) === (item.productVariantId ?? null)
-                )
+                selectedItems.some((sel) => sel.id === item.id)
             )
         );
 
@@ -183,12 +157,14 @@ function CartPage() {
         return Math.max(0, total - (appliedVoucher.discount || 0));
     };
 
+    // --- Checkout ---
     const handleCheckout = () => {
         if (selectedItems.length === 0) {
             alert("Bạn chưa chọn sản phẩm nào!");
             return;
         }
-        navigate("/user/checkout", { state: { items: selectedItems } });
+        const cartItemIds = selectedItems.map((i) => i.id);
+        navigate("/user/checkout", { state: { items: selectedItems, cartItemIds } });
     };
 
     if (loading) {
@@ -248,22 +224,8 @@ function CartPage() {
                                 style={{ padding: "10px 0", borderBottom: "1px solid #f0f0f0" }}
                             >
                                 <Checkbox
-                                    checked={selectedItems.some(
-                                        (i) =>
-                                            i.productId === item.productId &&
-                                            (i.productVariantId ?? null) === (item.productVariantId ?? null)
-                                    )}
-                                    onChange={(e) =>
-                                        handleToggleItem(
-                                            item.productId,
-                                            e.target.checked,
-                                            item.productVariantId,
-                                            item.quantity,
-                                            item.price,
-                                            item.productName,
-                                            item.thumbnail
-                                        )
-                                    }
+                                    checked={selectedItems.some((i) => i.id === item.id)}
+                                    onChange={(e) => handleToggleItem(item, e.target.checked)}
                                 />
                                 <div style={{ width: 60, textAlign: "center" }}>
                                     <Image

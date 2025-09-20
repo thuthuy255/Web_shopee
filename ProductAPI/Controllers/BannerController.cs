@@ -36,7 +36,23 @@ namespace ProductAPI.Controllers
             }
             return BadRequest(result);
         }
+        [HttpGet("getTotalBanner")]
+        public async Task<IActionResult> getTotalBanner()
+        {
+            var result = await _bannerService.GetTotalBannersAsync();
+            if (result.Success)
+            {
+                return Ok(new
+                {
+                    success = true,
+                    message = result.Message,
+                    data = result.Data,
+                    totalRecord = result.TotalRecord,
 
+                });
+            }
+            return BadRequest(result);
+        }
         [HttpPost("createBanner")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromForm] CreateBannerDTO dto)

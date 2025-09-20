@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Modal, Typography, Spin, Tag, Image } from "antd";
-import { getPromotionsOfSeller } from "../../api/promotion/promotion.api";
+import { getPromotions } from "../../api/promotion/promotion.api";
 const { Text } = Typography;
 import logo_voucher from '../../assets/img/voucher.png';
 
@@ -33,7 +33,7 @@ const VoucherModal = ({ visible, onClose, onApply }: VoucherModalProps) => {
     const fetchVouchers = async () => {
         setLoading(true);
         try {
-            const res: any = await getPromotionsOfSeller({ pageInfo: { page: 1, pageSize: 50 } });
+            const res: any = await getPromotions({ pageInfo: { page: 1, pageSize: 50 } });
             setVouchers(res.data || []);
         } catch (err) {
             console.error("Lỗi load voucher:", err);

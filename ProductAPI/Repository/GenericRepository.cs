@@ -27,7 +27,6 @@ namespace ProductAPI.Repository
         {
             return await _dbSet.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
         }
-
         public async Task AddAsync(T entity)
         {
             entity.Id = Guid.NewGuid();
