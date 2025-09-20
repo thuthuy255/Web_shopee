@@ -111,6 +111,8 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IProductVariantService, ProductVariantService>();
 builder.Services.AddScoped<CloudinaryService>();
 builder.Services.AddScoped<IPaymentServices, PaymentServices>();
+builder.Services.AddScoped<IStatisticService, StatisticService>();
+
 
 // DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

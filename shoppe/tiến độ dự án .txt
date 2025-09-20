@@ -19,3 +19,7 @@
 
 
 - BE cần sửa đưa các error 
+
+
+- Thiếu đầu GetInfoUser sau khi login thành công 
+- Viết 1 đầu Api thống kê bao gồm tổng : sản phẩm, danh mục, người bán, khuyến mãi 
