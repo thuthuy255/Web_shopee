@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { memo, useCallback, useEffect, useState } from "react";
 import {
   Button,
   Form,
@@ -17,7 +17,7 @@ import { showError, showSuccess } from "../../untils/ShowToast";
 
 const { Title, Text } = Typography;
 
-const ProfileForm = () => {
+export const ProfileForm = () => {
   const [form] = Form.useForm();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -91,7 +91,6 @@ const ProfileForm = () => {
 
   useEffect(() => {
     handleGetInfoUser();
-    console.log("kìn chá nà");
   }, []);
 
   return (
@@ -120,10 +119,27 @@ const ProfileForm = () => {
               label="Tên đăng nhập"
               rules={[
                 { required: true, message: "Vui lòng nhập tên đăng nhập" },
+                {
+                  pattern: /^[a-zA-Z0-9]+$/,
+                  message: "Chỉ được nhập chữ, số, không dấu, không khoảng trắng",
+                },
               ]}
             >
-              <Input size="large" placeholder="Nhập tên đăng nhập" />
+              <Input
+                size="large"
+                placeholder="Nhập tên đăng nhập"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Loại bỏ khoảng trắng và ký tự có dấu
+                  const normalized = value
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .replace(/\s+/g, "")
+                  e.target.value = normalized;
+                }}
+              />
             </Form.Item>
+
 
             <Form.Item
               name="fullName"
@@ -199,4 +215,4 @@ const ProfileForm = () => {
   );
 };
 
-export default ProfileForm;
+export default memo(ProfileForm);

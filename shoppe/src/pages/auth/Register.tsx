@@ -19,10 +19,7 @@ const Register = () => {
             const payload = {
                 email: values.email,
                 password: values.password,
-                // username: values.username,
-                // fullName: values.fullName,
                 phone: values.phone,
-                // avatar: '', // mặc định nếu chưa cho upload avatar
             };
             const res: any = await RegisterUser(payload);
             if (res.success == true) {

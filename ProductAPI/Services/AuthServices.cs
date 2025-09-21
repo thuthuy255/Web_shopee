@@ -62,7 +62,7 @@ namespace ProductAPI.Services
         public async Task<IMethodResult<bool>> RegisterUserAsync(RegisterRequestDTO request)
         {
             var existingUser = await _userRepo.TableNoTracking
-                            .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Email);
+                            .FirstOrDefaultAsync(u => u.Email == request.Email || u.Phone == request.Phone);
 
             if (existingUser != null)
             {
@@ -96,7 +96,7 @@ namespace ProductAPI.Services
 
             await _userRepo.AddAsync(newUser);
             return MethodResult<bool>.ResultWithData(true, "Đăng ký người dùng thành công");
-        }
+         }
         public async Task<IMethodResult<bool>> RegisterByAdminAsync(RegisterRequestDTO request)
         {
             var currentRole = _userPrincipalService.GetRoleUser();

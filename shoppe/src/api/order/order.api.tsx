@@ -1,3 +1,4 @@
+import { get } from "lodash";
 import { axiosClient, axiosClientNoAuth } from "../../services/axiosConfig";
 
 export const createOrder = (body: any) => {
@@ -30,3 +31,7 @@ export const getVnPayReturn = () => {
     const url = `/Payment/VnpayReturn${window.location.search}`;
     return axiosClientNoAuth.get(url); // GET request với query string
 };
+export const getMyPaidOrders = () => {
+    const url = "/Order/my-paid-orders";
+    return axiosClient.get(url);
+}

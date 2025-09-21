@@ -22,6 +22,8 @@ import { ROLE } from "../../constants";
 import { useDispatch } from "react-redux";
 import { setAppState } from "../../features/slices/app.slice";
 import { getUserCartItems } from "../../api/cartitem/cartitem.api";
+import { getUserInfo } from "../../api/user.api";
+import { setUserState } from "../../features/slices/user.slice";
 
 const { Title } = Typography;
 
@@ -37,6 +39,7 @@ const Login = () => {
       if (res?.success) {
         const token = res.data?.token;
         localStorage.setItem("access_token", token);
+
         const decoded: any = jwtDecode(token);
         const role =
           decoded.role_id ||
@@ -48,7 +51,19 @@ const Login = () => {
             token,
           })
         );
+
+        // 👉 Gọi API lấy thông tin user ngay sau khi có token
+        try {
+          const userInfoRes: any = await getUserInfo(); // API bạn đã viết
+          if (userInfoRes?.success) {
+            disptach(setUserState(userInfoRes.data)); // set vào Redux hoặc state
+          }
+        } catch (userErr) {
+          console.error("Lấy thông tin người dùng thất bại", userErr);
+        }
+
         showSuccess("Đăng nhập thành công");
+
         // 👉 Điều hướng theo role
         switch (role) {
           case ROLE.ADMIN:
@@ -69,6 +84,7 @@ const Login = () => {
       setLoading(false);
     }
   };
+
 
 
   return (

@@ -1,6 +1,7 @@
+// pages/product/ProductDetailPage.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Spin, Alert, Button, Input, Flex, Image, message, Typography, Divider } from 'antd';
+import { Spin, Alert, Button, Input, Image, message, Typography, Divider } from 'antd';
 import { ShopFilled, ShoppingCartOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { getDetailProduct } from '../../api/product/product.api';
@@ -12,8 +13,6 @@ import { setCart } from '../../features/slices/cart.slice';
 import { showSuccess } from '../../untils/ShowToast';
 
 const { Title, Text, Paragraph } = Typography;
-
-
 
 const ProductDetailPage = () => {
     const { id } = useParams();
@@ -38,7 +37,9 @@ const ProductDetailPage = () => {
                 if (res?.data?.productVariants?.length) {
                     setSelectedVariantId(res.data.productVariants[0].id);
                 }
-            } else setError('Không tìm thấy sản phẩm');
+            } else {
+                setError('Không tìm thấy sản phẩm');
+            }
         } catch {
             setError('Lỗi khi tải dữ liệu sản phẩm');
         } finally {
@@ -52,7 +53,15 @@ const ProductDetailPage = () => {
 
     const selectedVariant = product?.productVariants?.find((v: any) => v.id === selectedVariantId);
 
+    // Số lượng
+    const handleChangeQuantity = (value: number) => {
+        const stockLimit = selectedVariant?.stockQuantity ?? product?.stockQuantity ?? 1;
+        setQuantity(Math.max(1, Math.min(value, stockLimit)));
+    };
+    const increaseQuantity = () => handleChangeQuantity(quantity + 1);
+    const decreaseQuantity = () => handleChangeQuantity(quantity - 1);
 
+    // Thêm vào giỏ hàng
     const handleAddToCart = async () => {
         if (!token) return navigate('/auth/login');
 
@@ -78,7 +87,7 @@ const ProductDetailPage = () => {
                 variantPrice: variant ? variant.price : product.price,
                 variantImage: variant ? variant.imageUrl : null,
                 stockQuantity: variant ? variant.stockQuantity : product.stockQuantity,
-
+                price: variant ? variant.price : product.price,
                 quantity,
             };
 
@@ -92,14 +101,43 @@ const ProductDetailPage = () => {
         }
     };
 
+    // Mua ngay (chuyển sang checkout)
+    const handleBuyNow = () => {
+        if (!token) {
+            navigate('/auth/login');
+            return;
+        }
 
-    // Số lượng
-    const handleChangeQuantity = (value: number) => {
-        const stockLimit = selectedVariant?.stockQuantity ?? product?.stockQuantity ?? 1;
-        setQuantity(Math.max(1, Math.min(value, stockLimit)));
+        const hasVariants = !!product?.productVariants?.length;
+        if ((hasVariants && !selectedVariantId) || quantity <= 0) {
+            message.warning('Vui lòng chọn phân loại và số lượng hợp lệ');
+            return;
+        }
+
+        const variant = hasVariants
+            ? product.productVariants.find((v: any) => v.id === selectedVariantId)
+            : null;
+
+        const selectedItem = {
+            id: product.id,
+            productId: product.id,
+            productName: product.productName,
+            sellerName: product.sellerName,
+            thumbnail: product.thumbnail,
+            // price: product.price,
+            categoryName: product.categoryName,
+            productVariantId: variant ? variant.id : null,
+            variantName: variant ? `${variant.color} - ${variant.size}` : null,
+            variantPrice: variant ? variant.price : product.price,
+            variantImage: variant ? variant.imageUrl : null,
+            stockQuantity: variant ? variant.stockQuantity : product.stockQuantity,
+            price: variant ? variant.price : product.price,
+            quantity,
+
+        };
+
+        navigate('/user/checkout', { state: { items: [selectedItem] } });
     };
-    const increaseQuantity = () => handleChangeQuantity(quantity + 1);
-    const decreaseQuantity = () => handleChangeQuantity(quantity - 1);
 
     if (loading) return <Spin tip="Đang tải sản phẩm..." />;
     if (error) return <Alert message={error} type="error" />;
@@ -114,66 +152,45 @@ const ProductDetailPage = () => {
                         alt={product.productName}
                         style={{ width: 400, height: 400, objectFit: 'cover', border: '1px solid #eee', borderRadius: 8 }}
                     />
-
                     <div style={{ flex: 1 }}>
                         <Title level={3} style={{ marginBottom: 8 }}>{product.productName}</Title>
 
                         <div style={{ fontSize: 26, fontWeight: 600, color: COLOR_DEFAULT, margin: '12px 0 20px' }}>
-                            {selectedVariant?.price.toLocaleString('vi-VN') || product?.price.toLocaleString('vi-VN')}đ
+                            {(selectedVariant?.price ?? product?.price)?.toLocaleString('vi-VN')}đ
                         </div>
 
                         {/* Phân loại */}
                         {product?.productVariants?.length > 0 && (
                             <div style={{ marginBottom: 24 }}>
-                                <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>
-                                    Phân loại hàng
-                                </div>
-
-                                <Flex wrap gap={12}>
-                                    <Flex style={{ marginTop: 10, fontWeight: 500 }}>{product?.productVariants[0]?.variantName} :</Flex>
-                                    {product?.productVariants?.map((v: any) => (
-                                        <div key={v.id} style={{ display: "flex", alignItems: "center", gap: '10px' }}>
-
-                                            {/* Block chọn variant */}
-                                            <Flex
-                                                align="center"
-                                                gap={5}
-                                                onClick={() => {
-                                                    setSelectedVariantId(v.id);
-                                                    setQuantity(1);
-                                                }}
-                                                style={{
-                                                    border:
-                                                        selectedVariantId === v.id
-                                                            ? `2px solid ${COLOR_DEFAULT}`
-                                                            : "1px solid #ccc",
-                                                    borderRadius: 4,
-                                                    padding: "8px 12px",
-                                                    cursor: "pointer",
-                                                    background: selectedVariantId === v.id ? "#fff2ee" : "#fff",
-                                                    fontSize: 14,
-                                                    minWidth: 120,
-                                                    justifyContent: "center",
-                                                }}
-                                            >
-                                                <Flex align="center" gap={8}>
-                                                    <Image
-                                                        style={{ width: 30, height: 30, objectFit: "cover" }}
-                                                        src={v.imageUrl}
-                                                    />
-                                                    {v.variantValue}
-                                                </Flex>
-                                            </Flex>
+                                <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>Phân loại hàng</div>
+                                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                    {product.productVariants.map((v: any) => (
+                                        <div
+                                            key={v.id}
+                                            onClick={() => {
+                                                setSelectedVariantId(v.id);
+                                                setQuantity(1);
+                                            }}
+                                            style={{
+                                                border: selectedVariantId === v.id ? `2px solid ${COLOR_DEFAULT}` : '1px solid #ccc',
+                                                borderRadius: 4,
+                                                padding: '8px 12px',
+                                                cursor: 'pointer',
+                                                background: selectedVariantId === v.id ? '#fff2ee' : '#fff',
+                                                fontSize: 14,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                            }}
+                                        >
+                                            <Image
+                                                style={{ width: 30, height: 30, objectFit: 'cover' }}
+                                                src={v.imageUrl}
+                                            />
+                                            {v.variantValue}
                                         </div>
                                     ))}
-                                </Flex>
-                            </div>
-                        )}
-
-
-                        {selectedVariant && (
-                            <div style={{ fontSize: 14, marginBottom: 16 }}>
-                                <strong>Tồn kho:</strong> {selectedVariant.stockQuantity}
+                                </div>
                             </div>
                         )}
 
@@ -181,24 +198,26 @@ const ProductDetailPage = () => {
                         <div style={{ marginBottom: 24 }}>
                             <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>Số lượng</div>
                             <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <Button onClick={decreaseQuantity} disabled={quantity <= 1} style={{ borderRadius: 0 }}>-</Button>
-                                <Input
-                                    value={quantity}
-                                    onChange={(e) => handleChangeQuantity(Number(e.target.value))}
-                                    style={{ width: 44, height: 32, borderRadius: 0, textAlign: 'center', color: COLOR_DEFAULT }}
-                                />
-                                <Button
-                                    onClick={increaseQuantity}
-                                    disabled={quantity >= (selectedVariant?.stockQuantity ?? product?.stockQuantity ?? 1)}
-                                    style={{ borderRadius: 0 }}
-                                >
-                                    +
-                                </Button>
+                                <Button.Group>
+                                    <Button onClick={decreaseQuantity} disabled={quantity <= 1} >-</Button>
+                                    <Input
+                                        value={quantity}
+                                        onChange={(e) => handleChangeQuantity(Number(e.target.value))}
+                                        style={{ width: 40, height: 32, textAlign: 'center' }}
+                                    />
+                                    <Button
+                                        onClick={increaseQuantity}
+                                        disabled={quantity >= (selectedVariant?.stockQuantity ?? product?.stockQuantity ?? 1)}
+                                    >
+                                        +
+                                    </Button>
+                                </Button.Group>
                             </div>
+
                         </div>
 
-                        {/* Nút */}
-                        <Flex gap={12}>
+                        {/* Nút Thêm vào giỏ & Mua ngay */}
+                        <div style={{ display: 'flex', gap: 12 }}>
                             <Button
                                 type="primary"
                                 icon={<ShoppingCartOutlined />}
@@ -213,7 +232,7 @@ const ProductDetailPage = () => {
                                 }}
                                 onClick={handleAddToCart}
                             >
-                                Thêm Vào Giỏ Hàng
+                                Thêm vào giỏ hàng
                             </Button>
 
                             <Button
@@ -227,18 +246,19 @@ const ProductDetailPage = () => {
                                     borderRadius: 0,
                                     padding: '18px 26px',
                                 }}
+                                onClick={handleBuyNow}
                             >
                                 Mua ngay
                             </Button>
-                        </Flex>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* ===== Thông tin shop ===== */}
             <div style={{ padding: 24, maxWidth: 1200, margin: '20px auto', background: '#fff', borderRadius: 6 }}>
-                <Flex align="center" justify="space-between">
-                    <Flex align="center" gap={20}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                         <Image
                             src={product?.thumbnail}
                             alt={product?.productName}
@@ -248,29 +268,19 @@ const ProductDetailPage = () => {
                             <Text style={{ fontSize: 18, fontWeight: 600 }}>{product?.productName}</Text>
                             <Text type="secondary">Người bán uy tín</Text>
                         </div>
-                    </Flex>
-
+                    </div>
                     <Button
                         type="default"
-                        onClick={() => navigate(`/user/shop/${product?.sellerId}`)} // 👉 điều hướng đến trang shop
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            fontSize: 15,
-                            fontWeight: 500,
-                            borderRadius: 8,
-                            padding: '6px 16px',
-                        }}
+                        onClick={() => navigate(`/user/shop/${product?.sellerId}`)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 500, borderRadius: 8, padding: '6px 16px' }}
                     >
                         <ShopFilled style={{ color: '#ff4d4f', fontSize: 16 }} />
                         <span>Xem shop</span>
                     </Button>
-
-                </Flex>
+                </div>
             </div>
 
-            {/* ===== CHI TIẾT SẢN PHẨM ===== */}
+            {/* ===== Chi tiết sản phẩm ===== */}
             <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto', background: '#fff', borderRadius: 6 }}>
                 <Title level={5} style={{ margin: 0, paddingBottom: 12 }}>CHI TIẾT SẢN PHẨM</Title>
                 <Divider style={{ margin: '12px 0' }} />
@@ -279,7 +289,6 @@ const ProductDetailPage = () => {
                 <InfoRowDetail label="Trạng thái" value={product.status?.toUpperCase()} />
                 <InfoRowDetail label="Phân loại" value={product.productVariants?.length ? `${product.productVariants.length} biến thể` : 'Không có'} />
                 <InfoRowDetail label="Giá niêm yết" value={`${(product.price)?.toLocaleString('vi-VN')}₫`} />
-
             </div>
 
             <div style={{ padding: 24, maxWidth: 1200, margin: '20px auto', background: '#fff', borderRadius: 6 }}>

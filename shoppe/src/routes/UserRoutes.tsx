@@ -9,6 +9,7 @@ import OrderDetail from "../pages/user/OrderDetailPage";
 import ProductsPage from "../pages/user/ProductsPage";
 import PaymentResultPage from "../pages/user/PaymentResultPage";
 import MyPaidOrders from "../pages/user/MyPaidOrders";
+import Profile from "../pages/admin/Profile";
 
 const UserRoutes = [
   {
@@ -54,6 +55,10 @@ const UserRoutes = [
       {
         path: "orderstatus",
         element: <MyPaidOrders />,
+      },
+      {
+        path: "profile",
+        element: <Profile />,
       }
 
     ],

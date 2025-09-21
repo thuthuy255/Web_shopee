@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import { Card, List, Steps, Button, message, Spin, Modal, Input, Rate } from "antd";
 import axios from "axios";
 import dayjs from "dayjs";
+import { getMyPaidOrders } from "../../api/order/order.api";
+import { formatCurrency } from "../../untils/FormatPrice";
 
 const { Step } = Steps;
 const { TextArea } = Input;
@@ -32,6 +34,7 @@ interface OrderDto {
     CompletedDate?: string;
 }
 
+
 const MyPaidOrders = () => {
     const [orders, setOrders] = useState<OrderDto[]>([]);
     const [loading, setLoading] = useState(false);
@@ -50,8 +53,8 @@ const MyPaidOrders = () => {
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            const res = await axios.get("/api/Order/my-paid-orders");
-            setOrders(res.data);
+            const res = await getMyPaidOrders();
+            setOrders(res?.data);
         } catch (err: any) {
             message.error(err.response?.data || "Lấy đơn hàng thất bại");
         } finally {
@@ -59,13 +62,6 @@ const MyPaidOrders = () => {
         }
     };
 
-    const getCurrentStep = (order: OrderDto) => {
-        if (order.CompletedDate) return 4;
-        if (order.ReceivedDate) return 3;
-        if (order.ShippedDate) return 2;
-        if (order.PaymentDate) return 1;
-        return 0;
-    };
 
     const formatDate = (date?: string) => (date ? dayjs(date).format("DD/MM/YYYY HH:mm") : "-");
 
@@ -77,65 +73,51 @@ const MyPaidOrders = () => {
         setIsModalVisible(true);
     };
 
-    // Gửi đánh giá
-    const submitReview = async () => {
-        if (!currentOrderId) return;
-
-        setSubmitLoading(true);
-        try {
-            await axios.post("/api/Review", {
-                orderId: currentOrderId,
-                rating,
-                comment: reviewText
-            });
-            message.success("Đánh giá sản phẩm thành công");
-            setIsModalVisible(false);
-        } catch (err: any) {
-            message.error(err.response?.data || "Đánh giá thất bại");
-        } finally {
-            setSubmitLoading(false);
-        }
-    };
 
     return (
         <Spin spinning={loading}>
             <List
                 grid={{ gutter: 16, column: 1 }}
                 dataSource={orders}
-                renderItem={(order) => (
-                    <List.Item key={order.Id}>
+                renderItem={(order: any) => (
+                    <List.Item key={order?.id}>
                         <Card
-                            title={`Mã đơn: ${order.Id}`}
-                            extra={`Tổng: ${order.TotalAmount.toLocaleString()} VNĐ`}
+                            title={`Mã đơn: ${order?.id}`}
+                            extra={`Tổng: ${formatCurrency(order?.totalAmount)} VNĐ`}
                         >
                             {/* Timeline trạng thái */}
-                            <Steps current={getCurrentStep(order)} size="small">
-                                <Step title="Đơn Hàng Đã Đặt" description={formatDate(order.Created)} />
-                                <Step title="Đã Thanh Toán" description={formatDate(order.PaymentDate)} />
-                                <Step title="Đã Giao Cho ĐVVC" description={formatDate(order.ShippedDate)} />
-                                <Step title="Đã Nhận Hàng" description={formatDate(order.ReceivedDate)} />
-                                <Step title="Hoàn Thành" description={formatDate(order.CompletedDate)} />
+                            <Steps current={1} size="small">
+                                <Step title="Đơn Hàng Đã Đặt" description={formatDate(order?.Created)} />
+                                <Step title="Đã Thanh Toán" description={formatDate(order?.PaymentDate)} />
+                                <Step title="Đã Nhận Hàng" description={formatDate(order?.ReceivedDate)} />
+                                <Step title="Hoàn Thành" description={formatDate(order?.CompletedDate)} />
                             </Steps>
 
                             {/* Danh sách sản phẩm */}
                             <List
                                 style={{ marginTop: 16 }}
-                                dataSource={order.OrderItems}
-                                renderItem={(item) => (
-                                    <List.Item key={item.Id}>
+                                dataSource={order?.orderItems || []} // chú ý: orderItems, không phải OrderItems
+                                renderItem={(item: any) => (
+                                    <List.Item key={item.id}>
                                         <List.Item.Meta
-                                            avatar={item.ProductImage && (
-                                                <img src={item.ProductImage} alt={item.ProductName} width={50} />
-                                            )}
-                                            title={item.ProductName}
-                                            description={`Số lượng: ${item.Quantity} | Giá: ${item.Price.toLocaleString()} VNĐ`}
+                                            avatar={
+                                                item.productImage ? (
+                                                    <img src={item.productImage} alt={item.productName} width={50} />
+                                                ) : null
+                                            }
+                                            title={item.productName}
+                                            description={`Số lượng: ${item.quantity} | Giá: ${item.price != null
+                                                ? new Intl.NumberFormat("vi-VN").format(item.price) + " VNĐ"
+                                                : "0 VNĐ"
+                                                }`}
                                         />
                                     </List.Item>
                                 )}
                             />
 
+
                             {/* Nút đánh giá nếu đơn đã hoàn thành */}
-                            {order.CompletedDate && (
+                            {order?.CompletedDate && (
                                 <Button
                                     type="primary"
                                     style={{ marginTop: 16 }}
@@ -153,7 +135,7 @@ const MyPaidOrders = () => {
             <Modal
                 title="Đánh giá sản phẩm"
                 visible={isModalVisible}
-                onOk={submitReview}
+                // onOk={submitReview}
                 onCancel={() => setIsModalVisible(false)}
                 confirmLoading={submitLoading}
                 okText="Gửi đánh giá"
