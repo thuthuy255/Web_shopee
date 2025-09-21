@@ -15,94 +15,25 @@ namespace ProductAPI.Controllers
             _statisticService = statisticService;
         }
 
-        // GET: api/Statistic/getTotalProduct
-        [HttpGet("getTotalProduct")]
-        public async Task<IActionResult> GetTotalProduct()
+        [HttpGet("getStatisticAdminAsync")]
+        public async Task<IActionResult> GetStatisticAdminAsync()
         {
-            var result = await _statisticService.GetTotalProductAsync();
-            if (result.Success)
-            {
-                return Ok(new
-                {
-                    success = true,
-                    message = result.Message,
-                    data = result.Data,
-                    totalRecord = result.TotalRecord
-                });
-            }
-            return BadRequest(new { success = false, message = result.Message });
+            var result = await _statisticService.GetStatisticAdminAsync();
+            return Ok(result);
         }
 
-        // GET: api/Statistic/getTotalOrder
-        [HttpGet("getTotalOrder")]
-        public async Task<IActionResult> GetTotalOrder()
+        [HttpGet("getAnnualRevenueStatistics")]
+        public async Task<IActionResult> GetAnnualRevenueStatistics(int year)
         {
-            var result = await _statisticService.GetTotalOrderAsync();
-            if (result.Success)
-            {
-                return Ok(new
-                {
-                    success = true,
-                    message = result.Message,
-                    data = result.Data,
-                    totalRecord = result.TotalRecord
-                });
-            }
-            return BadRequest(new { success = false, message = result.Message });
+            var result = await _statisticService.GetAnnualRevenueStatistics(year);
+            return Ok(result);
         }
 
-        // GET: api/Statistic/getTotalUser
-        [HttpGet("getTotalUser")]
-        public async Task<IActionResult> GetTotalUser()
-        {
-            var result = await _statisticService.GetTotalUserAsync();
-            if (result.Success)
-            {
-                return Ok(new
-                {
-                    success = true,
-                    message = result.Message,
-                    data = result.Data,
-                    totalRecord = result.TotalRecord
-                });
-            }
-            return BadRequest(new { success = false, message = result.Message });
-        }
-
-        // GET: api/Statistic/getTotalRevenue
-        [HttpGet("getTotalRevenue")]
-        public async Task<IActionResult> GetTotalRevenue()
-        {
-            var result = await _statisticService.GetTotalRevenueAsync();
-            if (result.Success)
-            {
-                return Ok(new
-                {
-                    success = true,
-                    message = result.Message,
-                    data = result.Data,
-                    totalRecord = result.TotalRecord
-                });
-            }
-            return BadRequest(new { success = false, message = result.Message });
-        }
-
-        // GET: api/Statistic/getProductPercentageByCategory
-        [HttpGet("getProductPercentageByCategory")]
-        public async Task<IActionResult> GetProductPercentageByCategory()
+        [HttpGet("getProductPercentageByCategoryAsync")]
+        public async Task<IActionResult> GetProductPercentageByCategoryAsync()
         {
             var result = await _statisticService.GetProductPercentageByCategoryAsync();
-            if (result.Success)
-            {
-                return Ok(new
-                {
-                    success = true,
-                    message = result.Message,
-                    data = result.Data,
-                    totalRecord = result.Data?.Count ?? 0
-                });
-            }
-            return BadRequest(new { success = false, message = result.Message });
+            return Ok(result);
         }
     }
 }

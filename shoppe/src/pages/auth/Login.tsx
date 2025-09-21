@@ -16,19 +16,20 @@ import logo from "../../assets/img/logo.png";
 import backgroundImg from "../../assets/img/background.jpg";
 import { LoginAPI } from "../../api/auth.api";
 import { DEFAULT_TEXT, DEFAULT_TEXT_DARK } from "../../constants/Color";
-import { showError, showSuccess } from "../../untils/ShowToast";
+import { showError, showSuccess, showWarning } from "../../untils/ShowToast";
 import { jwtDecode } from "jwt-decode";
 import { ROLE } from "../../constants";
 import { useDispatch } from "react-redux";
 import { setAppState } from "../../features/slices/app.slice";
-import { getUserCartItems } from "../../api/cartitem/cartitem.api";
+import { getUserInfo } from "../../api/user.api";
+import { setUserState } from "../../features/slices/user.slice";
 
 const { Title } = Typography;
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const disptach = useDispatch();
+  const dispatch = useDispatch();
 
   const handleLogin = async (value: any) => {
     setLoading(true);
@@ -40,14 +41,17 @@ const Login = () => {
         const decoded: any = jwtDecode(token);
         const role =
           decoded.role_id ||
-          decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+          decoded[
+            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+          ];
 
-        disptach(
+        dispatch(
           setAppState({
             role_id: role,
             token,
           })
         );
+        await fetchUserInfo();
         showSuccess("Đăng nhập thành công");
         // 👉 Điều hướng theo role
         switch (role) {
@@ -70,6 +74,18 @@ const Login = () => {
     }
   };
 
+  const fetchUserInfo = async () => {
+    try {
+      const res: any = await getUserInfo();
+      if (res?.success) {
+        dispatch(setUserState(res?.data));
+      } else {
+        showWarning(res?.message || "Đăng nhập thất bại");
+      }
+    } catch {
+      showError("Lấy thông tin người dùng thất bại");
+    }
+  };
 
   return (
     <Row style={{ height: "100vh" }}>
