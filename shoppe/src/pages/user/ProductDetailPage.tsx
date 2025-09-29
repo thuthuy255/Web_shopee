@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Spin, Alert, Button, Input, Image, message, Typography, Divider } from 'antd';
-import { ShopFilled, ShoppingCartOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ShopFilled, ShoppingCartOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { getDetailProduct } from '../../api/product/product.api';
 import { createCartItem } from '../../api/cartitem/cartitem.api';
@@ -145,7 +145,23 @@ const ProductDetailPage = () => {
     return (
         <div>
             {/* ===== Thông tin sản phẩm ===== */}
-            <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto', background: '#fff', borderRadius: 6 }}>
+            <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto', background: '#fff', borderRadius: 6, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+                    <Button
+                        type="text"
+                        icon={<ArrowLeftOutlined />}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            color: "#555",
+                            fontWeight: 500,
+                        }}
+                        onClick={() => navigate(-1)}
+                    >
+                        Quay lại
+                    </Button>
+                </div>
                 <div style={{ display: 'flex', gap: 32 }}>
                     <img
                         src={selectedVariant?.imageUrl || product.thumbnail}

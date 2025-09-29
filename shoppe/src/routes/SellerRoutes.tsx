@@ -25,11 +25,11 @@ const SellerRoutes = [
       </ProtectedRoute>
     ),
     children: [
-      { index: true, element: <Navigate to="dashboard" replace /> },
-      {
-        path: "dashboard",
-        element: <DashboardAdmin />,
-      },
+      { index: true, element: <Navigate to="category" replace /> },
+      // {
+      //   path: "dashboard",
+      //   element: <DashboardAdmin />,
+      // },
       {
         path: "products",
         element: <ProductManagement />,

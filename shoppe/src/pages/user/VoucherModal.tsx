@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Modal, Typography, Spin, Tag, Image } from "antd";
+import { Modal, Typography, Spin, Tag, Image, Flex } from "antd";
 import { getPromotions } from "../../api/promotion/promotion.api";
 const { Text } = Typography;
 import logo_voucher from '../../assets/img/voucher.png';
@@ -106,18 +106,21 @@ const VoucherModal = ({ visible, onClose, onApply }: VoucherModalProps) => {
                                             ? `Giảm ${item.discountAmount.toLocaleString()}đ`
                                             : ""}
                                 </Text>
-                                <Text type="secondary" style={{ fontSize: 13 }}>
-                                    Đơn tối thiểu {item.minOrderValue?.toLocaleString()}đ
-                                </Text>
+                                <Flex align="center" justify="space-between">
 
-                                {item.description && (
-                                    <Tag
-                                        color="red"
-                                        style={{ marginTop: 6, display: "inline-block" }}
-                                    >
-                                        {item.description}
-                                    </Tag>
-                                )}
+                                    <Text type="secondary" style={{ fontSize: 13 }}>
+                                        Đơn tối thiểu {item.minOrderValue?.toLocaleString()}đ
+                                    </Text>
+
+                                    {item.description && (
+                                        <Tag
+                                            color="red"
+                                            style={{ marginTop: 6, display: "inline-block" }}
+                                        >
+                                            {item.description}
+                                        </Tag>
+                                    )}
+                                </Flex>
 
                                 <div style={{ marginTop: 6, fontSize: 12 }}>
                                     <Text type="secondary">HSD: {item.endDate}</Text>{" "}
