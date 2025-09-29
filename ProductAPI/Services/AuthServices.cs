@@ -163,17 +163,32 @@ namespace ProductAPI.Services
         }
         public async Task<IMethodResult<bool>> ResetPasswordAsync(string email, string newPassword)
         {
-            var user = await _userRepo.TableNoTracking.FirstOrDefaultAsync(u => u.Email == email);
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(newPassword))
+            {
+                return MethodResult<bool>.ResultWithError("Email hoặc mật khẩu không được để trống.");
+            }
+
+            var user = await _userRepo.TableNoTracking
+                .Where(u => u.Email == email)
+                .FirstOrDefaultAsync();
+
             if (user == null)
+            {
                 return MethodResult<bool>.ResultWithError("Email không tồn tại.");
+            }
 
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            user.Modified = DateTime.UtcNow;
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            user.PasswordHash = passwordHash;
 
-            await _userRepo.UpdateAsync(user); // ✅ Đừng quên await
+            // Đánh dấu property cần update (nếu bạn đang dùng pattern MarkDirty)
+            user.MarkDirty(nameof(user.PasswordHash));
+
+            // Update DB
+            await _userRepo.UpdateAsync(user);
 
             return MethodResult<bool>.ResultWithData(true, "Đặt lại mật khẩu thành công.");
         }
+
 
         public async Task<IMethodResult<bool>> ToggleUserLockAsync(Guid userId)
         {

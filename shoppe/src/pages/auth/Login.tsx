@@ -98,7 +98,7 @@ const Login = () => {
           justifyContent: "center",
         }}
       >
-        <div style={{ width: "100%", maxWidth: 400, padding: 24 }}>
+        <div style={{ width: "100%", maxWidth: 400, paddingTop: 24 }}>
           <div style={{ textAlign: "center", marginBottom: 24 }}>
             <Image src={logo} alt="logo" preview={false} width={120} />
           </div>
@@ -122,6 +122,7 @@ const Login = () => {
             >
               <Input.Password placeholder="Nhập mật khẩu" size="large" />
             </Form.Item>
+
             <Form.Item style={{ textAlign: "center" }}>
               <Button
                 type="primary"
@@ -135,7 +136,7 @@ const Login = () => {
             </Form.Item>
           </Form>
 
-          <Flex justify="center" style={{ textAlign: "center", marginTop: 16 }}>
+          <Flex justify="space-between" style={{ textAlign: "center", marginTop: 16 }}>
             <span
               style={{
                 fontStyle: "italic",
@@ -148,6 +149,14 @@ const Login = () => {
                 Đăng ký
               </Link>
             </span>
+
+            <Link to="/auth/sendOTP" style={{
+              fontStyle: "bold",
+              textAlign: "center",
+              color: DEFAULT_TEXT_DARK,
+            }}>
+              Quên mật khẩu
+            </Link>
           </Flex>
 
           <div style={{ textAlign: "center", margin: "16px 0", color: "#999" }}>

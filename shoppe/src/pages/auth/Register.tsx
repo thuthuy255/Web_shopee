@@ -1,12 +1,13 @@
 import React from 'react';
-import { Row, Col, Form, Input, Button, Typography, Image, Space } from 'antd';
+import { Row, Col, Form, Input, Button, Typography, Image, Space, Flex } from 'antd';
 import { GoogleOutlined, FacebookFilled } from '@ant-design/icons';
 import logo from '../../assets/img/logo.png';
 import backgroundImg from '../../assets/img/background.jpg';
 import { RegisterUser } from '../../api/auth.api';
 import { showError, showSuccess } from '../../untils/ShowToast';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { message } from 'antd';
+import { DEFAULT_TEXT_DARK } from '../../constants/Color';
 
 const { Title } = Typography;
 
@@ -118,7 +119,20 @@ const Register = () => {
                             </Button>
                         </Form.Item>
                     </Form>
-
+                    <Flex justify="center" style={{ textAlign: "center", marginTop: 16 }}>
+                        <span
+                            style={{
+                                fontStyle: "italic",
+                                textAlign: "center",
+                                color: DEFAULT_TEXT_DARK,
+                            }}
+                        >
+                            Bạn đã có tài khoản?{" "}
+                            <Link to="/auth/login" style={{ fontWeight: "bold" }}>
+                                Đăng nhập
+                            </Link>
+                        </span>
+                    </Flex>
                     <div style={{ textAlign: 'center', margin: '16px 0', color: '#999' }}>
                         Hoặc đăng nhập bằng tài khoản
                     </div>

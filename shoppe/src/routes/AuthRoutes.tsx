@@ -1,6 +1,9 @@
 // AuthRoutes.ts
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
+import ResetPasswordForm from "../pages/auth/ResetPassword";
+import SendOTP from "../pages/auth/SendOTP";
+import VerifyOTP from "../pages/auth/VerifyOTP";
 
 export const AuthMainRoutes = [
   {
@@ -8,6 +11,10 @@ export const AuthMainRoutes = [
     children: [
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
+      { path: "sendOTP", element: <SendOTP /> },
+      { path: "verifyOTP", element: <VerifyOTP /> },
+      { path: "reset-password", element: <ResetPasswordForm /> },
+
     ],
   },
   // {
