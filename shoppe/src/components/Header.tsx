@@ -2,7 +2,7 @@ import { Flex, Image, Dropdown, Menu, Badge, Button } from 'antd';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { BiBell, BiCart } from 'react-icons/bi';
 import { BsQuestionCircle } from 'react-icons/bs';
-import logo from '../assets/img/logoshopee.png';
+import logo from '../assets/img/logo_home.png';
 import ShopeeSearch from './ShopeeSearch';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -59,7 +59,7 @@ function Header() {
     return (
         <div style={{ backgroundColor: COLOR_DEFAULT }}>
             {/* Thanh trên */}
-            <Flex justify="space-between" style={{ padding: '10px 20px' }}>
+            <Flex justify="space-between" style={{ padding: '0 20px', paddingTop: 10 }}>
                 <Flex gap={15}>
                     <a style={{ color: 'white' }}>Kênh người bán</a>
                     <a style={{ color: 'white' }}>Trở thành người bán hàng</a>
@@ -97,17 +97,13 @@ function Header() {
             </Flex>
 
             {/* Thanh giữa */}
-            <Flex align="center" justify="space-between" style={{ padding: '10px 40px' }}>
+            <Flex align="center" justify="space-between" style={{ padding: '3px 40px' }}>
                 <Image
                     src={logo}
                     style={{ width: 150, cursor: "pointer", display: "block" }}
                     preview={false}
                     onClick={handleBackToHome}
                 />
-
-
-
-
                 <ShopeeSearch />
 
                 {/* Cart dropdown */}

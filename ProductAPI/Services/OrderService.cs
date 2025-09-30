@@ -33,65 +33,95 @@ namespace ProductAPI.Services
 
         public async Task<MethodResult<OrderDto>> CreateOrderAsync(Guid userId, OrderCreateDto body)
         {
-            var cartItems = await _cartRepo.Table
-                .Include(c => c.Product)
-                .Where(c => c.UserId == userId && body.CartItemIds.Contains(c.Id))
-                .ToListAsync();
-
-            if (!cartItems.Any())
-                return MethodResult<OrderDto>.ResultWithError("Bạn chưa chọn sản phẩm nào.");
-
             var orderItems = new List<OrderItem>();
             var orderItemsDto = new List<OrderItemDto>();
             decimal totalAmount = 0m;
 
-            foreach (var cart in cartItems)
+            // 🟢 Case 1: Checkout từ giỏ hàng
+            if (body.CartItemIds != null && body.CartItemIds.Any())
             {
-                if (cart.Product.StockQuantity < cart.Quantity)
-                    return MethodResult<OrderDto>.ResultWithError(
-                        $"Sản phẩm '{cart.Product.ProductName}' không đủ hàng.");
+                var cartItems = await _cartRepo.Table
+                    .Include(c => c.Product)
+                    .Where(c => c.UserId == userId && body.CartItemIds.Contains(c.Id))
+                    .ToListAsync();
 
-                totalAmount += cart.Quantity * cart.Product.Price;
+                if (!cartItems.Any())
+                    return MethodResult<OrderDto>.ResultWithError("Bạn chưa chọn sản phẩm nào.");
 
-                var item = new OrderItem
+                foreach (var cart in cartItems)
                 {
-                    Id = Guid.NewGuid(),
-                    ProductId = cart.ProductId,
-                    Quantity = cart.Quantity,
-                    Price = cart.Product.Price
-                };
-                orderItems.Add(item);
+                    if (cart.Product.StockQuantity < cart.Quantity)
+                        return MethodResult<OrderDto>.ResultWithError(
+                            $"Sản phẩm '{cart.Product.ProductName}' không đủ hàng.");
 
-                orderItemsDto.Add(new OrderItemDto
+                    totalAmount += cart.Quantity * cart.Product.Price;
+
+                    var item = new OrderItem
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = cart.ProductId,
+                        Quantity = cart.Quantity,
+                        Price = cart.Product.Price
+                    };
+                    orderItems.Add(item);
+
+                    orderItemsDto.Add(new OrderItemDto
+                    {
+                        Id = item.Id,
+                        ProductId = cart.ProductId,
+                        ProductName = cart.Product.ProductName,
+                        ProductImage = cart.Product.Thumbnail ?? "",
+                        Quantity = cart.Quantity,
+                        Price = cart.Product.Price
+                    });
+
+                    cart.Product.StockQuantity -= cart.Quantity;
+                }
+
+                await _cartRepo.DeleteRangeAsync(cartItems); // xoá khỏi giỏ sau khi tạo đơn
+            }
+            // 🟢 Case 2: Mua ngay (Buy Now)
+            else if (body.Items != null && body.Items.Any())
+            {
+                foreach (var input in body.Items)
                 {
-                    Id = item.Id,
-                    ProductId = cart.ProductId,
-                    ProductName = cart.Product.ProductName,
-                    ProductImage = cart.Product.Thumbnail ?? "",
-                    Quantity = cart.Quantity,
-                    Price = cart.Product.Price
-                });
+                    var product = await _productRepo.GetByIdAsync(input.ProductId);
+                    if (product == null)
+                        return MethodResult<OrderDto>.ResultWithError("Sản phẩm không tồn tại.");
+                    if (product.StockQuantity < input.Quantity)
+                        return MethodResult<OrderDto>.ResultWithError(
+                            $"Sản phẩm '{product.ProductName}' không đủ hàng.");
 
-                cart.Product.StockQuantity -= cart.Quantity;
+                    totalAmount += input.Quantity * product.Price;
+
+                    var item = new OrderItem
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = product.Id,
+                        Quantity = input.Quantity,
+                        Price = product.Price
+                    };
+                    orderItems.Add(item);
+
+                    orderItemsDto.Add(new OrderItemDto
+                    {
+                        Id = item.Id,
+                        ProductId = product.Id,
+                        ProductName = product.ProductName,
+                        ProductImage = product.Thumbnail ?? "",
+                        Quantity = input.Quantity,
+                        Price = product.Price
+                    });
+
+                    product.StockQuantity -= input.Quantity;
+                }
+            }
+            else
+            {
+                return MethodResult<OrderDto>.ResultWithError("Bạn chưa chọn sản phẩm nào.");
             }
 
-            //// 🟢 Áp dụng khuyến mãi (nếu có)
-            //if (!string.IsNullOrEmpty(body.PromotionCode))
-            //{
-            //    var promotion = await _promoRepo.Table
-            //        .FirstOrDefaultAsync(p => p.Code == body.PromotionCode);
-
-            //    if (promotion != null)
-            //    {
-            //        if (promotion.DiscountAmount > 0)
-            //            totalAmount -= promotion.DiscountAmount;
-            //        else if (promotion.DiscountPercent > 0)
-            //            totalAmount -= (totalAmount * promotion.DiscountPercent) / 100;
-
-            //        if (totalAmount < 0) totalAmount = 0;
-            //    }
-            //}
-
+            // 🟢 Tính mã đơn hàng
             var random = new Random();
             var txnRef = DateTime.Now.ToString("yyyyMMddHHmmss") + random.Next(1000, 9999);
 
@@ -103,14 +133,13 @@ namespace ProductAPI.Services
                 PromotionCode = body.PromotionCode,
                 PaymentMethod = body.PaymentMethod,
                 PaymentStatus = PaymentStatus.Pending,
-                TotalAmount = totalAmount,   // ✅ chỉ BE tính
+                TotalAmount = totalAmount,
                 TxnRef = txnRef,
                 OrderItems = orderItems,
                 Created = DateTime.UtcNow
             };
 
             await _orderRepo.AddAsync(order);
-            await _cartRepo.DeleteRangeAsync(cartItems);
 
             return MethodResult<OrderDto>.ResultWithData(new OrderDto
             {
@@ -125,6 +154,7 @@ namespace ProductAPI.Services
                 TxnRef = order.TxnRef
             }, "Tạo đơn hàng thành công.");
         }
+
         public async Task<MethodResult<int>> GetTotalOrderAsync()
         {
             var total = await _orderRepo.TableNoTracking.CountAsync();

@@ -239,7 +239,7 @@ const ProductDetailPage = () => {
                                 icon={<ShoppingCartOutlined />}
                                 size="large"
                                 style={{
-                                    backgroundColor: '#FFF5F1',
+                                    backgroundColor: '#fff',
                                     border: `1px solid ${COLOR_DEFAULT}`,
                                     color: COLOR_DEFAULT,
                                     fontWeight: 500,
