@@ -107,7 +107,7 @@ namespace ProductAPI.Services
 
 
             var existingUser = await _userRepo.TableNoTracking
-                .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Email);
+                .FirstOrDefaultAsync(u => u.Email == request.Email);
             if (existingUser != null)
             {
                 return MethodResult<bool>.ResultWithError(Constants.MESS_AlreadyExists);
