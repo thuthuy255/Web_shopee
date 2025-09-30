@@ -10,7 +10,7 @@ import {
     message,
 } from "antd";
 import { Link, useNavigate } from "react-router-dom";
-import logo from "../../assets/img/logo.png";
+import logo from "../../assets/img/logo_home.png";
 import backgroundImg from "../../assets/img/background.jpg";
 import { SendOtp } from "../../api/auth.api"; // gọi API quên mật khẩu
 import { DEFAULT_TEXT_DARK } from "../../constants/Color";

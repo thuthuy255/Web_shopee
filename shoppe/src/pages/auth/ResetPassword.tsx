@@ -10,7 +10,7 @@ import {
     message,
 } from "antd";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import logo from "../../assets/img/logo.png";
+import logo from "../../assets/img/logo_home.png";
 import backgroundImg from "../../assets/img/background.jpg";
 import { ResetPassword } from "../../api/auth.api";
 import { DEFAULT_TEXT_DARK } from "../../constants/Color";

@@ -12,7 +12,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { MenuProps } from "antd";
 import { getMenuByRole } from "./MenuIttem";
 import { getRoleIdState, resetLogin } from "../features/slices/app.slice";
-import logo from "../assets/img/logo.png";
+import logo from "../assets/img/logo_home.png";
 import person from "../assets/img/person.png";
 import { InfoUserState, resetUserState } from "../features/slices/user.slice";
 

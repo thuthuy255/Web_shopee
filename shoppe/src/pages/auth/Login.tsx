@@ -12,7 +12,7 @@ import {
 } from "antd";
 import { GoogleOutlined, FacebookFilled } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
-import logo from "../../assets/img/logo.png";
+import logo from "../../assets/img/logo_home.png";
 import backgroundImg from "../../assets/img/background.jpg";
 import { LoginAPI } from "../../api/auth.api";
 import { DEFAULT_TEXT, DEFAULT_TEXT_DARK } from "../../constants/Color";

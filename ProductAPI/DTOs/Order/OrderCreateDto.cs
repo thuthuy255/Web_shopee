@@ -6,6 +6,7 @@
         public string? PromotionCode { get; set; }
         public string? PaymentMethod { get; set; }
         public List<Guid> CartItemIds { get; set; } = new();
+        public List<OrderItemInputDto> Items { get; set; }
     }
 
 }

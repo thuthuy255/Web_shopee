@@ -1,7 +1,7 @@
 import React from 'react';
 import { Row, Col, Form, Input, Button, Typography, Image, Space, Flex } from 'antd';
 import { GoogleOutlined, FacebookFilled } from '@ant-design/icons';
-import logo from '../../assets/img/logo.png';
+import logo from '../../assets/img/logo_home.png';
 import backgroundImg from '../../assets/img/background.jpg';
 import { RegisterUser } from '../../api/auth.api';
 import { showError, showSuccess } from '../../untils/ShowToast';
