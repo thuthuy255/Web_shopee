@@ -10,6 +10,7 @@ import ProductsPage from "../pages/user/ProductsPage";
 import PaymentResultPage from "../pages/user/PaymentResultPage";
 import MyPaidOrders from "../pages/user/MyPaidOrders";
 import Profile from "../pages/admin/Profile";
+import PaymentResult from "../pages/user/PaymentResultPage";
 
 const UserRoutes = [
   {
@@ -49,8 +50,8 @@ const UserRoutes = [
         element: <OrderDetail />,
       },
       {
-        path: "payment-result",
-        element: <PaymentResultPage />,
+        path: "payment/result",
+        element: <PaymentResult />,
       },
       {
         path: "orderstatus",

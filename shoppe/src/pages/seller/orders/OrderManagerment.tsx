@@ -26,13 +26,13 @@ const columns: TableColumnsType<Order> = [
         width: "15%",
         align: "center",
     },
-    {
-        title: "Người đặt",
-        dataIndex: "userName",
-        key: "userName",
-        width: "15%",
-        align: "center",
-    },
+    // {
+    //     title: "Người đặt",
+    //     dataIndex: "userName",
+    //     key: "userName",
+    //     width: "15%",
+    //     align: "center",
+    // },
     {
         title: "Địa chỉ",
         dataIndex: "addressDetail",

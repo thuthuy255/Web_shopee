@@ -77,9 +77,8 @@ const Login = () => {
             break;
         }
       }
-    } catch (e) {
-      console.log("Có lỗi xảy ra", e);
-      showError("Có lỗi xảy ra!");
+    } catch (e: any) {
+      showError(e?.error || "Có lỗi xảy ra!");
     } finally {
       setLoading(false);
     }

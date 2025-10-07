@@ -27,11 +27,12 @@ export const getMenuByRole = (roleId: string | null): MenuProps["items"] => {
   ];
 
   const sellerItems: MenuProps["items"] = [
+    { key: "dashboard", icon: <PieChartOutlined />, label: "Bảng điều khiển" },
     { key: "category", icon: <BiCategory />, label: "Quản lý danh mục" },
     { key: "products", icon: <ProductOutlined />, label: "Quản lý sản phẩm" },
     // { key: "productVariants", icon: <ProductOutlined />, label: "Quản lý biến thể sản phẩm" },
     { key: "orders", icon: <UploadOutlined />, label: "Quản lý đơn hàng" },
-    // { key: "analytics", icon: <PieChartOutlined />, label: "Thống kê" },
+    { key: "analystic", icon: <PiFlagBanner />, label: "Thống kê" },
   ];
 
   switch (roleId) {

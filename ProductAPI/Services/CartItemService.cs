@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProductAPI.Core;
 using ProductAPI.DTOs.CartItem;
 using ProductAPI.IRepository;
@@ -91,6 +92,21 @@ namespace ProductAPI.Services
                 await _cartItemRepos.DeleteRangeAsync(selectedItems);
             }
         }
+        public async Task<IMethodResult<bool>> RemoveCartItemAsync(Guid cartItemId)
+        {
+            var userId = _userPrincipal.GetUserId();
+
+            var cartItem = await _cartItemRepos.Table
+                .FirstOrDefaultAsync(c => c.Id == cartItemId && c.UserId == userId);
+
+            if (cartItem == null)
+                return MethodResult<bool>.ResultWithError("Không có sản phẩm này trong giỏ hàng.");
+
+            await _cartItemRepos.DeleteAsync(cartItem);
+
+            return MethodResult<bool>.ResultWithData(true, "Xóa sản phẩm khỏi giỏ hàng thành công.");
+        }
+
 
         public async Task RemoveAllItemsAsync(Guid userId)
         {

@@ -78,8 +78,8 @@ export default function SellerEdit() {
                     showError(res.data.error || 'Cập nhật thất bại');
                 }
             })
-            .catch((res) => {
-                showError('Có lỗi xảy ra khi cập nhật');
+            .catch((res: any) => {
+                showError(res?.error);
             })
             .finally(() => {
                 setLoadingSubmit(false);

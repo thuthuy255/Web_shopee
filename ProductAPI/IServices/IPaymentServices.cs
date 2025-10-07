@@ -9,7 +9,7 @@ namespace ProductAPI.IServices
     {
         //Task<IMethodResult<bool>> UpdatePaymentStatusAsync(Guid id, PaymentStatus status);
         //Task<IMethodResult<Payment>> CreatePaymentAsync(AddorUpdatePaymentRequest request);
-        Task<bool> HandleVnPayReturnAsync(IQueryCollection query);
+        Task<(bool Success, string ResponseCode, string Message)> HandleVnPayReturnAsync(IQueryCollection query);
         Task<string> CreatePaymentUrlAsync(AddorUpdatePaymentRequest request);
     }
 }

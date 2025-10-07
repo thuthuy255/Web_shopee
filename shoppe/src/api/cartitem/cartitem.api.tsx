@@ -16,6 +16,10 @@ export const deleteSelectedCart = () => {
     const url = '/CartItem/selected';
     return axiosClient.delete(url);
 }
+export const removeCartItem = (id: string) => {
+    const url = `/CartItem/removeCartItem?cartItemId=${id}`;
+    return axiosClient.delete(url);
+};
 export const toggleCartItemSelection = (productId: string, isSelected: boolean, productVariantId?: string | null) => {
     return axiosClient.post('/CartItem/toggle-selection', {
         productId,

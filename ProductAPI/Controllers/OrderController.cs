@@ -21,7 +21,6 @@ namespace ProductAPI.Controllers
             _userPrincipal = userPrincipal;
         }
 
-        // Tạo order tạm thời
         [HttpPost("create")]
         public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto dto)
         {

@@ -17,8 +17,9 @@ function BannerHome() {
           minHeight: 200,
         }}
       >
-        <BannerSlider bannerType="homepage" />
+        <BannerSlider bannerTypes={["homepage", "Top Banner"]} />
       </Col>
+
 
       {/* Static banners */}
       <Col

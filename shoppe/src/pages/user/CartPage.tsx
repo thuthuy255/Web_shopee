@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
     Checkbox,
@@ -15,22 +15,24 @@ import { Link, useNavigate } from "react-router-dom";
 import { getCartState, setCart } from "../../features/slices/cart.slice";
 import {
     getUserCartItems,
+    removeCartItem,
     updateCartItem,
 } from "../../api/cartitem/cartitem.api";
 import LoadingDefault from "../../components/loading/LoadingDefault";
 import { COLOR_DEFAULT } from "../../constants/Color";
 import VoucherModal from "./VoucherModal";
+import { showError, showSuccess } from "../../untils/ShowToast";
 
 const { Text } = Typography;
 
 function CartPage() {
     const dispatch = useDispatch();
     const { data } = useSelector(getCartState);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize] = useState(5);
-    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    // Tổng tiền giỏ hàng (subtotal)
+    const [cartTotal, setCartTotal] = useState<number>(0);
 
     // Voucher state
     const [isVoucherModalVisible, setVoucherModalVisible] = useState(false);
@@ -40,13 +42,11 @@ function CartPage() {
     const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
     // --- Fetch Cart ---
-    const fetchCart = async (page: number) => {
+    const fetchCart = async () => {
         try {
             setLoading(true);
-            const body = { pageInfo: { page, pageSize }, keyWord: "" };
+            const body = { pageInfo: { page: 1, pageSize: 20 }, keyWord: "" };
             const res: any = await getUserCartItems(body);
-            setTotal(res?.totalRecord);
-            setCurrentPage(page);
             dispatch(
                 setCart({
                     data: res?.data,
@@ -62,18 +62,35 @@ function CartPage() {
     };
 
     useEffect(() => {
-        fetchCart(currentPage);
+        fetchCart();
     }, []);
+
+    // --- Tính tổng tiền khi selectedItems thay đổi ---
+    useEffect(() => {
+        const subtotal = selectedItems.reduce(
+            (sum, item) =>
+                sum + ((item.productVariant?.price ?? item.price) * item.quantity),
+            0
+        );
+        setCartTotal(subtotal);
+
+        // Nếu có voucher thì cập nhật lại discount
+        if (appliedVoucher) {
+            let discount = 0;
+            if (appliedVoucher.discountPercent) {
+                discount = (subtotal * appliedVoucher.discountPercent) / 100;
+            } else if (appliedVoucher.minOrderValue && subtotal >= appliedVoucher.minOrderValue) {
+                discount = appliedVoucher.discountAmount || 0;
+            }
+            setAppliedVoucher((prev: any) => ({ ...prev, discount }));
+        }
+    }, [selectedItems]);
 
     // --- Toggle item ---
     const handleToggleItem = (item: any, checked: boolean) => {
-        if (checked) {
-            setSelectedItems((prev) => [...prev, item]);
-        } else {
-            setSelectedItems((prev) =>
-                prev.filter((i) => i.id !== item.id)
-            );
-        }
+        setSelectedItems((prev) =>
+            checked ? [...prev, item] : prev.filter((i) => i.id !== item.id)
+        );
     };
 
     // --- Update quantity ---
@@ -83,11 +100,10 @@ function CartPage() {
         quantity: number
     ) => {
         try {
-            const body = { productId, productVariantId, quantity };
-            await updateCartItem(body);
-            fetchCart(currentPage);
+            await updateCartItem({ productId, productVariantId, quantity });
+            fetchCart();
 
-            // Cập nhật lại selectedItems nếu item này đang được chọn
+            // Sync selected items
             setSelectedItems((prev) =>
                 prev.map((item) =>
                     item.productId === productId &&
@@ -112,7 +128,7 @@ function CartPage() {
     };
 
     const isAllSelected =
-        (data?.length ?? 0) > 0 &&
+        data?.length > 0 &&
         selectedItems.length > 0 &&
         data.every((seller) =>
             seller.items.every((item) =>
@@ -120,10 +136,9 @@ function CartPage() {
             )
         );
 
-    const isIndeterminate =
-        selectedItems.length > 0 && !isAllSelected;
+    const isIndeterminate = selectedItems.length > 0 && !isAllSelected;
 
-    // --- Voucher ---
+    // --- Apply Voucher ---
     const handleApplyVoucher = (voucher: any) => {
         if (!voucher) {
             setAppliedVoucher(null);
@@ -131,15 +146,10 @@ function CartPage() {
             return;
         }
 
-        const subtotal = selectedItems.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-        );
-
         let discount = 0;
         if (voucher.discountPercent) {
-            discount = (subtotal * voucher.discountPercent) / 100;
-        } else if (voucher.minOrderValue && subtotal >= voucher.minOrderValue) {
+            discount = (cartTotal * voucher.discountPercent) / 100;
+        } else if (voucher.minOrderValue && cartTotal >= voucher.minOrderValue) {
             discount = voucher.discountAmount || 0;
         }
 
@@ -147,15 +157,11 @@ function CartPage() {
         message.success(`Voucher ${voucher.code} đã được áp dụng!`);
     };
 
-    const getTotalPriceAfterVoucher = () => {
-        const total = selectedItems.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-        );
-
-        if (!appliedVoucher) return total;
-        return Math.max(0, total - (appliedVoucher.discount || 0));
-    };
+    // --- Final Price ---
+    const finalPrice = useMemo(
+        () => Math.max(0, cartTotal - (appliedVoucher?.discount || 0)),
+        [cartTotal, appliedVoucher]
+    );
 
     // --- Checkout ---
     const handleCheckout = () => {
@@ -163,8 +169,35 @@ function CartPage() {
             alert("Bạn chưa chọn sản phẩm nào!");
             return;
         }
-        const cartItemIds = selectedItems.map((i) => i.id);
-        navigate("/user/checkout", { state: { items: selectedItems, cartItemIds } });
+
+        // Chuẩn hóa lại giá trước khi navigate
+        const checkoutItems = selectedItems.map(item => {
+            const unitPrice = item.productVariant?.price ?? item.price;
+            return {
+                ...item,
+                price: unitPrice
+            };
+        });
+
+        const cartItemIds = checkoutItems.map((i) => i.id);
+        navigate("/user/checkout", {
+            state: { items: checkoutItems, cartItemIds, appliedVoucher },
+        });
+    };
+
+    // --- Delete item ---
+    const handleDelete = async (id: string) => {
+        try {
+            setLoading(true);
+            await removeCartItem(id);
+            showSuccess("Đã xoá sản phẩm khỏi giỏ hàng");
+            fetchCart();
+            setSelectedItems((prev) => prev.filter((item) => item.id !== id));
+        } catch (error) {
+            showError("Xoá sản phẩm thất bại");
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (loading) {
@@ -199,7 +232,7 @@ function CartPage() {
 
                 {/* Danh sách shop + sản phẩm */}
                 {data?.map((itemsCart) => (
-                    <Card key={itemsCart.sellerId} style={{ marginBottom: 20 }}>
+                    <Card key={itemsCart?.sellerId} style={{ marginBottom: 20 }}>
                         <div
                             style={{
                                 display: "flex",
@@ -216,30 +249,31 @@ function CartPage() {
                             <Text>{itemsCart.sellerName}</Text>
                         </div>
 
-                        {itemsCart.items?.map((item) => (
-                            <Flex
-                                key={item.id}
-                                align="center"
-                                gap={10}
-                                style={{ padding: "10px 0", borderBottom: "1px solid #f0f0f0" }}
-                            >
-                                <Checkbox
-                                    checked={selectedItems.some((i) => i.id === item.id)}
-                                    onChange={(e) => handleToggleItem(item, e.target.checked)}
-                                />
-                                <div style={{ width: 60, textAlign: "center" }}>
+                        {itemsCart.items?.map((item) => {
+                            const unitPrice = item?.productVariant?.price ?? item.price;
+                            const lineTotal = unitPrice * item.quantity;
+
+                            return (
+                                <Flex
+                                    key={item.id}
+                                    align="center"
+                                    gap={10}
+                                    style={{ padding: "10px 0", borderBottom: "1px solid #f0f0f0" }}
+                                >
+                                    <Checkbox
+                                        checked={selectedItems.some((i) => i.id === item.id)}
+                                        onChange={(e) => handleToggleItem(item, e.target.checked)}
+                                    />
                                     <Image
-                                        src={item.thumbnail}
-                                        alt={item.productName}
+                                        src={item?.thumbnail}
+                                        alt={item?.productName}
                                         width={60}
                                         height={60}
                                         style={{ objectFit: "contain", borderRadius: 4, backgroundColor: "#f0f0f0" }}
                                         preview={false}
                                     />
-                                </div>
-                                <div style={{ flex: 2, display: "flex", alignItems: "center", gap: 10 }}>
-                                    <div>
-                                        <Link to={`/user/products/${item.productId}`}>
+                                    <div style={{ flex: 2 }}>
+                                        <Link to={`/user/products/{item?.productId}`}>
                                             <Text
                                                 style={{
                                                     display: "block",
@@ -253,73 +287,70 @@ function CartPage() {
                                                 {item.productName}
                                             </Text>
                                         </Link>
-                                        <div style={{ color: "gray", fontSize: 13 }}>
-                                            {item.variantValue && <span>Màu: {item.variantValue} </span>}
-                                        </div>
+                                        {item?.productVariant && (
+                                            <div style={{ color: "gray", fontSize: 13 }}>
+                                                {item?.productVariant?.variantName}: {item?.productVariant?.variantValue}
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                                <div style={{ flex: 1, textAlign: "center" }}>
-                                    {item.price.toLocaleString("vi-VN")} đ
-                                </div>
-                                <div style={{ flex: 1, textAlign: "center" }}>
-                                    <InputNumber
-                                        min={1}
-                                        max={item.stockQuantity}
-                                        value={item.quantity}
-                                        onChange={(value) =>
-                                            handleQuantityChange(item.productId, item.productVariantId, value || 1)
-                                        }
-                                    />
-                                </div>
-                                <div style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
-                                    {(item.price * item.quantity).toLocaleString("vi-VN")} đ
-                                </div>
-                                <div style={{ flex: 1, textAlign: "center" }}>
-                                    <Button type="link" danger>
-                                        Xóa
-                                    </Button>
-                                </div>
-                            </Flex>
-                        ))}
+                                    <div style={{ flex: 1, textAlign: "center" }}>
+                                        {unitPrice.toLocaleString("vi-VN")} đ
+                                    </div>
+                                    <div style={{ flex: 1, textAlign: "center" }}>
+                                        <InputNumber
+                                            min={1}
+                                            max={item?.stockQuantity}
+                                            value={item?.quantity}
+                                            onChange={(value) =>
+                                                handleQuantityChange(item?.productId, item?.productVariantId ?? null, value || 1)
+                                            }
+                                        />
+                                    </div>
+                                    <div style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
+                                        {lineTotal.toLocaleString("vi-VN")} đ
+                                    </div>
+                                    <div style={{ flex: 1, textAlign: "center" }}>
+                                        <Button type="link" danger onClick={() => handleDelete(item.id)}>
+                                            Xóa
+                                        </Button>
+                                    </div>
+                                </Flex>
+                            );
+                        })}
                     </Card>
                 ))}
 
                 {/* Tổng cộng */}
                 <Card style={{ position: "sticky", bottom: 0, zIndex: 100, background: "#fff" }}>
-                    <div style={{ gap: "20px", display: "flex", flexDirection: "column" }}>
-                        <Flex style={{ width: "100%", textAlign: "center" }} justify="flex-end" align="center" gap={50}>
-                            <Flex align="center">
-                                <BarcodeOutlined style={{ fontSize: "23px", color: COLOR_DEFAULT }} />
-                                <Text style={{ marginLeft: 8, fontSize: "16px" }}>Shopping Voucher</Text>
-                            </Flex>
+                    <Flex justify="space-between" align="center">
+                        <Flex align="center">
+                            <BarcodeOutlined style={{ fontSize: 23, color: COLOR_DEFAULT }} />
+                            <Text style={{ marginLeft: 8, fontSize: 16 }}>Shopping Voucher</Text>
                             <Text
-                                style={{ cursor: "pointer", color: "#20609bff", fontSize: "14px" }}
+                                style={{ marginLeft: 16, cursor: "pointer", color: "#20609bff" }}
                                 onClick={() => setVoucherModalVisible(true)}
                             >
                                 Chọn hoặc nhập mã
                             </Text>
                         </Flex>
-                        <div style={{ display: "flex", width: "100%", height: 1, borderTop: "1px dashed #ccc" }} />
-                        <Flex justify="space-between" align="center">
+                        <Flex align="center" gap={20}>
                             <Text strong>
                                 Tổng cộng ({selectedItems.length} sản phẩm đã chọn):
                             </Text>
                             <Text strong type="danger" style={{ fontSize: 18 }}>
-                                {getTotalPriceAfterVoucher().toLocaleString("vi-VN")} đ
+                                {finalPrice.toLocaleString("vi-VN")} đ
                             </Text>
-                            <Flex gap={8}>
-                                <Button
-                                    type="primary"
-                                    style={{ backgroundColor: COLOR_DEFAULT }}
-                                    size="large"
-                                    disabled={getTotalPriceAfterVoucher() === 0}
-                                    onClick={handleCheckout}
-                                >
-                                    Mua hàng
-                                </Button>
-                            </Flex>
+                            <Button
+                                type="primary"
+                                style={{ backgroundColor: COLOR_DEFAULT }}
+                                size="large"
+                                disabled={finalPrice === 0}
+                                onClick={handleCheckout}
+                            >
+                                Mua hàng
+                            </Button>
                         </Flex>
-                    </div>
+                    </Flex>
                 </Card>
 
                 {/* Voucher Modal */}
@@ -327,7 +358,9 @@ function CartPage() {
                     visible={isVoucherModalVisible}
                     onClose={() => setVoucherModalVisible(false)}
                     onApply={handleApplyVoucher}
+                    cartTotal={cartTotal}   // <-- thêm prop này
                 />
+
             </div>
         </div>
     );

@@ -29,13 +29,14 @@ namespace ProductAPI.Controllers
         [HttpGet("VnpayReturn")]
         public async Task<IActionResult> VnPayReturn()
         {
-            var success = await _paymentServices.HandleVnPayReturnAsync(Request.Query);
+            var (success, code, message) = await _paymentServices.HandleVnPayReturnAsync(Request.Query);
 
-            return Ok(new
-            {
-                Message = success ? "Thanh toán thành công" : "Thanh toán thất bại",
-                Status = success
-            });
+            // URL FE bạn muốn redirect về
+            var feUrl = "http://localhost:3000/user/payment/result";
+
+            return Redirect($"{feUrl}?status={code}&message={Uri.EscapeDataString(message)}");
         }
+
+
     }
 }

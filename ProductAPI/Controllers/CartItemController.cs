@@ -130,5 +130,7 @@ namespace ProductAPI.Controllers
             await _cartItemServices.RemoveSelectedItemsAsync(userId.Value);
             return Ok("Đã xoá các sản phẩm đã chọn khỏi giỏ hàng.");
         }
+         
+
     }
 }

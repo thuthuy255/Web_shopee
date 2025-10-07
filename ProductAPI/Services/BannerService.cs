@@ -79,6 +79,12 @@ namespace ProductAPI.Services
         }
         public async Task<MethodResult<BannerDTO>> CreateAsync(CreateBannerDTO dto, Guid adminId)
         {
+            var existed = await _bannerRepo.TableNoTracking
+                .AnyAsync(b => b.Type == dto.Type);
+
+            if (existed)
+                return MethodResult<BannerDTO>.ResultWithError("Trùng loại Banner");
+
             string? imageUrl = null;
             if (dto.ImageFile != null)
                 imageUrl = await _cloudinaryService.UploadImageAsync(dto.ImageFile);
@@ -106,8 +112,10 @@ namespace ProductAPI.Services
                 IsActive = banner.IsActive,
                 Type = banner.Type
             };
+
             return MethodResult<BannerDTO>.ResultWithData(result, "Tạo banner thành công");
         }
+
 
         public async Task<MethodResult<BannerDTO>> UpdateAsync(BannerUpdateRequest dto)
         {

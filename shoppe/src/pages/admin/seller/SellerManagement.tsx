@@ -121,7 +121,7 @@ export default function SellerManagement() {
                     pageSize={pageSize}
                     currentPage={currentPage}
                     total={total}
-                    scrollY={window.innerHeight - 300}
+                    // scrollY={window.innerHeight - 300}
                     onPageChange={handlePageChange}
                     onAdd={handleAdd}
                     onView={handleView}

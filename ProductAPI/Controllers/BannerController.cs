@@ -61,7 +61,7 @@ namespace ProductAPI.Controllers
             if (!adminId.HasValue) return Unauthorized("Bạn chưa đăng nhập.");
 
             var result = await _bannerService.CreateAsync(dto, adminId.Value);
-            return Ok(result);
+            return result.Success ? Ok(result) : BadRequest(result);
         }
 
         [HttpPut("updateBanner")]

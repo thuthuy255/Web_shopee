@@ -16,19 +16,22 @@ namespace ProductAPI.Services
         private readonly IRepository<Order> _orderRepo;
         private readonly IRepository<OrderItem> _orderItemRepo;
         private readonly IRepository<Promotion> _promoRepo;
+        private readonly IRepository<ProductVariant> _variantRepo;
 
         public OrderService(
             IRepository<CartItem> cartRepo,
             IRepository<Product> productRepo,
             IRepository<Order> orderRepo,
             IRepository<OrderItem> orderItemRepo,
-            IRepository<Promotion> promoRepo)
+            IRepository<Promotion> promoRepo,
+            IRepository<ProductVariant> variantRepo)
         {
             _cartRepo = cartRepo;
             _productRepo = productRepo;
             _orderRepo = orderRepo;
             _orderItemRepo = orderItemRepo;
             _promoRepo = promoRepo;
+            _variantRepo = variantRepo;
         }
 
         public async Task<MethodResult<OrderDto>> CreateOrderAsync(Guid userId, OrderCreateDto body)
@@ -36,94 +39,136 @@ namespace ProductAPI.Services
             var orderItems = new List<OrderItem>();
             var orderItemsDto = new List<OrderItemDto>();
             decimal totalAmount = 0m;
+            decimal discountAmount = 0m;
 
-            // 🟢 Case 1: Checkout từ giỏ hàng
-            if (body.CartItemIds != null && body.CartItemIds.Any())
+            // Lấy danh sách từ Cart hoặc Items (Buy Now)
+            var cartItems = new List<(Guid ProductId, Guid? VariantId, int Quantity)>();
+
+            if (body.CartItemIds?.Any() == true)
             {
-                var cartItems = await _cartRepo.Table
+                var carts = await _cartRepo.Table
                     .Include(c => c.Product)
+                    .Include(c => c.ProductVariant)
                     .Where(c => c.UserId == userId && body.CartItemIds.Contains(c.Id))
                     .ToListAsync();
 
-                if (!cartItems.Any())
+                if (!carts.Any())
                     return MethodResult<OrderDto>.ResultWithError("Bạn chưa chọn sản phẩm nào.");
 
-                foreach (var cart in cartItems)
-                {
-                    if (cart.Product.StockQuantity < cart.Quantity)
-                        return MethodResult<OrderDto>.ResultWithError(
-                            $"Sản phẩm '{cart.Product.ProductName}' không đủ hàng.");
+                foreach (var c in carts)
+                    cartItems.Add((c.ProductId, c.ProductVariantId, c.Quantity));
 
-                    totalAmount += cart.Quantity * cart.Product.Price;
-
-                    var item = new OrderItem
-                    {
-                        Id = Guid.NewGuid(),
-                        ProductId = cart.ProductId,
-                        Quantity = cart.Quantity,
-                        Price = cart.Product.Price
-                    };
-                    orderItems.Add(item);
-
-                    orderItemsDto.Add(new OrderItemDto
-                    {
-                        Id = item.Id,
-                        ProductId = cart.ProductId,
-                        ProductName = cart.Product.ProductName,
-                        ProductImage = cart.Product.Thumbnail ?? "",
-                        Quantity = cart.Quantity,
-                        Price = cart.Product.Price
-                    });
-
-                    cart.Product.StockQuantity -= cart.Quantity;
-                }
-
-                await _cartRepo.DeleteRangeAsync(cartItems); // xoá khỏi giỏ sau khi tạo đơn
+                await _cartRepo.DeleteRangeAsync(carts); // Xoá khỏi giỏ sau khi tạo đơn
             }
-            // 🟢 Case 2: Mua ngay (Buy Now)
-            else if (body.Items != null && body.Items.Any())
+            else if (body.Items?.Any() == true)
             {
-                foreach (var input in body.Items)
-                {
-                    var product = await _productRepo.GetByIdAsync(input.ProductId);
-                    if (product == null)
-                        return MethodResult<OrderDto>.ResultWithError("Sản phẩm không tồn tại.");
-                    if (product.StockQuantity < input.Quantity)
-                        return MethodResult<OrderDto>.ResultWithError(
-                            $"Sản phẩm '{product.ProductName}' không đủ hàng.");
-
-                    totalAmount += input.Quantity * product.Price;
-
-                    var item = new OrderItem
-                    {
-                        Id = Guid.NewGuid(),
-                        ProductId = product.Id,
-                        Quantity = input.Quantity,
-                        Price = product.Price
-                    };
-                    orderItems.Add(item);
-
-                    orderItemsDto.Add(new OrderItemDto
-                    {
-                        Id = item.Id,
-                        ProductId = product.Id,
-                        ProductName = product.ProductName,
-                        ProductImage = product.Thumbnail ?? "",
-                        Quantity = input.Quantity,
-                        Price = product.Price
-                    });
-
-                    product.StockQuantity -= input.Quantity;
-                }
+                foreach (var i in body.Items)
+                    cartItems.Add((i.ProductId, i.ProductVariantId, i.Quantity));
             }
             else
             {
                 return MethodResult<OrderDto>.ResultWithError("Bạn chưa chọn sản phẩm nào.");
             }
 
-            // 🟢 Tính mã đơn hàng
-            var random = new Random();
-            var txnRef = DateTime.Now.ToString("yyyyMMddHHmmss") + random.Next(1000, 9999);
+            // Duyệt từng sản phẩm trong giỏ
+            foreach (var input in cartItems)
+            {
+                var product = await _productRepo.GetByIdAsync(input.ProductId);
+                if (product == null)
+                    return MethodResult<OrderDto>.ResultWithError("Sản phẩm không tồn tại.");
+
+                decimal price;
+                string? variantName = null, variantValue = null, image = product.Thumbnail;
+                Guid? variantId = input.VariantId;
+
+                if (variantId.HasValue) // Có biến thể
+                {
+                    var variant = await _variantRepo.GetByIdAsync(variantId.Value);
+                    if (variant == null)
+                        return MethodResult<OrderDto>.ResultWithError("Biến thể không tồn tại.");
+                    if (variant.StockQuantity < input.Quantity)
+                        return MethodResult<OrderDto>.ResultWithError(
+                            $"Biến thể '{variant.VariantName} - {variant.VariantValue}' không đủ hàng."
+                        );
+
+                    price = variant.Price; // ✅ lấy giá từ biến thể
+                    variantName = variant.VariantName;
+                    variantValue = variant.VariantValue;
+                    image = variant.ImageUrl ?? product.Thumbnail;
+
+                    variant.StockQuantity -= input.Quantity; // trừ tồn kho biến thể
+                }
+                else // Không có biến thể
+                {
+                    if (product.StockQuantity < input.Quantity)
+                        return MethodResult<OrderDto>.ResultWithError(
+                            $"Sản phẩm '{product.ProductName}' không đủ hàng."
+                        );
+
+                    price = product.Price; // ✅ lấy giá từ sản phẩm
+                    product.StockQuantity -= input.Quantity; // trừ tồn kho sản phẩm
+                }
+
+                // Tính tổng
+                totalAmount += input.Quantity * price;
+
+                // Tạo OrderItem
+                var orderItem = new OrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = product.Id,
+                    VariantId = variantId,
+                    Quantity = input.Quantity,
+                    Price = price
+                };
+                orderItems.Add(orderItem);
+
+                orderItemsDto.Add(new OrderItemDto
+                {
+                    Id = orderItem.Id,
+                    ProductId = product.Id,
+                    VariantId = variantId,
+                    ProductName = product.ProductName,
+                    VariantName = variantName,
+                    VariantValue = variantValue,
+                    ProductImage = image ?? "",
+                    Quantity = input.Quantity,
+                    Price = price
+                });
+            }
+            // ✅ Áp dụng mã khuyến mãi (nếu có)
+            if (!string.IsNullOrEmpty(body.PromotionCode))
+            {
+                var promotion = await _promoRepo.Table
+                    .FirstOrDefaultAsync(p =>
+                        p.Code == body.PromotionCode &&
+                        p.Status == PromotionStatus.Active.ToString() &&
+                        p.StartDate <= DateTime.UtcNow &&
+                        p.EndDate >= DateTime.UtcNow);
+
+                if (promotion == null)
+                    return MethodResult<OrderDto>.ResultWithError("Mã khuyến mãi không hợp lệ hoặc đã hết hạn.");
+
+                if (promotion.MinOrderValue == null || totalAmount >= promotion.MinOrderValue)
+                {
+                    if (promotion.DiscountPercent > 0)
+                    {
+                        discountAmount = totalAmount * (promotion.DiscountPercent / 100m);
+
+                        if (discountAmount > totalAmount)
+                            discountAmount = totalAmount;
+                    }
+                    // Cập nhật số lần sử dụng
+                    promotion.UsedQuantity += 1;
+                    await _promoRepo.UpdateAsync(promotion);
+                }
+            }
+
+            var finalAmount = totalAmount - discountAmount;
+
+
+            // Sinh mã giao dịch
+            var txnRef = DateTime.Now.ToString("yyyyMMddHHmmss") + new Random().Next(1000, 9999);
 
             var order = new Order
             {
@@ -133,7 +178,7 @@ namespace ProductAPI.Services
                 PromotionCode = body.PromotionCode,
                 PaymentMethod = body.PaymentMethod,
                 PaymentStatus = PaymentStatus.Pending,
-                TotalAmount = totalAmount,
+                TotalAmount = finalAmount,
                 TxnRef = txnRef,
                 OrderItems = orderItems,
                 Created = DateTime.UtcNow
@@ -154,6 +199,10 @@ namespace ProductAPI.Services
                 TxnRef = order.TxnRef
             }, "Tạo đơn hàng thành công.");
         }
+
+
+
+
 
         public async Task<MethodResult<int>> GetTotalOrderAsync()
         {

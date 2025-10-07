@@ -111,11 +111,21 @@ namespace ProductAPI.Services
             {
                 return MethodResult<UserDto>.ResultWithError("Không tìm thấy người dùng");
             }
+            if (existingUser.Email != dto.Email)
+            {
+                var emailExists = await _userRepo.TableNoTracking
+                    .AnyAsync(u => u.Email == dto.Email && u.Id != dto.Id);
+                if (emailExists)
+                {
+                    return MethodResult<UserDto>.ResultWithError("Email đã tồn tại!");
+                }
+
+                existingUser.Email = dto.Email;
+                existingUser.MarkDirty(nameof(existingUser.Email));
+            }
             // Cập nhật các trường cần thiết
             existingUser.FullName = dto.FullName;
-
             existingUser.Username = dto.Username;
-            existingUser.Email = dto.Email;
             existingUser.Phone = dto.Phone;
             existingUser.IsLocked = dto.IsLocked || false;
             if (dto.Avatar != null)
@@ -126,7 +136,6 @@ namespace ProductAPI.Services
             existingUser.Created = DateTime.UtcNow;
             existingUser.MarkDirty(nameof(existingUser.FullName));
             existingUser.MarkDirty(nameof(existingUser.Username));
-            existingUser.MarkDirty(nameof(existingUser.Email));
             existingUser.MarkDirty(nameof(existingUser.Phone));
             existingUser.MarkDirty(nameof(existingUser.IsLocked));
             existingUser.MarkDirty(nameof(existingUser.Avatar));

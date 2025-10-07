@@ -51,9 +51,8 @@ export default function SellerCreate() {
             showSuccess('Tạo tài khoản thành công');
             formRef.current?.resetFields(); // ✅
             navigate('/admin/seller')
-        } catch (error) {
-            console.log("🚀 ~ handleSubmit ~ error:", error)
-            showError('Tạo tài khoản thất bại');
+        } catch (e: any) {
+            showError(e?.error);
         }
         finally {
             setLoading(false);

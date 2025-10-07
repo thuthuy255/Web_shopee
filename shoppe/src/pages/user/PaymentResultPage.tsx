@@ -1,60 +1,76 @@
-import { useEffect, useState } from "react";
-import { Spin, Button } from "antd";
-import { useNavigate } from "react-router-dom";
-import { getVnPayReturn } from "../../api/order/order.api";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Button } from "antd";
+import { CheckCircleOutlined } from "@ant-design/icons";
 
-function PaymentResultPage() {
-    const [loading, setLoading] = useState(true);
-    const [status, setStatus] = useState<null | boolean>(null);
+function PaymentResult() {
+    const location = useLocation();
     const navigate = useNavigate();
 
+    const params = new URLSearchParams(location.search);
+    const status = params.get("status"); // 00 = thành công
+    const txnRef = params.get("txnRef");
+
+    const isSuccess = status === "00";
+
     useEffect(() => {
-        const fetchStatus = async () => {
-            try {
-                setLoading(true);
-                const res = await getVnPayReturn();
-                setStatus(res.data.Status);
-            } catch (err) {
-                console.error(err);
-                setStatus(false);
-            } finally {
-                setLoading(false);
-            }
-        };
+        if (!status) {
+            navigate("/");
+        }
+        if (isSuccess) {
+            // Sau 3 giây tự động chuyển trang
+            const timer = setTimeout(() => {
+                navigate("/user/orderstatus");
+            }, 3000);
+            return () => clearTimeout(timer);
+        } else {
+            // Nếu không thành công thì quay về giỏ hàng
+            navigate("/cart");
+        }
+    }, [status, isSuccess, navigate]);
 
-        fetchStatus();
-    }, []);
-
-    if (loading) {
-        return (
-            <div style={{ textAlign: "center", padding: 50 }}>
-                <Spin size="large" />
-                <p>Đang kiểm tra trạng thái thanh toán...</p>
-            </div>
-        );
-    }
+    if (!isSuccess) return null;
 
     return (
-        <div style={{ textAlign: "center", padding: 50 }}>
-            {status ? (
-                <>
-                    <h2 style={{ color: "#0f9d58" }}>🎉 Thanh toán thành công!</h2>
-                    <p>Cảm ơn bạn đã mua hàng.</p>
-                    <Button type="primary" onClick={() => navigate("/user")}>
-                        Về trang chủ
-                    </Button>
-                </>
-            ) : (
-                <>
-                    <h2 style={{ color: "#d0011b" }}>❌ Thanh toán thất bại</h2>
-                    <p>Vui lòng thử lại hoặc liên hệ hỗ trợ.</p>
-                    <Button type="primary" onClick={() => navigate("/cart")}>
-                        Quay lại giỏ hàng
-                    </Button>
-                </>
-            )}
+        <div style={{ padding: "40px 20px" }}>
+            <div
+                style={{
+                    maxWidth: 600,
+                    margin: "0 auto",
+                    background: "#f6ffed",
+                    border: "1px solid #b7eb8f",
+                    borderRadius: 16,
+                    padding: "40px 30px",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+                    textAlign: "center",
+                    animation: "fadeIn 0.6s ease-in-out",
+                }}
+            >
+                <CheckCircleOutlined style={{ fontSize: 72, color: "#52c41a" }} />
+                <h2 style={{ margin: "20px 0 10px", fontSize: 24, fontWeight: 600 }}>
+                    Thanh toán thành công!
+                </h2>
+                <p style={{ fontSize: 16, color: "#333" }}>
+                    Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của chúng tôi 🎉
+                </p>
+                {txnRef && (
+                    <p style={{ marginTop: 12, fontWeight: "bold" }}>
+                        Mã giao dịch: <span style={{ color: "#000" }}>{txnRef}</span>
+                    </p>
+                )}
+                <p style={{ marginTop: 20, color: "#888" }}>
+                    Bạn sẽ được chuyển đến trang trạng thái đơn hàng trong giây lát...
+                </p>
+                <Button
+                    type="primary"
+                    onClick={() => navigate("/user/orderstatus")}
+                    style={{ marginTop: 20 }}
+                >
+                    Xem trạng thái đơn hàng ngay
+                </Button>
+            </div>
         </div>
     );
 }
 
-export default PaymentResultPage;
+export default PaymentResult;

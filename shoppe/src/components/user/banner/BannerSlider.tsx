@@ -3,34 +3,39 @@ import { Carousel, message } from "antd";
 import { getBannerByType } from "../../../api/banner/banner.api";
 import LoadingDefault from "../../loading/LoadingDefault";
 import "../../../css/components/banner/BannerSlider.css";
+
 interface BannerSliderProps {
-  bannerType: string;
+  bannerTypes: string[]; // 👈 nhận mảng thay vì string
 }
 
-const BannerSlider = ({ bannerType }: BannerSliderProps) => {
+const BannerSlider = ({ bannerTypes }: BannerSliderProps) => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchBanner = async () => {
+  const fetchBanners = async () => {
     setLoading(true);
     try {
-      const res: any = await getBannerByType(bannerType.toLowerCase());
-      if (res.success) {
-        setData(res.data || []);
-      } else {
-        message.error("Không thể lấy danh sách banner");
+      let allBanners: any[] = [];
+
+      for (let type of bannerTypes) {
+        const res: any = await getBannerByType(type.toLowerCase());
+        if (res.success) {
+          allBanners = [...allBanners, ...(res.data || [])];
+        }
       }
+
+      setData(allBanners);
     } catch (error) {
       console.error(error);
-      message.error("Đã xảy ra lỗi khi tải dữ liệu");
+      message.error("Đã xảy ra lỗi khi tải banner");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBanner();
-  }, [bannerType]); // <- Gọi lại khi bannerType thay đổi
+    fetchBanners();
+  }, [bannerTypes]);
 
   if (loading) {
     return <LoadingDefault />;
@@ -38,7 +43,9 @@ const BannerSlider = ({ bannerType }: BannerSliderProps) => {
 
   return (
     <Carousel
-      autoplay
+      autoplay                    // bật tự chạy
+      autoplaySpeed={3000}        // 3 giây mỗi slide
+      pauseOnHover={false}        // hover không dừng
       className="w-full"
       style={{ borderRadius: 10, overflow: "hidden" }}
     >
@@ -48,11 +55,8 @@ const BannerSlider = ({ bannerType }: BannerSliderProps) => {
           className="flex justify-center items-center bg-white containerBanner"
         >
           <div
-            key={banner.id}
             className="bannerItem"
-            style={{
-              backgroundImage: `url(${banner.imageUrl})`,
-            }}
+            style={{ backgroundImage: `url(${banner.imageUrl})` }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "scale(1.01)";
               e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.25)";
@@ -65,6 +69,7 @@ const BannerSlider = ({ bannerType }: BannerSliderProps) => {
         </div>
       ))}
     </Carousel>
+
   );
 };
 

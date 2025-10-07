@@ -34,6 +34,10 @@ interface OrderItem {
     price: number;
     quantity: number;
     thumbnail: string;
+    productVariantId?: string | null;
+    variantName?: string | null;
+    variantValue?: string | null;
+    priceVariant?: number | null;
 }
 
 interface Order {
@@ -63,43 +67,27 @@ interface Voucher {
     discountPercent?: number;
 }
 
-// ------------------ Helper ------------------
-const statusColor = (status: string) => {
-    switch (status) {
-        case "Pending":
-            return "orange";
-        case "Completed":
-            return "green";
-        case "Cancelled":
-            return "red";
-        default:
-            return "blue";
-    }
-};
-
+// ------------------ Component ------------------
 const OrderDetail = () => {
     const { orderId } = useParams<{ orderId: string }>();
     const location = useLocation();
 
     // ✅ nhận cả selectedItems + cartItemIds từ CartPage
     const selectedItems: OrderItem[] = location.state?.items || [];
-    console.log("🚀 ~ OrderDetail ~ selectedItems:", selectedItems)
     const cartItemIds: string[] = location.state?.cartItemIds || [];
 
-    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-        null
-    );
+    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
     const [order, setOrder] = useState<Order | null>(null);
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
-
+    const [cartTotal, setCartTotal] = useState<number>(0);
     const [loading, setLoading] = useState(false);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
 
     useEffect(() => {
         if (orderId) {
-            fetchOrderDetail(orderId); // dữ liệu chuẩn từ BE
+            fetchOrderDetail(orderId);
         } else if (selectedItems.length > 0) {
             const totalAmount = selectedItems.reduce(
                 (sum, item) => sum + item.price * item.quantity,
@@ -111,18 +99,25 @@ const OrderDetail = () => {
                 orderItems: selectedItems,
                 totalAmount,
                 originalAmount: totalAmount,
+                paymentMethod: "VNPay",
             });
+            setCartTotal(totalAmount);
         }
         fetchAddresses();
     }, [orderId]);
 
+    // Lấy chi tiết đơn hàng
     const fetchOrderDetail = async (id: string) => {
         setLoading(true);
         try {
             const res: any = await getOrderDetail(id);
+            if (!res) {
+                message.error("Không tìm thấy đơn hàng.");
+                return;
+            }
             setOrder({
                 ...res,
-                originalAmount: res.totalAmount,
+                originalAmount: res.originalAmount ?? res.totalAmount,
             });
         } catch (error) {
             console.error(error);
@@ -132,6 +127,7 @@ const OrderDetail = () => {
         }
     };
 
+    // Lấy địa chỉ người dùng
     const fetchAddresses = async () => {
         try {
             const res: any = await getUserAddresses();
@@ -161,17 +157,16 @@ const OrderDetail = () => {
                 promotionCode: null,
                 totalAmount: order.originalAmount,
             });
+            setCartTotal(order.originalAmount);
             return;
         }
 
         let newTotal = order.originalAmount;
-
         if (voucher.discountAmount) {
             newTotal -= voucher.discountAmount;
         } else if (voucher.discountPercent) {
             newTotal -= (order.originalAmount * voucher.discountPercent) / 100;
         }
-
         if (newTotal < 0) newTotal = 0;
 
         setSelectedVoucher(voucher);
@@ -180,6 +175,7 @@ const OrderDetail = () => {
             promotionCode: voucher.code,
             totalAmount: newTotal,
         });
+        setCartTotal(newTotal);
     };
 
     // ------------------ Thanh toán ------------------
@@ -199,34 +195,41 @@ const OrderDetail = () => {
             if (orderIdToPay === "TEMP-CHECKOUT") {
                 const payload = {
                     addressId: selectedAddressId,
-                    promotionCode: order.promotionCode,
-                    paymentMethod: "VNPay", // có thể đổi thành COD, Paypal...
+                    promotionCode: order.promotionCode || null,
+                    paymentMethod: order.paymentMethod || "VNPay",
                     items: order.orderItems.map((i) => ({
                         productId: i.productId,
+                        productVariantId: i.productVariantId ?? null,
                         quantity: i.quantity,
                     })),
-                    cartItemIds, // ✅ chỉ xoá item được chọn
+                    cartItemIds,
                 };
 
                 const res: any = await createOrder(payload);
-                if (!res || !res.data) {
-                    message.error("Không thể tạo đơn hàng.");
+                console.log("🚀 ~ handlePayment ~ res:", res)
+                if (!res?.success || !res.data) {
+                    message.error(res?.message || "Không thể tạo đơn hàng.");
                     return;
                 }
+
                 orderIdToPay = res.data.id;
                 totalAmount = res.data.totalAmount;
+                console.log("🚀 ~ handlePayment ~ totalAmount:", totalAmount)
 
-                setOrder({
-                    ...order,
-                    id: orderIdToPay,
-                    totalAmount: totalAmount,   // lấy từ BE
-                    originalAmount: totalAmount // đồng bộ lại
-                });
+                setOrder((prev) =>
+                    prev
+                        ? {
+                            ...prev,
+                            id: orderIdToPay,
+                            totalAmount: totalAmount,
+                            originalAmount: res.data.originalAmount ?? totalAmount,
+                        }
+                        : null
+                );
             }
-            const payReq = {
-                orderId: orderIdToPay,
-                amount: totalAmount,
-            };
+
+            // Gọi API thanh toán
+            const payReq = { orderId: orderIdToPay, amount: totalAmount };
             const payRes: any = await paymentOrder(payReq);
 
             if (payRes?.paymentUrl) {
@@ -235,18 +238,17 @@ const OrderDetail = () => {
                 message.error("Không lấy được link thanh toán.");
             }
         } catch (err) {
-            console.error(err);
+            console.error("🚀 ~ handlePayment error:", err);
             message.error("Thanh toán thất bại.");
         } finally {
             setLoading(false);
         }
     };
 
+    // Lấy địa chỉ hiển thị
     const orderAddress: Address | null =
         addresses.find((a) => a.id === selectedAddressId) ||
-        (order?.addressId
-            ? addresses.find((a) => a.id === order.addressId) || null
-            : null);
+        (order?.addressId ? addresses.find((a) => a.id === order.addressId) || null : null);
 
     if (loading && !order) {
         return (
@@ -259,63 +261,31 @@ const OrderDetail = () => {
     return (
         <div style={{ padding: "24px 16px", maxWidth: "80%", margin: "0 auto" }}>
             <Card
-                style={{
-                    borderRadius: 12,
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                }}
+                style={{ borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}
                 bodyStyle={{ padding: 24 }}
             >
-
-
                 {/* Địa chỉ giao hàng */}
-                <Card
-                    type="inner"
-                    title="Địa chỉ giao hàng"
-                    style={{ marginBottom: 16 }}
-                >
+                <Card type="inner" title="Địa chỉ giao hàng" style={{ marginBottom: 16 }}>
                     {orderAddress ? (
                         <>
                             <div style={{ marginBottom: 4 }}>
                                 <Text strong>
-                                    {orderAddress.fullName} -{" "}
-                                    {orderAddress.phoneNumber}
+                                    {orderAddress.fullName} - {orderAddress.phoneNumber}
                                 </Text>
                             </div>
-                            <Flex
-                                gap={16}
-                                justify="space-between"
-                                align="center"
-                            >
-                                <div
-                                    style={{
-                                        marginBottom: 8,
-                                        color: "rgba(0,0,0,0.75)",
-                                    }}
-                                >
+                            <Flex gap={16} justify="space-between" align="center">
+                                <div style={{ marginBottom: 8, color: "rgba(0,0,0,0.75)" }}>
                                     {orderAddress.addressDetail}
-                                    {orderAddress.city
-                                        ? `, ${orderAddress.city}`
-                                        : ""}
-                                    {orderAddress.province
-                                        ? `, ${orderAddress.province}`
-                                        : ""}
+                                    {orderAddress.city ? `, ${orderAddress.city}` : ""}
+                                    {orderAddress.province ? `, ${orderAddress.province}` : ""}
                                 </div>
-
                                 <div>
                                     {orderAddress.isDefault && (
-                                        <Tag
-                                            color="blue"
-                                            style={{ marginRight: 8 }}
-                                        >
+                                        <Tag color="blue" style={{ marginRight: 8 }}>
                                             Mặc định
                                         </Tag>
                                     )}
-                                    <Button
-                                        type="link"
-                                        onClick={() =>
-                                            setIsAddressModalOpen(true)
-                                        }
-                                    >
+                                    <Button type="link" onClick={() => setIsAddressModalOpen(true)}>
                                         Chọn/Sửa địa chỉ
                                     </Button>
                                 </div>
@@ -329,9 +299,7 @@ const OrderDetail = () => {
                                 alignItems: "center",
                             }}
                         >
-                            <Text type="secondary">
-                                Chưa có địa chỉ giao hàng
-                            </Text>
+                            <Text type="secondary">Chưa có địa chỉ giao hàng</Text>
                             <Button
                                 type="primary"
                                 size="small"
@@ -365,18 +333,18 @@ const OrderDetail = () => {
                                 />
                             </Col>
                             <Col span={12}>
-                                <Title level={5}>
-                                    {item.productName || "Tên sản phẩm"}
-                                </Title>
-                                <Text type="secondary">
-                                    Số lượng: {item.quantity}
-                                </Text>
+                                <Title level={5}>{item.productName || "Tên sản phẩm"}</Title>
+                                <Text type="secondary">Số lượng: {item.quantity}</Text>
+                                {item.variantName && (
+                                    <div>
+                                        <Text type="secondary">
+                                            {item.variantName}: {item.variantValue}
+                                        </Text>
+                                    </div>
+                                )}
                             </Col>
                             <Col span={6} style={{ textAlign: "right" }}>
-                                <Title
-                                    level={5}
-                                    style={{ color: "#fa541c" }}
-                                >
+                                <Title level={5} style={{ color: "#fa541c" }}>
                                     {formatCurrency(item.price)}
                                 </Title>
                             </Col>
@@ -391,25 +359,12 @@ const OrderDetail = () => {
                     <Col span={24}>
                         <Flex justify="space-between" align="center">
                             <Flex align="center">
-                                <BarcodeOutlined
-                                    style={{
-                                        fontSize: "23px",
-                                        color: COLOR_DEFAULT,
-                                    }}
-                                />
-                                <Text
-                                    style={{
-                                        marginLeft: 8,
-                                        fontSize: "16px",
-                                    }}
-                                >
+                                <BarcodeOutlined style={{ fontSize: "23px", color: COLOR_DEFAULT }} />
+                                <Text style={{ marginLeft: 8, fontSize: "16px" }}>
                                     Shopping Voucher
                                 </Text>
                             </Flex>
-                            <Button
-                                type="link"
-                                onClick={() => setIsVoucherModalOpen(true)}
-                            >
+                            <Button type="link" onClick={() => setIsVoucherModalOpen(true)}>
                                 {selectedVoucher
                                     ? `Đã áp dụng: ${selectedVoucher.code}`
                                     : "Chọn voucher"}
@@ -426,9 +381,7 @@ const OrderDetail = () => {
                             Tổng: {formatCurrency(order?.totalAmount || 0)}
                         </Title>
                         {order?.paymentMethod && (
-                            <Text type="secondary">
-                                Thanh toán: {order.paymentMethod}
-                            </Text>
+                            <Text type="secondary">Thanh toán: {order.paymentMethod}</Text>
                         )}
                         <div style={{ marginTop: 16 }}>
                             <Button
@@ -458,6 +411,7 @@ const OrderDetail = () => {
                 visible={isVoucherModalOpen}
                 onClose={() => setIsVoucherModalOpen(false)}
                 onApply={handleApplyVoucher}
+                cartTotal={cartTotal}
             />
         </div>
     );

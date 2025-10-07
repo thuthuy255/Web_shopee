@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProductAPI.Core;
+using ProductAPI.Data.Enums;
 using ProductAPI.DTOs.Payment;
 using ProductAPI.Helpers;
 using ProductAPI.IRepository;
@@ -148,7 +149,7 @@ namespace ProductAPI.Services
 
 
 
-        public async Task<bool> HandleVnPayReturnAsync(IQueryCollection query)
+        public async Task<(bool Success, string ResponseCode, string Message)> HandleVnPayReturnAsync(IQueryCollection query)
         {
             var vnp_HashSecret = _config["VnPay:HashSecret"];
             var vnpay = new VnPayLibrary();
@@ -158,24 +159,30 @@ namespace ProductAPI.Services
             if (check)
             {
                 string txnRef = query["vnp_TxnRef"];
-                string responseCode = query["vnp_ResponseCode"]; // 00 = thành công
+                string responseCode = query["vnp_ResponseCode"]; // "00" = thành công
 
                 // Lấy order theo txnRef
                 var orderPayment = await _orderRepos.Table.FirstOrDefaultAsync(p => p.TxnRef == txnRef);
                 if (orderPayment != null)
                 {
-                    orderPayment.PaymentStatus = responseCode == "00" ? PaymentStatus.Paid : PaymentStatus.Failed;
+                    orderPayment.PaymentStatus = responseCode == "00"
+                        ? Enums.PaymentStatus.Paid
+                        : Enums.PaymentStatus.Failed;
+
                     orderPayment.MarkDirty(nameof(orderPayment.PaymentStatus));
                     orderPayment.Modified = DateTime.UtcNow;
                     await _orderRepos.UpdateAsync(orderPayment);
                 }
 
+                // Lấy message mô tả theo code
+                var message = Enums.GetVnPayMessage(responseCode);
 
-                return responseCode == "00";
+                return (responseCode == "00", responseCode, message);
             }
 
-            return false;
+            return (false, "97", "Chữ ký không hợp lệ hoặc dữ liệu không hợp lệ");
         }
+
 
     }
 }

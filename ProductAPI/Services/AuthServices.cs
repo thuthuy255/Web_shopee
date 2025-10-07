@@ -107,13 +107,18 @@ namespace ProductAPI.Services
 
 
             var existingUser = await _userRepo.TableNoTracking
-                .FirstOrDefaultAsync(u => u.Email == request.Email);
+                             .FirstOrDefaultAsync(u => u.Email == request.Email || u.Phone == request.Phone);
+
             if (existingUser != null)
             {
-                return MethodResult<bool>.ResultWithError(Constants.MESS_AlreadyExists);
+
+                if (existingUser.Email == request.Email)
+                {
+                    return MethodResult<bool>.ResultWithError("Email đã được sử dụng");
+                }  
             }
-          
-          
+
+
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
             var newUser = new User

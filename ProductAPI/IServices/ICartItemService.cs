@@ -13,5 +13,6 @@ namespace ProductAPI.IServices
         Task<MethodResult<CartItemDetailDto>> UpdateCartItemAsync(Guid userId, CartItemDto dto);
         Task<MethodResult<string>> ToggleCartItemSelectionAsync(Guid userId, Guid productId, bool isSelected, Guid? productVariantId);
         Task<MethodResult<string>> ToggleSelectAllSmartAsync(Guid userId);
+        Task<IMethodResult<bool>> RemoveCartItemAsync(Guid cartItemId);
     }
 }

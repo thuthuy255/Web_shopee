@@ -52,6 +52,11 @@ namespace ProductAPI.Data
                 .WithMany(p => p.OrderItems)
                 .HasForeignKey(oi => oi.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<OrderItem>()
+                .HasOne(oi => oi.Variant)
+                .WithMany()
+                .HasForeignKey(oi => oi.VariantId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // CartItem Relationships
             modelBuilder.Entity<CartItem>()
@@ -121,11 +126,14 @@ namespace ProductAPI.Data
                 .HasForeignKey(o => o.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Address)
                 .WithMany()
                 .HasForeignKey(o => o.AddressId)
                 .OnDelete(DeleteBehavior.Restrict);
+           
+
 
             modelBuilder.Entity<Banner>()
                 .Property(x => x.Id)
