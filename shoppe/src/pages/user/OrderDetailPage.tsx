@@ -21,7 +21,7 @@ import { getUserAddresses } from "../../api/address/address.api";
 import AddressManagement from "./AddressManagement";
 import { formatCurrency } from "../../untils/FormatPrice";
 import VoucherModal from "./VoucherModal";
-import { BarcodeOutlined } from "@ant-design/icons";
+import { BarcodeOutlined, CloseOutlined } from "@ant-design/icons";
 import { COLOR_DEFAULT } from "../../constants/Color";
 
 const { Text, Title } = Typography;
@@ -71,8 +71,6 @@ interface Voucher {
 const OrderDetail = () => {
     const { orderId } = useParams<{ orderId: string }>();
     const location = useLocation();
-
-    // ✅ nhận cả selectedItems + cartItemIds từ CartPage
     const selectedItems: OrderItem[] = location.state?.items || [];
     const cartItemIds: string[] = location.state?.cartItemIds || [];
 
@@ -150,7 +148,11 @@ const OrderDetail = () => {
     const handleApplyVoucher = (voucher: Voucher | null) => {
         if (!order) return;
 
-        if (!voucher) {
+        // ✅ Nếu voucher null hoặc bấm lại đúng voucher đang chọn → bỏ chọn
+        if (
+            !voucher ||
+            (selectedVoucher && voucher && selectedVoucher.code === voucher.code)
+        ) {
             setSelectedVoucher(null);
             setOrder({
                 ...order,
@@ -158,15 +160,19 @@ const OrderDetail = () => {
                 totalAmount: order.originalAmount,
             });
             setCartTotal(order.originalAmount);
+            message.info("Đã bỏ chọn voucher.");
             return;
         }
 
+        // ✅ Ngược lại: áp dụng voucher mới
         let newTotal = order.originalAmount;
+
         if (voucher.discountAmount) {
             newTotal -= voucher.discountAmount;
         } else if (voucher.discountPercent) {
             newTotal -= (order.originalAmount * voucher.discountPercent) / 100;
         }
+
         if (newTotal < 0) newTotal = 0;
 
         setSelectedVoucher(voucher);
@@ -176,7 +182,9 @@ const OrderDetail = () => {
             totalAmount: newTotal,
         });
         setCartTotal(newTotal);
+        message.success(`Đã áp dụng mã: ${voucher.code}`);
     };
+
 
     // ------------------ Thanh toán ------------------
     const handlePayment = async () => {
@@ -365,9 +373,38 @@ const OrderDetail = () => {
                                 </Text>
                             </Flex>
                             <Button type="link" onClick={() => setIsVoucherModalOpen(true)}>
-                                {selectedVoucher
-                                    ? `Đã áp dụng: ${selectedVoucher.code}`
-                                    : "Chọn voucher"}
+                                {selectedVoucher ? (
+                                    <div
+                                        style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            backgroundColor: "#e6f7ff",
+                                            border: "1px dashed #1890ff",
+                                            borderRadius: 6,
+                                            padding: "4px 10px",
+                                            cursor: "pointer",
+                                            gap: 8,
+                                        }}
+                                        onClick={() => handleApplyVoucher(null)} // Bấm toàn bộ box => bỏ voucher
+                                    >
+                                        <BarcodeOutlined style={{ color: "#1890ff" }} />
+                                        <span style={{ color: "#1890ff", fontWeight: 600 }}>
+                                            {selectedVoucher.code || `Giảm ${selectedVoucher.discountPercent}%`}
+                                        </span>
+                                        <CloseOutlined style={{ color: "#1890ff", fontWeight: 600 }} />
+                                    </div>
+                                ) : (
+                                    <Button
+                                        type="link"
+                                        onClick={() => setIsVoucherModalOpen(true)}
+                                        style={{ color: "#20609bff", fontWeight: 500 }}
+                                    >
+                                        Chọn voucher
+                                    </Button>
+                                )}
+
+
+
                             </Button>
                         </Flex>
                     </Col>

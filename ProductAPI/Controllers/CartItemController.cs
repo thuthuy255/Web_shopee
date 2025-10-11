@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using ProductAPI.DTOs.CartItem;
 using ProductAPI.IRepository;
 using ProductAPI.IServices;
+using ProductAPI.Services;
 
 namespace ProductAPI.Controllers
 {
@@ -98,8 +99,26 @@ namespace ProductAPI.Controllers
             await _cartItemServices.RemoveAllItemsAsync(userId.Value);
             return Ok("Đã xoá tất cả các sản phẩm đã chọn khỏi giỏ hàng.");
         }
+        [HttpDelete("removeCartItem")]
+        public async Task<IActionResult> RemoveCartItem([FromQuery] Guid cartItemId)
+        {
+            if (cartItemId == Guid.Empty)
+                return BadRequest(new { success = false, message = "Thiếu cartItemId." });
 
-        [HttpPost("toggle-selection")]
+            var result = await _cartItemServices.RemoveCartItemAsync(cartItemId);
+
+            if (!result.Success)
+                return BadRequest(new { success = false, message = result.Message });
+
+            return Ok(new
+            {
+                success = true,
+                message = result.Message,
+                data = result.Data
+            });
+        }
+
+    [HttpPost("toggle-selection")]
         public async Task<IActionResult> ToggleCartItemSelection([FromQuery] Guid productId, [FromQuery] bool isSelected, [FromQuery] Guid? productVariantId)
         {
             var userId = _userPrincipal.GetUserId();

@@ -33,7 +33,6 @@ function CartPage() {
 
     // Tổng tiền giỏ hàng (subtotal)
     const [cartTotal, setCartTotal] = useState<number>(0);
-
     // Voucher state
     const [isVoucherModalVisible, setVoucherModalVisible] = useState(false);
     const [appliedVoucher, setAppliedVoucher] = useState<any>(null);
@@ -321,6 +320,7 @@ function CartPage() {
                 ))}
 
                 {/* Tổng cộng */}
+                {/* Tổng cộng */}
                 <Card style={{ position: "sticky", bottom: 0, zIndex: 100, background: "#fff" }}>
                     <Flex justify="space-between" align="center">
                         <Flex align="center">
@@ -333,6 +333,7 @@ function CartPage() {
                                 Chọn hoặc nhập mã
                             </Text>
                         </Flex>
+
                         <Flex align="center" gap={20}>
                             <Text strong>
                                 Tổng cộng ({selectedItems.length} sản phẩm đã chọn):
@@ -340,18 +341,40 @@ function CartPage() {
                             <Text strong type="danger" style={{ fontSize: 18 }}>
                                 {finalPrice.toLocaleString("vi-VN")} đ
                             </Text>
-                            <Button
-                                type="primary"
-                                style={{ backgroundColor: COLOR_DEFAULT }}
-                                size="large"
-                                disabled={finalPrice === 0}
-                                onClick={handleCheckout}
-                            >
-                                Mua hàng
-                            </Button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {appliedVoucher && (
+                                    <div
+                                        style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            backgroundColor: "#e6f7ff",
+                                            border: "1px dashed #1890ff",
+                                            borderRadius: 6,
+                                            padding: "4px 10px",
+                                            marginLeft: 12,
+                                        }}
+                                    >
+                                        <BarcodeOutlined style={{ color: "#1890ff", marginRight: 6 }} />
+                                        <span style={{ color: "#1890ff", fontWeight: 600 }}>
+                                            {appliedVoucher.code || `Giảm ${appliedVoucher.discountPercent}%`}
+                                        </span>
+                                    </div>
+                                )}
+
+                                <Button
+                                    type="primary"
+                                    style={{ backgroundColor: COLOR_DEFAULT }}
+                                    size="large"
+                                    disabled={finalPrice === 0}
+                                    onClick={handleCheckout}
+                                >
+                                    Mua hàng
+                                </Button>
+                            </div>
                         </Flex>
                     </Flex>
                 </Card>
+
 
                 {/* Voucher Modal */}
                 <VoucherModal

@@ -181,23 +181,22 @@ const ShopeeSearch = () => {
                 {/* Category list */}
                 <div style={{ display: 'flex', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                     {categories.map((cat) => (
-                        <a
+                        <div
                             key={cat.id}
-                            href="#"
                             title={cat.name}
                             style={{
                                 color: 'white',
-                                textDecoration: 'none',
                                 backgroundColor: COLOR_DEFAULT,
                                 padding: '2px 6px',
                                 borderRadius: 4,
                                 marginRight: 8,
-                                display: 'inline-block',
+                                cursor: 'pointer',
                                 whiteSpace: 'nowrap',
                             }}
+                            onClick={() => navigate(`/user/products?category=${cat.id}`)}
                         >
                             {cat.name}
-                        </a>
+                        </div>
                     ))}
                 </div>
             </div>

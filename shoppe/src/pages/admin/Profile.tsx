@@ -14,6 +14,8 @@ import {
 } from "antd";
 import { getUserInfo, updateUser } from "../../api/user.api";
 import { showError, showSuccess } from "../../untils/ShowToast";
+import { useDispatch } from "react-redux";
+import { setUserState } from "../../features/slices/user.slice";
 
 const { Title, Text } = Typography;
 
@@ -23,7 +25,7 @@ export const ProfileForm = () => {
   const [loading, setLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
-
+  const dispatch = useDispatch();
   const handleUpload = ({ fileList }: { fileList: UploadFile[] }) => {
     setFileList(fileList);
     if (fileList.length > 0 && fileList[0].originFileObj) {
@@ -51,6 +53,7 @@ export const ProfileForm = () => {
       const res: any = await updateUser(formData);
       if (res.success) {
         showSuccess("Cập nhật thành công");
+        dispatch(setUserState(res.data));
         handleGetInfoUser();
       } else {
         showError(res.message || "Cập nhật thất bại");
