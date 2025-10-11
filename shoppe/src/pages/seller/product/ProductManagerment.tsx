@@ -7,6 +7,7 @@ import { deleteProduct, getAllProductOfSeller } from '../../../api/product/produ
 import LoadingDefault from '../../../components/loading/LoadingDefault';
 import { debounce } from 'lodash';
 import Search from 'antd/es/input/Search';
+import { useDispatch } from 'react-redux';
 
 interface Product {
     id: string;
@@ -116,6 +117,7 @@ export default function ProductManagement() {
     const [keyword, setKeyword] = useState('');
     const [filterIsActive, setFilterIsActive] = useState<string | null>(null);
     const [filterSellerStatus, setFilterSellerStatus] = useState<string | null>(null);
+    const dispatch = useDispatch();
 
     const navigate = useNavigate();
 
@@ -136,7 +138,6 @@ export default function ProductManagement() {
                 setData(res?.data);
                 setTotal(res?.totalRecord); // lấy tổng từ API
                 setCurrentPage(page);
-            } else {
                 message.error('Không thể lấy danh sách sản phẩm');
             }
         } catch (error) {
@@ -178,13 +179,13 @@ export default function ProductManagement() {
             setLoading(false);
         }
     };
-    const filteredData = data
-        .filter(item =>
-            filterIsActive === null || item.isActive.toString() === filterIsActive
-        )
-        .filter(item =>
-            filterSellerStatus === null || item.sellerStatus.toString() === filterSellerStatus
-        );
+    // const filteredData = data
+    //     .filter(item =>
+    //         filterIsActive === null || item.isActive.toString() === filterIsActive
+    //     )
+    //     .filter(item =>
+    //         filterSellerStatus === null || item.sellerStatus.toString() === filterSellerStatus
+    //     );
 
     return (
         <div>

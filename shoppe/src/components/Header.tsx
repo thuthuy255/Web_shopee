@@ -1,5 +1,5 @@
 import { Flex, Image, Dropdown, Menu, Badge, Button } from 'antd';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback } from 'react';
 import { BiBell, BiCart } from 'react-icons/bi';
 import { BsQuestionCircle } from 'react-icons/bs';
 import logo from '../assets/img/logo_home.png';
@@ -12,8 +12,10 @@ import { COLOR_DEFAULT } from '../constants/Color';
 import { getCartState } from '../features/slices/cart.slice';
 import CartMenuHeader from './CartMenuHeader';
 
+
 function Header() {
     const user = useSelector(InfoUserState);
+    console.log("🚀 ~ Header ~ user:", user)
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { data: cartItems, totalCartItem } = useSelector(getCartState);
@@ -37,21 +39,28 @@ function Header() {
         navigate('/user');
     }
 
-    const userMenu = [
-        {
-            key: '1',
-            label: <span onClick={() => navigate('/user/profile')}>Trang cá nhân</span>
-        },
-        {
-            key: '2',
-            label: <span onClick={() => navigate('/user/orderstatus')}>Đơn mua</span>
-        },
-        {
-            key: '3',
-            label: <span onClick={handleLogout}>Đăng xuất</span>
-        },
+    const userMenu = user && user.id
+        ? [
+            {
+                key: "1",
+                label: <span onClick={() => navigate("/user/profile")}>Trang cá nhân</span>,
+            },
+            {
+                key: "2",
+                label: <span onClick={() => navigate("/user/orderstatus")}>Đơn mua</span>,
+            },
+            {
+                key: "3",
+                label: <span onClick={handleLogout}>Đăng xuất</span>,
+            },
+        ]
+        : [
+            {
+                key: "1",
+                label: <span onClick={() => navigate("/auth/login")}>Đăng nhập</span>,
+            },
+        ];
 
-    ];
 
 
 

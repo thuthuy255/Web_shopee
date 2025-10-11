@@ -17,19 +17,22 @@ namespace ProductAPI.Services
         private readonly IRepository<User> _userRepos;
         private readonly IRepository<Category> _cateRepos;
         private readonly IRepository<OrderItem> _orderItemRepos;
+        private readonly IRepository<Promotion> _promoRepos;
 
         public StatisticService(
             IRepository<Product> productRepos,
             IRepository<Order> orderRepos,
             IRepository<User> userRepos,
            IRepository<Category> cateRepos,
-           IRepository<OrderItem> orderItemRepos)
+           IRepository<OrderItem> orderItemRepos,
+           IRepository<Promotion> promoRepos)
         {
             _productRepos = productRepos;
             _orderRepos = orderRepos;
             _userRepos = userRepos;
             _cateRepos = cateRepos;
             _orderItemRepos = orderItemRepos;
+            _promoRepos = promoRepos;
         }
 
         public async Task<MethodResult<StatisticAdminReponse>> GetStatisticAdminAsync()
@@ -41,12 +44,14 @@ namespace ProductAPI.Services
                .Where(o => o.PaymentStatus == Data.Enums.Enums.PaymentStatus.Paid)
                .SumAsync(o => o.TotalAmount);
             var totalUser = await _userRepos.TableNoTracking.CountAsync();
+            var totalVoucher = await _promoRepos.TableNoTracking.CountAsync();
             var result = new StatisticAdminReponse()
             {
                 totalCategory = totalCategory,
                 totalProducts = totalProducts,
                 totalQuantitySeller = totalUser,
-                totalRevenue = totalRevenue
+                totalRevenue = totalRevenue,
+                totalVoucher = totalVoucher
             };
             return MethodResult<StatisticAdminReponse>.ResultWithData(result, "Lấy thông tin thành công");
         }

@@ -1,40 +1,55 @@
-import { Input, Button } from 'antd';
+import { Input } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { getAllCategories } from '../api/category/category.api';
 import { showError } from '../untils/ShowToast';
 import { COLOR_DEFAULT } from '../constants/Color';
+import { InfoProductState } from '../features/slices/product.slice';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+
+interface Category {
+    id: string;
+    name: string;
+    description: string;
+    imageUrl: string;
+    parentCategoryId?: string | null;
+}
+
+interface Product {
+    id: string;
+    productName: string;
+    description: string;
+    price: number;
+    stockQuantity: number;
+    thumbnail: string;
+    isActive: boolean;
+    sellerStatus: boolean;
+    categoryId: string;
+    categoryName: string;
+    categoryDescription: string;
+    categoryImageUrl: string;
+}
 
 const ShopeeSearch = () => {
-    interface Category {
-        id: string;
-        name: string;
-        description: string;
-        imageUrl: string;
-        parentCategoryId?: string | null;
-    }
-    const [data, setData] = useState<Category[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize] = useState(10);
-    const [total, setTotal] = useState(0);
+    const [searchText, setSearchText] = useState("");
+    const navigate = useNavigate();
 
+    const { products } = useSelector(InfoProductState);
+
+    // fetch categories
     const fetchCategory = async (page: number) => {
         try {
-            const body = {
-                pageInfo: {
-                    page: page,
-                    pageSize: pageSize,
-                },
-                keyWord: '',
-
-            };
+            const body = { pageInfo: { page, pageSize }, keyWord: '' };
             const res = await getAllCategories(body);
-            if (res.data) {
-                setData(res.data);
-                setTotal(res.data?.totalRecord || (res.data?.length ?? 0));
+            if (res?.data) {
+                setCategories(res?.data);
                 setCurrentPage(page);
             } else {
-                showError('Không thể lấy danh sách người bán');
+                showError('Không thể lấy danh sách danh mục');
             }
         } catch (error) {
             console.error(error);
@@ -46,12 +61,17 @@ const ShopeeSearch = () => {
         fetchCategory(currentPage);
     }, []);
 
+    // filter products theo searchText
+    const filteredProducts = useMemo(() => {
+        if (!searchText) return [];
+        return products.filter((product: Product) =>
+            product?.productName.toLowerCase().includes(searchText.toLowerCase())
+        );
+    }, [searchText, products]);
 
     return (
-        <div style={{ width: '60%', display: 'flex', justifyContent: 'center', backgroundColor: COLOR_DEFAULT }}>
-            {/* Container gói search và category */}
+        <div style={{ width: '60%', display: 'flex', justifyContent: 'center', backgroundColor: COLOR_DEFAULT, position: 'relative' }}>
             <div style={{ width: '80%' }}>
-
                 {/* Search box */}
                 <div
                     style={{
@@ -62,41 +82,109 @@ const ShopeeSearch = () => {
                         border: `2px solid ${COLOR_DEFAULT}`,
                         borderRadius: 4,
                         overflow: 'hidden',
-                        backgroundColor: 'white',
+
                         padding: '5px',
+                        position: 'relative',
+                        zIndex: 1
                     }}
                 >
                     <Input
-                        placeholder="Tìm sản phẩm, thương hiệu và tên shop"
-                        variant="borderless"
-                        style={{
-                            flex: 1,
-                            fontSize: 14,
-                        }}
-                    />
-                    <Button
-                        type="primary"
-                        icon={<SearchOutlined />}
-                        style={{
-                            backgroundColor: COLOR_DEFAULT,
-                            borderRadius: 0,
-                            width: '60px',
-                            height: '38px',
-                        }}
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        placeholder="Tìm kiếm sản phẩm..."
+                        allowClear
+                        suffix={<SearchOutlined />}
+                        style={{ backgroundColor: 'white', padding: "15px", borderRadius: '10px' }}
                     />
                 </div>
 
+                {/* Dropdown hiển thị sản phẩm khi searchText không rỗng */}
+                {searchText && filteredProducts.length > 0 && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '55px',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '1px solid #ccc',
+                        borderRadius: 4,
+                        maxHeight: 300,
+                        overflowY: 'auto',
+                        zIndex: 10
+                    }}>
+                        {filteredProducts.map((prod: any) => (
+                            <div
+                                key={prod.id}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    padding: '8px 12px',
+                                    borderBottom: '1px solid #f0f0f0',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.2s',
+                                }}
+                                onClick={() => {
+                                    navigate(`/user/products/${prod.id}`);
+                                    setSearchText(""); // ✅ reset search để ẩn dropdown
+                                    // setFilteredProducts([]); // ✅ (tuỳ chọn) xóa danh sách kết quả
+                                }}
+
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+                            >
+                                {/* Thumbnail */}
+                                <img
+                                    src={prod.thumbnail || 'https://via.placeholder.com/60'}
+                                    alt={prod.productName}
+                                    style={{
+                                        width: 60,
+                                        height: 60,
+                                        objectFit: 'cover',
+                                        borderRadius: 6,
+                                        flexShrink: 0,
+                                        border: '1px solid #eee',
+                                    }}
+                                />
+
+                                {/* Info */}
+                                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                    <span
+                                        style={{
+                                            fontSize: 14,
+                                            fontWeight: 500,
+                                            color: '#333',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                        }}
+                                    >
+                                        {prod.productName}
+                                    </span>
+                                    <span
+                                        style={{
+                                            fontSize: 13,
+                                            fontWeight: 600,
+                                            color: '#d0021b',
+                                            marginTop: 4,
+                                        }}
+                                    >
+                                        {prod.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+
+                    </div>
+                )}
+
                 {/* Category list */}
-                <div style={{
-                    display: 'flex',
-                    overflow: 'hidden', // ẩn phần tràn
-                    whiteSpace: 'nowrap' // giữ một dòng
-                }}>
-                    {data.map((data, index) => (
+                <div style={{ display: 'flex', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    {categories.map((cat) => (
                         <a
-                            key={index}
+                            key={cat.id}
                             href="#"
-                            title={data.name}
+                            title={cat.name}
                             style={{
                                 color: 'white',
                                 textDecoration: 'none',
@@ -108,15 +196,12 @@ const ShopeeSearch = () => {
                                 whiteSpace: 'nowrap',
                             }}
                         >
-                            {data.name}
+                            {cat.name}
                         </a>
                     ))}
                 </div>
-
             </div>
         </div>
-
-
     );
 };
 

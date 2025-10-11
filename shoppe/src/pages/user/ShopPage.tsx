@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Card, Avatar, Row, Col, Typography, Button, Divider, Spin, Pagination, Input, message } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import { getInfoShop } from "./../../api/product/product.api";
@@ -26,7 +26,7 @@ const ShopPage = () => {
     const { sellerId } = useParams();
     const [shop, setShop] = useState<ShopInfo | null>(null);
     const [loading, setLoading] = useState(true);
-
+    const navigate = useNavigate();
     const [products, setProducts] = useState<Product[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(15);
@@ -163,28 +163,7 @@ const ShopPage = () => {
                                 <Title level={4} style={{ color: 'white', marginBottom: 4 }}>
                                     {shop?.sellerName}
                                 </Title>
-                                {/* <Text style={{ color: 'rgba(255,255,255,0.85)', marginBottom: 8 }}>
-                                    {shop?.description}
-                                </Text>
-                                {/* Optional: Followers / Rating / Follow Button */}
-                                {/* <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                                    <Text style={{ color: 'rgba(255,255,255,0.85)' }}>
-                                        {shop?.followers?.toLocaleString()} Followers
-                                    </Text>
-                                    <button
-                                        style={{
-                                            backgroundColor: '#ff424f',
-                                            color: '#fff',
-                                            border: 'none',
-                                            borderRadius: 12,
-                                            padding: '4px 12px',
-                                            cursor: 'pointer',
-                                            fontWeight: 600,
-                                        }}
-                                    >
-                                        Follow
-                                    </button>
-                                </div> */}
+
                             </div>
                         </div>
                     </Col>
@@ -194,61 +173,63 @@ const ShopPage = () => {
 
 
             {/* Shop Products */}
-            <Row gutter={[16, 16]}>
+            <Row gutter={[16, 20]} justify="start">
                 {products.map((p) => (
-                    <Col xs={12} sm={8} md={6} lg={3} key={p.id}>
+                    <Col xs={24} sm={12} md={8} lg={6} xl={4} key={p.id}>
                         <Card
                             hoverable
                             style={{
                                 borderRadius: 12,
                                 overflow: 'hidden',
-                                transition: 'transform 0.2s',
+                                transition: 'transform 0.2s ease',
+                                height: '100%',
+
                             }}
                             onMouseEnter={(e) => {
-                                const card = e.currentTarget;
-                                card.style.transform = 'translateY(-4px) scale(1.03)';
+                                e.currentTarget.style.transform = 'translateY(-4px) scale(1.03)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
                             }}
                             onMouseLeave={(e) => {
-                                const card = e.currentTarget;
-                                card.style.transform = 'translateY(0) scale(1)';
+                                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                e.currentTarget.style.boxShadow = 'none';
                             }}
                             cover={
-                                <div style={{ position: 'relative' }}>
+                                <div style={{ position: 'relative' }} onClick={() => navigate(`/user/products/${p.id}`)}>
                                     <img
                                         alt={p.productName}
                                         src={p.thumbnail}
                                         style={{
                                             width: '100%',
-                                            height: 180,
+                                            height: 240,
                                             objectFit: 'cover',
                                             display: 'block',
+                                            borderBottom: '1px solid #f0f0f0',
                                         }}
                                     />
-                                    {/* Optional: Discount badge */}
-
                                 </div>
                             }
                         >
                             <Title
                                 level={5}
                                 style={{
-                                    marginBottom: 4,
-                                    height: 40,
+                                    marginBottom: 6,
+                                    height: 44,
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
                                 }}
-                                title={p.productName} // hover show full name
+                                title={p.productName}
                             >
                                 {p.productName}
                             </Title>
-                            <Text strong style={{ color: 'red', fontSize: 16 }}>
+                            <Text strong style={{ color: '#d0021b', fontSize: 18 }}>
                                 {p.price.toLocaleString('vi-VN')}₫
                             </Text>
                         </Card>
                     </Col>
                 ))}
             </Row>
+
 
 
             {/* Pagination */}

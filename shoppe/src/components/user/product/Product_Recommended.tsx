@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { getAllProduct } from '../../../api/product/product.api';
 import '../../../css/ProductCard.css';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setProductList } from '../../../features/slices/product.slice';
 
 function ProductRecommended() {
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-
+    const dispatch = useDispatch();
     useEffect(() => {
         (async () => {
             setLoading(true);
@@ -17,7 +19,10 @@ function ProductRecommended() {
                     keyWord: '',
 
                 });
-                if (res.success && Array.isArray(res.data)) setData(res.data);
+                if (res.success && Array.isArray(res.data)) {
+                    setData(res.data);
+                    dispatch(setProductList(res?.data));
+                }
                 else console.error('Lấy sản phẩm thất bại');
             } catch (e) {
                 console.error('Lỗi tải dữ liệu', e);
