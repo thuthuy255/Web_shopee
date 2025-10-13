@@ -13,6 +13,7 @@ export const useGetDetailCategoryQuery = ({
         queryFn: () => getDetailCategory(params),
         staleTime: 0,
         enabled: true,
+        gcTime: 0,
     };
     return useQuery(_options);
 };

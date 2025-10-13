@@ -62,6 +62,7 @@ export default function BannerCreate() {
             }
             await createBanner(formData);
             showSuccess('Thêm banner thành công');
+
             navigate('/admin/banner');
         } catch (error: any) {
             console.log("🚀 ~ handleSubmit ~ error:", error)

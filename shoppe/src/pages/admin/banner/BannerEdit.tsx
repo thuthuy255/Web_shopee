@@ -69,13 +69,14 @@ export default function BannerEdit() {
                 linkTo: banner?.linkTo || '',
                 isActive: banner?.isActive ?? true,
                 type: banner?.type || '',
-                imageFile: banner?.imageUrl ? { url: banner.imageUrl } : null // ✅ preview ảnh nếu có
+                imageFile: banner?.imageUrl ? { url: banner.imageUrl } : null,
             });
         }
     }, [data]);
 
+
     const handleSubmit = (values: any) => {
-        setLoadingSubmit(true);
+        // setLoadingSubmit(true);
         const formData = new FormData();
 
         formData.append('Id', values.id);
@@ -101,9 +102,9 @@ export default function BannerEdit() {
             .catch(() => {
                 message.error('Có lỗi xảy ra khi cập nhật');
             })
-            .finally(() => {
-                setLoadingSubmit(false);
-            });
+        // .finally(() => {
+        //     setLoadingSubmit(false);
+        // });
     };
 
     return (

@@ -108,7 +108,7 @@ export default function PromotionEdit() {
 
 
     const handleSubmit = (values: any) => {
-        setLoadingSubmit(true);
+        // setLoadingSubmit(true);
 
         // Nếu có chọn Date, cần convert thành ISO string
         const body = {
@@ -129,9 +129,9 @@ export default function PromotionEdit() {
             .catch(() => {
                 message.error('Đã xảy ra lỗi khi cập nhật');
             })
-            .finally(() => {
-                setLoadingSubmit(false);
-            });
+        // .finally(() => {
+        //     setLoadingSubmit(false);
+        // });
     };
 
     return (

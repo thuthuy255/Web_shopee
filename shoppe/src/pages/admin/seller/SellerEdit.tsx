@@ -55,7 +55,7 @@ export default function SellerEdit() {
     }, [data]);
 
     const handleSubmit = (values: any) => {
-        setLoadingSubmit(true);
+        // setLoadingSubmit(true);
         const formData = new FormData();
 
         formData.append('Id', values.id); // 🔥 phải có để backend biết user nào cần update
@@ -81,9 +81,9 @@ export default function SellerEdit() {
             .catch((res: any) => {
                 showError(res?.error);
             })
-            .finally(() => {
-                setLoadingSubmit(false);
-            });
+        // .finally(() => {
+        //     setLoadingSubmit(false);
+        // });
     };
 
     return (

@@ -1,7 +1,8 @@
-import React, { memo, useEffect, useState } from 'react';
-import { Form, Input, Button, Select, Card, Row, Col, Upload, DatePicker } from 'antd';
+import React, { memo, use, useEffect, useState } from 'react';
+import { Form, Input, Button, Select, Card, Row, Col, Upload, DatePicker, Space } from 'antd';
 import { FiUploadCloud } from 'react-icons/fi';
 import moment from 'moment';
+import { useNavigate } from 'react-router-dom';
 
 export interface Field {
     name: string;
@@ -32,7 +33,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     loading = false,
 }) => {
     const [form] = Form.useForm();
-
+    const navigate = useNavigate();
     // state quản lý file list cho tất cả field file
     const [fileLists, setFileLists] = useState<Record<string, any[]>>({});
 
@@ -174,11 +175,30 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                     ))}
                 </Row>
 
-                <Form.Item style={{ textAlign: 'center', marginTop: 24 }}>
-                    <Button type="primary" htmlType="submit" size="large" loading={loading} style={{ minWidth: 150 }}>
-                        {submitText || (isEdit ? 'Cập nhật' : 'Thêm mới')}
-                    </Button>
+                <Form.Item style={{ textAlign: 'center', marginTop: 32 }}>
+                    <Space size="middle">
+                        <Button
+                            type="primary"
+                            htmlType="submit"
+                            size="large"
+                            loading={loading}
+                            style={{ minWidth: 160 }}
+                        >
+                            {submitText || (isEdit ? 'Cập nhật' : 'Thêm mới')}
+                        </Button>
+
+                        <Button
+                            type="default"
+                            size="large"
+                            style={{ minWidth: 160 }}
+                            onClick={() => navigate(-1)}
+                            disabled={loading}
+                        >
+                            Hủy
+                        </Button>
+                    </Space>
                 </Form.Item>
+
             </Form>
         </Card>
     );

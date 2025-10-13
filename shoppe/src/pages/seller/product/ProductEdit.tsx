@@ -143,7 +143,7 @@ export default function ProductEdit() {
     ];
 
     const handleSubmit = async (values: any) => {
-        setLoadingSubmit(true);
+        // setLoadingSubmit(true);
         try {
             const formData = new FormData();
 
@@ -214,9 +214,10 @@ export default function ProductEdit() {
         } catch (err) {
             console.error(err);
             message.error('Đã xảy ra lỗi khi cập nhật sản phẩm');
-        } finally {
-            setLoadingSubmit(false);
         }
+        // finally {
+        //     setLoadingSubmit(false);
+        // }
     };
 
     return (

@@ -45,7 +45,7 @@ export default function CategoryEdit() {
     }, []);
 
     useEffect(() => {
-        if (data) {
+        if (data?.data) {
             const category = data.data;
             setInitialValues({
                 id: category.id,
@@ -83,7 +83,7 @@ export default function CategoryEdit() {
     ];
 
     const handleSubmit = (values: any) => {
-        setLoadingSubmit(true);
+        // setLoadingSubmit(true);
         const formData = new FormData();
         formData.append('Id', values.id);
         formData.append('name', values.name);
@@ -107,9 +107,9 @@ export default function CategoryEdit() {
             .catch(() => {
                 message.error('Đã xảy ra lỗi khi cập nhật danh mục');
             })
-            .finally(() => {
-                setLoadingSubmit(false);
-            });
+        // .finally(() => {
+        //     setLoadingSubmit(false);
+        // });
     };
 
     return (

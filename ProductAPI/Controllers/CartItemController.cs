@@ -107,7 +107,7 @@ namespace ProductAPI.Controllers
 
             var result = await _cartItemServices.RemoveCartItemAsync(cartItemId);
 
-            if (!result.Success)
+            if (!result.Success )
                 return BadRequest(new { success = false, message = result.Message });
 
             return Ok(new
