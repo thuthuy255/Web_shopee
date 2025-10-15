@@ -15,7 +15,6 @@ import CartMenuHeader from './CartMenuHeader';
 
 function Header() {
     const user = useSelector(InfoUserState);
-    console.log("🚀 ~ Header ~ user:", user)
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { data: cartItems, totalCartItem } = useSelector(getCartState);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
     Card,
     Row,
@@ -21,7 +21,7 @@ import { getUserAddresses } from "../../api/address/address.api";
 import AddressManagement from "./AddressManagement";
 import { formatCurrency } from "../../untils/FormatPrice";
 import VoucherModal from "./VoucherModal";
-import { BarcodeOutlined, CloseOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, BarcodeOutlined, CloseOutlined } from "@ant-design/icons";
 import { COLOR_DEFAULT } from "../../constants/Color";
 
 const { Text, Title } = Typography;
@@ -73,7 +73,7 @@ const OrderDetail = () => {
     const location = useLocation();
     const selectedItems: OrderItem[] = location.state?.items || [];
     const cartItemIds: string[] = location.state?.cartItemIds || [];
-
+    const navigate = useNavigate();
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
     const [order, setOrder] = useState<Order | null>(null);
     const [addresses, setAddresses] = useState<Address[]>([]);
@@ -268,6 +268,23 @@ const OrderDetail = () => {
 
     return (
         <div style={{ padding: "24px 16px", maxWidth: "80%", margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+                <Button
+                    type="text"
+                    icon={<ArrowLeftOutlined />}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        color: "#555",
+                        fontWeight: 500,
+                    }}
+                    onClick={() => navigate(-1)}
+                >
+                    Quay lại
+                </Button>
+            </div>
+
             <Card
                 style={{ borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}
                 bodyStyle={{ padding: 24 }}

@@ -35,13 +35,20 @@ const VoucherModal = ({ visible, onClose, onApply, cartTotal }: VoucherModalProp
         setLoading(true);
         try {
             const res: any = await getPromotions({ pageInfo: { page: 1, pageSize: 50 } });
-            setVouchers(res.data || []);
+
+            // ✅ Chỉ lấy những voucher có trạng thái Active
+            const activeVouchers = (res.data || []).filter(
+                (v: any) => v.status === "Active"
+            );
+
+            setVouchers(activeVouchers);
         } catch (err) {
             console.error("Lỗi load voucher:", err);
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleApply = () => {
         onApply(selectedVoucher);

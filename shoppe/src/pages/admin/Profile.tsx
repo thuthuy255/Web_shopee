@@ -117,7 +117,7 @@ export const ProfileForm = () => {
               <Input type="hidden" />
             </Form.Item>
 
-            <Form.Item
+            {/* <Form.Item
               name="username"
               label="Tên đăng nhập"
               rules={[
@@ -141,7 +141,7 @@ export const ProfileForm = () => {
                   e.target.value = normalized;
                 }}
               />
-            </Form.Item>
+            </Form.Item> */}
 
 
             <Form.Item

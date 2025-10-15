@@ -1,8 +1,11 @@
-import React, { memo, use, useEffect, useState } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { Form, Input, Button, Select, Card, Row, Col, Upload, DatePicker, Space } from 'antd';
 import { FiUploadCloud } from 'react-icons/fi';
-import moment from 'moment';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import { useNavigate } from 'react-router-dom';
+
+dayjs.extend(utc);
 
 export interface Field {
     name: string;
@@ -34,7 +37,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 }) => {
     const [form] = Form.useForm();
     const navigate = useNavigate();
-    // state quản lý file list cho tất cả field file
     const [fileLists, setFileLists] = useState<Record<string, any[]>>({});
 
     useEffect(() => {
@@ -44,12 +46,20 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     useEffect(() => {
         if (initialValues) {
             const convertedValues = { ...initialValues };
+
             fields.forEach((field) => {
+                // ✅ FIX phần DATE
                 if (field.type === 'date' && initialValues[field.name]) {
-                    convertedValues[field.name] = moment(initialValues[field.name]);
+                    const rawDate = initialValues[field.name];
+                    if (typeof rawDate === 'string' && rawDate.includes('T')) {
+                        // parse UTC để giữ nguyên ngày, không bị lệch múi giờ
+                        convertedValues[field.name] = dayjs.utc(rawDate).local();
+                    } else {
+                        convertedValues[field.name] = dayjs(rawDate, 'YYYY-MM-DD');
+                    }
                 }
 
-                // khởi tạo fileList state từ initialValues nếu field type=file
+                // ✅ Khởi tạo file list nếu có field file
                 if (field.type === 'file') {
                     const isMultiple = field.name === 'ProductImages';
                     const currentValueRaw = initialValues[field.name];
@@ -74,6 +84,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                     setFileLists(prev => ({ ...prev, [field.name]: list }));
                 }
             });
+
             form.setFieldsValue(convertedValues);
         }
     }, [initialValues, fields, form]);
@@ -97,7 +108,13 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             case 'email':
                 return <Input type="email" placeholder={`Nhập ${field.label}`} />;
             case 'date':
-                return <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />;
+                return (
+                    <DatePicker
+                        style={{ width: '100%' }}
+                        format="YYYY-MM-DD"
+                        allowClear
+                    />
+                );
             case 'file': {
                 const isMultiple = field.name === 'ProductImages';
                 const fileListState = fileLists[field.name] || [];
@@ -112,17 +129,15 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                                 uid: file.uid,
                                 name: file.name,
                                 status: "done",
-                                originFileObj: file,  // giữ file gốc
+                                originFileObj: file,
                                 url: URL.createObjectURL(file),
                             };
 
                             const updatedList = isMultiple ? [...fileListState, newFile] : [newFile];
                             setFileLists((prev) => ({ ...prev, [field.name]: updatedList }));
-
-                            // cập nhật form
                             form.setFieldsValue({ [field.name]: isMultiple ? updatedList : newFile });
 
-                            return false; // chặn upload tự động
+                            return false;
                         }}
                         onRemove={(fileToRemove) => {
                             const newList = fileListState.filter(f => f.uid !== fileToRemove.uid);
@@ -134,7 +149,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                     </Upload>
                 );
             }
-
             default:
                 return <Input placeholder={`Nhập ${field.label}`} />;
         }
@@ -142,13 +156,17 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
     const handleFinish = (values: any) => {
         const processed = { ...values };
+
         fields.forEach((field) => {
             if (field.type === 'date' && values[field.name]) {
-                processed[field.name] = values[field.name].toISOString();
+                // giữ nguyên ngày theo local, không ép UTC
+                processed[field.name] = dayjs(values[field.name]).format('YYYY-MM-DD');
             }
         });
+
         onSubmit(processed);
     };
+
 
     return (
         <Card style={{ margin: 'auto', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
@@ -198,7 +216,6 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                         </Button>
                     </Space>
                 </Form.Item>
-
             </Form>
         </Card>
     );

@@ -17,8 +17,8 @@ export default function SellerEdit() {
 
     const fields: Field[] = [
         { name: 'id', type: 'hidden' },
-        { name: 'fullName', label: 'Họ và tên', type: 'text', fullWidth: false },
-        { name: 'username', label: 'Tên đăng nhập', type: 'text', fullWidth: false },
+        { name: 'fullName', label: 'Tên cửa hàng', type: 'text', fullWidth: false },
+        { name: 'username', label: 'Tên người bán', type: 'text', fullWidth: false },
         { name: 'email', label: 'Email', type: 'email', fullWidth: false },
         { name: 'phone', label: 'Số điện thoại', type: 'text', fullWidth: false },
         {

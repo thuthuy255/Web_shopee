@@ -79,6 +79,7 @@ export default function CategoryEdit() {
             name: 'imageUrl',
             label: 'Ảnh đại diện',
             type: 'file',
+            rules: [{ required: true, message: 'Vui lòng chọn ảnh đại diện' }],
         },
     ];
 

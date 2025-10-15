@@ -10,7 +10,7 @@ import {
     Button,
     message,
 } from "antd";
-import { BarcodeOutlined, ShopOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, BarcodeOutlined, ShopOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import { getCartState, setCart } from "../../features/slices/cart.slice";
 import {
@@ -210,6 +210,23 @@ function CartPage() {
     return (
         <div style={{ backgroundColor: "#f5f5f5", minHeight: "50vh", padding: "1px 0" }}>
             <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 16px" }}>
+                <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+                    <Button
+                        type="text"
+                        icon={<ArrowLeftOutlined />}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            color: "#555",
+                            fontWeight: 500,
+                        }}
+                        onClick={() => navigate(-1)}
+                    >
+                        Quay lại
+                    </Button>
+                </div>
+
                 {/* Header giỏ hàng */}
                 <Card style={{ marginBottom: 20 }}>
                     <Flex justify="space-between" align="center">

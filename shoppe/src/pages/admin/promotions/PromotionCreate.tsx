@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import DynamicForm, { type Field } from '../../../components/DynamicForm';
-import { inserProduct } from '../../../api/product/product.api';
 import { showError, showSuccess } from '../../../untils/ShowToast';
 import { useNavigate } from 'react-router-dom';
 import { createPromotion } from '../../../api/promotion/promotion.api';

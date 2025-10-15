@@ -5,7 +5,6 @@ using ProductAPI.IRepository;
 using ProductAPI.IServices;
 using ProductAPI.Models;
 using System.Linq;
-using System.Reflection;
 
 namespace ProductAPI.Services
 {
@@ -13,22 +12,15 @@ namespace ProductAPI.Services
     {
         private readonly IRepository<Promotion> _promoRepo;
 
-
         public PromotionService(IRepository<Promotion> promoRepo) : base(promoRepo)
         {
             _promoRepo = promoRepo;
         }
 
-        public async Task<MethodResult<Promotion>> CreateAsync( Guid userId,PromotionDto dto)
+        public async Task<MethodResult<Promotion>> CreateAsync(Guid userId, PromotionDto dto)
         {
-            //var promo = await _promoRepo.GetByIdAsync(dto.Id.Value);
-            //if (promo == null || promo.UserId != userId)
-            //    return MethodResult<Promotion>.ResultWithError("Không tìm thấy hoặc bạn không có quyền sửa mã khuyến mãi này.");
-
             if (string.IsNullOrWhiteSpace(dto.Code))
-            {
                 return MethodResult<Promotion>.ResultWithError("Mã khuyến mãi (Code) là bắt buộc.");
-            }
 
             var newPromo = new Promotion
             {
@@ -54,6 +46,7 @@ namespace ProductAPI.Services
             var total = await _promoRepo.TableNoTracking.CountAsync();
             return MethodResult<int>.ResultWithData(total, $"Tổng số khuyến mãi: {total}");
         }
+
         public async Task<MethodResult<Promotion>> UpdateAsync(Guid userId, PromotionDto dto)
         {
             if (dto.Id == null)
@@ -71,6 +64,7 @@ namespace ProductAPI.Services
             promo.StartDate = dto.StartDate;
             promo.EndDate = dto.EndDate;
             promo.Status = dto.Status;
+
             promo.MarkDirty(nameof(promo.Code));
             promo.MarkDirty(nameof(promo.Description));
             promo.MarkDirty(nameof(promo.DiscountPercent));
@@ -79,6 +73,7 @@ namespace ProductAPI.Services
             promo.MarkDirty(nameof(promo.StartDate));
             promo.MarkDirty(nameof(promo.EndDate));
             promo.MarkDirty(nameof(promo.Status));
+
             await _promoRepo.UpdateAsync(promo);
             return MethodResult<Promotion>.ResultWithData(promo, "Cập nhật mã khuyến mãi thành công.");
         }
@@ -89,13 +84,19 @@ namespace ProductAPI.Services
             if (promo == null)
                 return MethodResult<Promotion>.ResultWithError("Không tìm thấy mã khuyến mãi.");
 
+            // ✅ Check nếu đã hết hạn => cập nhật trạng thái
+            if (promo.EndDate < DateTime.UtcNow && promo.Status == PromotionStatus.Active.ToString())
+            {
+                promo.Status = PromotionStatus.Expired.ToString();
+                await _promoRepo.UpdateAsync(promo);
+            }
+
             return MethodResult<Promotion>.ResultWithData(promo, "Lấy chi tiết thành công.");
         }
 
-        public async Task<MethodResult<List<Promotion>>> GetAllBySellerWithGridAsync( GridInfo grid)
+        public async Task<MethodResult<List<Promotion>>> GetAllBySellerWithGridAsync(GridInfo grid)
         {
             var query = _promoRepo.TableNoTracking;
-                
 
             // Tìm kiếm theo Code hoặc Description nếu có từ khóa
             if (!string.IsNullOrEmpty(grid.KeyWord))
@@ -115,6 +116,27 @@ namespace ProductAPI.Services
                 .Skip((grid.PageInfo.Page - 1) * grid.PageInfo.PageSize)
                 .Take(grid.PageInfo.PageSize)
                 .ToListAsync();
+
+            // ✅ Cập nhật trạng thái nếu mã đã hết hạn
+            var now = DateTime.UtcNow;
+            foreach (var promo in result)
+            {
+                if (promo.EndDate < now && promo.Status == PromotionStatus.Active.ToString())
+                {
+                    promo.Status = PromotionStatus.Expired.ToString();
+                    await _promoRepo.UpdateAsync(promo);
+                }
+                else if (promo.StartDate > now && promo.Status == PromotionStatus.Active.ToString())
+                {
+                    promo.Status = PromotionStatus.Active.ToString();
+                    await _promoRepo.UpdateAsync(promo);
+                }
+                else if (promo.StartDate <= now && promo.EndDate >= now && promo.Status != PromotionStatus.Active.ToString())
+                {
+                    promo.Status = PromotionStatus.Active.ToString();
+                    await _promoRepo.UpdateAsync(promo);
+                }
+            }
 
             return MethodResult<List<Promotion>>.ResultWithData(result, "Lấy danh sách mã khuyến mãi thành công", totalRecord);
         }
