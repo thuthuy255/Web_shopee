@@ -171,7 +171,7 @@ const ProductDetailPage = () => {
                             color: "#555",
                             fontWeight: 500,
                         }}
-                        onClick={() => navigate(-1)}
+                        onClick={() => navigate('/user')}
                     >
                         Quay lại
                     </Button>

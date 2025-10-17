@@ -12,7 +12,6 @@ import { queryGetStatisticAdminAsync } from "../../../api/stastic/stastic.query"
 
 function StatisticDashboardAdmin() {
   const { data, isLoading } = queryGetStatisticAdminAsync();
-  console.log("🚀 ~ StatisticDashboardAdmin ~ data:", data)
   const statisticData: StatisticItem[] = [
     {
       title: "Người bán",

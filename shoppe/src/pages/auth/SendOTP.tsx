@@ -26,7 +26,6 @@ export default function SendOTP() {
         try {
             setLoading(true);
             const res: any = await SendOtp({ email: values.email });
-            console.log("🚀 ~ handleSendOtp ~ res:", res)
             if (res?.success) {
                 showSuccess(res.message || "OTP đã được gửi qua email");
                 navigate("/auth/verifyOTP", { state: { email: values.email } });

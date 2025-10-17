@@ -22,7 +22,6 @@ const OrderList = () => {
         setLoading(true);
         try {
             const res: any = await getUserOrders();
-            console.log("🚀 ~ fetchOrders ~ res:", res)
             if (res) {
                 setOrders(res);
             } else {

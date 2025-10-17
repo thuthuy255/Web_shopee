@@ -122,7 +122,6 @@ const OrderManagement = () => {
                 keyWord: key,
             };
             const res: any = await getUserOrdersOfSeller(body);
-            console.log("🚀 ~ fetchOrders ~ res:", res)
             if (res?.success) {
                 setData(res.data);
                 setTotal(res.totalRecord);

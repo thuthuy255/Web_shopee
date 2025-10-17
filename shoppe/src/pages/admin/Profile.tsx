@@ -70,7 +70,6 @@ export const ProfileForm = () => {
       const res: any = await getUserInfo();
       if (res.success && res.data) {
         const userData = res.data;
-        console.log("🚀 ~ ProfileForm ~ userData:", userData);
 
         // set giá trị vào form
         form.setFieldsValue({

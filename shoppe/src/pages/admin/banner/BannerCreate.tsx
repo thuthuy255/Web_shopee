@@ -65,7 +65,6 @@ export default function BannerCreate() {
 
             navigate('/admin/banner');
         } catch (error: any) {
-            console.log("🚀 ~ handleSubmit ~ error:", error)
             showError(error?.error);
             console.error(error);
         } finally {

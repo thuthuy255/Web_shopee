@@ -33,7 +33,6 @@ const Register = () => {
 
         } catch (message: any) {
             showError(message?.error);
-            console.log("🚀 ~ handleRegister ~ error:", message)
         }
     };
 

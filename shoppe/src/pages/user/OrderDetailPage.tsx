@@ -214,7 +214,6 @@ const OrderDetail = () => {
                 };
 
                 const res: any = await createOrder(payload);
-                console.log("🚀 ~ handlePayment ~ res:", res)
                 if (!res?.success || !res.data) {
                     message.error(res?.message || "Không thể tạo đơn hàng.");
                     return;
@@ -222,7 +221,6 @@ const OrderDetail = () => {
 
                 orderIdToPay = res.data.id;
                 totalAmount = res.data.totalAmount;
-                console.log("🚀 ~ handlePayment ~ totalAmount:", totalAmount)
 
                 setOrder((prev) =>
                     prev
@@ -279,7 +277,7 @@ const OrderDetail = () => {
                         color: "#555",
                         fontWeight: 500,
                     }}
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate('/user')}
                 >
                     Quay lại
                 </Button>

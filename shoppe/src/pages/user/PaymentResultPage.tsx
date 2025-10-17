@@ -25,7 +25,7 @@ function PaymentResult() {
             return () => clearTimeout(timer);
         } else {
             // Nếu không thành công thì quay về giỏ hàng
-            navigate("/cart");
+            navigate("/user/cart");
         }
     }, [status, isSuccess, navigate]);
 

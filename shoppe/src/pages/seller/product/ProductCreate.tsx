@@ -138,12 +138,6 @@ export default function ProductsCreate() {
                     }
                 });
             }
-
-            console.log("ProductImages values:", values.ProductImages);
-
-
-
-
             await inserProduct(formData);
             showSuccess('Thêm sản phẩm thành công');
             navigate('/seller/products');

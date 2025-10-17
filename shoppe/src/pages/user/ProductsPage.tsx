@@ -10,7 +10,6 @@ function ProductsPage() {
     const [searchParams] = useSearchParams();
     const categoryId = searchParams.get('category');
     const [products, setProducts] = useState<any[]>([]);
-    console.log("🚀 ~ ProductsPage ~ products:", products)
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const fetchProducts = async () => {
@@ -58,7 +57,7 @@ function ProductsPage() {
                         color: "#555",
                         fontWeight: 500,
                     }}
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate('/user')}
                 >
                     Quay lại
                 </Button>

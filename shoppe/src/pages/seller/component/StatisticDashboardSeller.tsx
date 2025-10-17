@@ -13,7 +13,6 @@ import { queryGetStatisticSellerAsync } from "../../../api/stastic/stastic.query
 
 function StatisticDashboardSeller() {
     const { data, isLoading } = queryGetStatisticSellerAsync();
-    console.log("🚀 ~ StatisticDashboardSeller ~ data:", data)
     const statisticData: StatisticItem[] = [
         {
             title: "Sản phẩm",

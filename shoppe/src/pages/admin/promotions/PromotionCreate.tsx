@@ -71,7 +71,6 @@ export default function PromotionCreate() {
             type: 'select',
             options: [
                 { label: 'Đang hoạt động', value: 'Active' },
-                { label: 'Hết hạn', value: 'Expired' },
                 { label: 'Đã huỷ', value: 'Inactive' },
             ],
             rules: [{ required: true, message: 'Vui lòng chọn trạng thái' }],
@@ -86,7 +85,6 @@ export default function PromotionCreate() {
             formRef.current?.resetFields(); // ✅
             navigate('/admin/promotions')
         } catch (error) {
-            console.log("🚀 ~ handleSubmit ~ error:", error)
             showError('Tạo mã giảm giá thất bại');
         }
         finally {
