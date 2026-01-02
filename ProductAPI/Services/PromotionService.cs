@@ -21,7 +21,8 @@ namespace ProductAPI.Services
         {
             if (string.IsNullOrWhiteSpace(dto.Code))
                 return MethodResult<Promotion>.ResultWithError("Mã khuyến mãi (Code) là bắt buộc.");
-
+            if (dto.EndDate < dto.StartDate)
+                return MethodResult<Promotion>.ResultWithError("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.");
             var newPromo = new Promotion
             {
                 Id = Guid.NewGuid(),
@@ -102,10 +103,16 @@ namespace ProductAPI.Services
             if (!string.IsNullOrEmpty(grid.KeyWord))
             {
                 var keyword = grid.KeyWord.ToLower();
+
                 query = query.Where(p =>
-                    p.Code.ToLower().Contains(keyword) ||
-                    p.Description.ToLower().Contains(keyword));
+                    p.Code.ToLower().Contains(keyword) ||                  // text
+                    p.Description.ToLower().Contains(keyword) ||           // text
+                    p.QuantityLimit.ToString().Contains(keyword) ||       // số
+                    p.DiscountPercent.ToString().Contains(keyword) ||     // số
+                    p.MinOrderValue.ToString().Contains(keyword)          // số
+                );
             }
+
 
             // Đếm tổng số bản ghi sau lọc
             var totalRecord = await query.CountAsync();

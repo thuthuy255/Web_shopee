@@ -115,7 +115,12 @@ namespace ProductAPI.Services
                 if (existingUser.Email == request.Email)
                 {
                     return MethodResult<bool>.ResultWithError("Email đã được sử dụng");
-                }  
+                }
+                if (existingUser.Phone == request.Phone)
+                {
+                    return MethodResult<bool>.ResultWithError("Số điện thoại đã được sử dụng");
+                }
+
             }
 
 
