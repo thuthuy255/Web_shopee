@@ -80,7 +80,7 @@ namespace ProductAPI.Services
                 Description = x.p.Description,
                 Price = x.p.Price,
                 StockQuantity = x.p.StockQuantity,
-                IsActive = x.p.IsActive,
+                IsActive = x.p.StockQuantity == 0 ? false : x.p.IsActive,
                 SellerStatus = x.p.SellerStatus,
                 Thumbnail = x.p.Thumbnail,
                 SellerName = x.u.Username,
