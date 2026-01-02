@@ -84,7 +84,6 @@ export default function CategoryEdit() {
     ];
 
     const handleSubmit = (values: any) => {
-        // setLoadingSubmit(true);
         const formData = new FormData();
         formData.append('Id', values.id);
         formData.append('name', values.name);
@@ -97,21 +96,18 @@ export default function CategoryEdit() {
         }
 
         updateCategory(values.id, formData)
-            .then((res) => {
-                if (res?.data) {
-                    showSuccess('Cập nhật danh mục thành công');
+            .then((res: any) => {
+                console.log("🚀 ~ handleSubmit ~ res?.success:", res?.success)
+                if (res?.success) {
+                    showSuccess(res?.message || 'Cập nhật danh mục thành công');
                     navigate('/seller/category');
-                } else {
-                    message.error(res.data?.message || 'Cập nhật danh mục thất bại');
                 }
             })
-            .catch(() => {
-                message.error('Đã xảy ra lỗi khi cập nhật danh mục');
-            })
-        // .finally(() => {
-        //     setLoadingSubmit(false);
-        // });
+            .catch((res: any) => {
+                showError(res?.error || res?.message);
+            });
     };
+
 
     return (
         <div>

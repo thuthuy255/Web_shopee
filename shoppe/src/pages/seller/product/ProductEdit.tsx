@@ -60,11 +60,11 @@ export default function ProductEdit() {
         // Thumbnail
         Thumbnail: product.thumbnail
           ? {
-              url: product.thumbnail,
-              uid: "thumb",
-              name: product.productName,
-              status: "done",
-            }
+            url: product.thumbnail,
+            uid: "thumb",
+            name: product.productName,
+            status: "done",
+          }
           : null,
         ProductImages:
           product.productImages?.map((url: string, idx: number) => ({
@@ -94,6 +94,15 @@ export default function ProductEdit() {
     { name: "description", label: "Mô tả", type: "text" },
     { name: "Price", label: "Giá", type: "number" },
     { name: "StockQuantity", label: "Tồn kho", type: "number" },
+    // {
+    //   name: "isActive",
+    //   label: "Trạng thái tồn kho",
+    //   type: "select",
+    //   options: [
+    //     { label: "Hoạt động", value: true },
+    //     { label: "Hết hàng", value: false },
+    //   ],
+    // },
     {
       name: "sellerStatus",
       label: "Trạng thái",
@@ -133,7 +142,7 @@ export default function ProductEdit() {
       formData.append("Description", values.description);
       formData.append("Price", values.Price.toString());
       formData.append("StockQuantity", values.StockQuantity.toString());
-      formData.append("SellerStatus", values.sellerStatus.toString());
+      formData.append("sellerStatus", values.sellerStatus.toString());
       formData.append("CategoryId", values.categoryId);
 
       // Thumbnail

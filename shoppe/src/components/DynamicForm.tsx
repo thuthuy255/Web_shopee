@@ -22,15 +22,18 @@ export interface Field {
   name: string;
   label?: string;
   type?:
-    | "text"
-    | "email"
-    | "password"
-    | "select"
-    | "hidden"
-    | "file"
-    | "number"
-    | "date";
+  | "text"
+  | "email"
+  | "password"
+  | "select"
+  | "hidden"
+  | "file"
+  | "number"
+  | "date";
   options?: { label: string; value: string | boolean }[];
+  disabledDate?: (current: any) => boolean;
+  onChange?: (value: any) => void;
+  [key: string]: any; // Cho phép các props khác linh hoạt
   rules?: any[];
   fullWidth?: boolean;
 }
@@ -55,6 +58,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   formRef,
   loading = false,
   hideButtons = false, // Mặc định là false (hiện nút)
+
 }) => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
@@ -89,8 +93,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
               ? currentValueRaw
               : []
             : currentValueRaw
-            ? [currentValueRaw]
-            : [];
+              ? [currentValueRaw]
+              : [];
 
           const list = currentValue
             .filter(Boolean)
@@ -153,6 +157,10 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             style={{ width: "100%" }}
             format="YYYY-MM-DD"
             allowClear
+            disabledDate={field.disabledDate} // ✅ dùng từ field
+            onChange={(date) => {
+              if (field.onChange) field.onChange(date); // ✅ dùng từ field
+            }}
           />
         );
       case "file": {
@@ -244,11 +252,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
                   field.type === "hidden"
                     ? []
                     : field.rules || [
-                        {
-                          required: true,
-                          message: `Vui lòng nhập ${field.label}`,
-                        },
-                      ]
+                      {
+                        required: true,
+                        message: `Vui lòng nhập ${field.label}`,
+                      },
+                    ]
                 }
               >
                 {renderField(field)}

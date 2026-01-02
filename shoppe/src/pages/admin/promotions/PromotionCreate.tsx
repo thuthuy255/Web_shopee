@@ -63,7 +63,12 @@ export default function PromotionCreate() {
             label: 'Ngày kết thúc',
             type: 'date',
             rules: [{ required: true, message: 'Vui lòng chọn ngày kết thúc' }],
+            disabledDate: (current) => {
+                const startDate = formRef.current?.getFieldValue('startDate');
+                return current && startDate && current.isBefore(startDate, 'day');
+            },
         },
+
 
         {
             name: 'status',
