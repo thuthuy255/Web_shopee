@@ -15,6 +15,7 @@ import CategoryManagement from "../pages/admin/category/CategoryManagement";
 import PromotionManagement from "../pages/admin/promotions/PromotionManagement";
 import PromotionCreate from "../pages/admin/promotions/PromotionCreate";
 import PromotionEdit from "../pages/admin/promotions/PromotionEdit";
+import UserManagement from "../pages/admin/user/UserManagement";
 
 const AdminRoutes = [
   {
@@ -36,6 +37,10 @@ const AdminRoutes = [
       {
         path: "seller",
         element: <SellerManagement />,
+      },
+      {
+        path: "user",
+        element: <UserManagement />,
       },
       {
         path: "seller/create",

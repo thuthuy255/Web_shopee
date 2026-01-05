@@ -65,7 +65,7 @@ namespace ProductAPI.Controllers
         public async Task<IActionResult> ToggleLock(Guid userId)
         {
             var result = await _authServices.ToggleUserLockAsync(userId);
-            return result.Success ? Ok(result) : BadRequest(result);
+            return Ok(result);
         }
         [HttpGet("getUserInfo")]
         [Authorize]

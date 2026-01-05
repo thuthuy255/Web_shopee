@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { Flex, Input, message } from "antd";
+import { useEffect, useState } from "react";
+import { Flex, message } from "antd";
 import type { TableColumnsType } from "antd";
 import CustomTable from "../../../components/CustomTable";
 import { useNavigate } from "react-router-dom";
-import { getAllSeller, deleteSeller } from "../../../api/seller/seller.api";
-import { showError, showSuccess } from "../../../untils/ShowToast";
+import { deleteSeller } from "../../../api/seller/seller.api";
+import { showError, showSuccess, showWarning } from "../../../untils/ShowToast";
 import LoadingDefault from "../../../components/loading/LoadingDefault";
 import Search from "antd/es/input/Search";
+import { getAllUser } from "../../../api/user.api";
+import { ToggleLock } from "../../../api/auth.api";
 
 interface Seller {
   id: string;
@@ -21,17 +23,13 @@ interface Seller {
 
 const columns: TableColumnsType<Seller> = [
   {
-    title: "Tên cửa hàng",
-    dataIndex: "fullName",
-    key: "fullName",
-    align: "center",
-  },
-  {
-    title: "Tên người bán",
+    title: "Họ và tên",
     dataIndex: "username",
     key: "username",
     align: "center",
+    render: (value, record) => value || record?.fullName || "Chưa cập nhật",
   },
+
   { title: "Email", dataIndex: "email", key: "email", align: "center" },
   { title: "Số điện thoại", dataIndex: "phone", key: "phone", align: "center" },
   {
@@ -50,7 +48,7 @@ const columns: TableColumnsType<Seller> = [
   },
 ];
 
-export default function SellerManagement() {
+export default function UserManagement() {
   const [data, setData] = useState<Seller[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
@@ -58,7 +56,6 @@ export default function SellerManagement() {
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [searchValue, setSearchValue] = useState("");
-  const navigate = useNavigate();
 
   // Hàm gọi API
   const fetchSellers = async (page: number, key: string) => {
@@ -68,7 +65,7 @@ export default function SellerManagement() {
         pageInfo: { page, pageSize },
         keyWord: key,
       };
-      const res: any = await getAllSeller(body);
+      const res: any = await getAllUser(body);
       if (res?.success) {
         setData(res?.data);
         setTotal(res?.totalRecord);
@@ -97,9 +94,6 @@ export default function SellerManagement() {
     fetchSellers(1, value);
   };
 
-  const handleAdd = () => navigate("/admin/seller/create");
-  const handleView = (record: Seller) =>
-    navigate(`/admin/seller/edit/${record.id}`);
   const handleDelete = async (id: string) => {
     try {
       await deleteSeller(id);
@@ -111,10 +105,34 @@ export default function SellerManagement() {
     }
   };
 
+  const handleToggleLock = async (id: string, currentLockStatus: boolean) => {
+    if (!id) return;
+    try {
+      // Gọi API để toggle lock status
+      const response: any = await ToggleLock(id);
+      if (response?.success) {
+        // Cập nhật data local
+        setData((prev) =>
+          prev.map((seller) =>
+            seller.id === id
+              ? { ...seller, isLocked: !currentLockStatus }
+              : seller
+          )
+        );
+        showSuccess(response?.message);
+      } else {
+        showWarning(response?.message);
+      }
+    } catch (error) {
+      console.error(error);
+      showError("Không thể thay đổi trạng thái khóa");
+    }
+  };
+
   return (
     <div>
       <Flex align="center" justify="space-between" style={{ marginBottom: 16 }}>
-        <h2>Danh sách người bán</h2>
+        <h2>Danh sách người dùng</h2>
         <Search
           placeholder="Tìm kiếm theo tên, email..."
           value={searchValue}
@@ -134,9 +152,9 @@ export default function SellerManagement() {
           currentPage={currentPage}
           total={total}
           onPageChange={handlePageChange}
-          onAdd={handleAdd}
-          onView={handleView}
           onDelete={handleDelete}
+          onToggleLock={handleToggleLock}
+          lockStatusKey="isLocked"
         />
       )}
     </div>

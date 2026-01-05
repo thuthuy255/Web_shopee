@@ -20,6 +20,8 @@ export const getMenuByRole = (roleId: string | null): MenuProps["items"] => {
   const adminItems: MenuProps["items"] = [
     { key: "dashboard", icon: <PieChartOutlined />, label: "Bảng điều khiển" },
     { key: "seller", icon: <UserOutlined />, label: "Quản lý người bán" },
+    { key: "user", icon: <UserOutlined />, label: "Quản lý người dùng" },
+
     { key: "products", icon: <ShoppingOutlined />, label: "Quản lý sản phẩm" },
     { key: "promotions", icon: <GiftOutlined />, label: "Quản lý khuyến mãi" },
     { key: "banner", icon: <PictureOutlined />, label: "Quản lý banner" },
