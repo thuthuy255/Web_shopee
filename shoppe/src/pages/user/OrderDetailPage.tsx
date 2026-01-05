@@ -239,7 +239,7 @@ const OrderDetail = () => {
             const payRes: any = await paymentOrder(payReq);
 
             if (payRes?.paymentUrl) {
-                window.location.href = payRes.paymentUrl;
+                window.open(payRes.paymentUrl, "_blank"); // Mở trong tab mới
             } else {
                 message.error("Không lấy được link thanh toán.");
             }
@@ -377,53 +377,51 @@ const OrderDetail = () => {
 
                 <Divider />
 
-                {/* Voucher */}
-                <Row style={{ marginBottom: 16 }}>
-                    <Col span={24}>
-                        <Flex justify="space-between" align="center">
-                            <Flex align="center">
-                                <BarcodeOutlined style={{ fontSize: "23px", color: COLOR_DEFAULT }} />
-                                <Text style={{ marginLeft: 8, fontSize: "16px" }}>
-                                    Shopping Voucher
-                                </Text>
-                            </Flex>
-                            <Button type="link" onClick={() => setIsVoucherModalOpen(true)}>
-                                {selectedVoucher ? (
-                                    <div
-                                        style={{
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            backgroundColor: "#e6f7ff",
-                                            border: "1px dashed #1890ff",
-                                            borderRadius: 6,
-                                            padding: "4px 10px",
-                                            cursor: "pointer",
-                                            gap: 8,
-                                        }}
-                                        onClick={() => handleApplyVoucher(null)} // Bấm toàn bộ box => bỏ voucher
-                                    >
-                                        <BarcodeOutlined style={{ color: "#1890ff" }} />
-                                        <span style={{ color: "#1890ff", fontWeight: 600 }}>
-                                            {selectedVoucher.code || `Giảm ${selectedVoucher.discountPercent}%`}
-                                        </span>
-                                        <CloseOutlined style={{ color: "#1890ff", fontWeight: 600 }} />
-                                    </div>
-                                ) : (
-                                    <Button
-                                        type="link"
-                                        onClick={() => setIsVoucherModalOpen(true)}
-                                        style={{ color: "#20609bff", fontWeight: 500 }}
-                                    >
-                                        Chọn voucher
-                                    </Button>
-                                )}
+               {/* Voucher */}
+<Row style={{ marginBottom: 16 }}>
+  <Col span={24}>
+    <Flex justify="space-between" align="center">
+      <Flex align="center">
+        <BarcodeOutlined style={{ fontSize: "23px", color: COLOR_DEFAULT }} />
+        <Text style={{ marginLeft: 8, fontSize: "16px" }}>Shopping Voucher</Text>
+      </Flex>
 
+      {selectedVoucher ? (
+        // ✅ Nếu đã chọn voucher: hiển thị box + cho phép bấm để bỏ chọn
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            backgroundColor: "#e6f7ff",
+            border: "1px dashed #1890ff",
+            borderRadius: 6,
+            padding: "4px 10px",
+            cursor: "pointer",
+            gap: 8,
+          }}
+          onClick={() => handleApplyVoucher(null)}
+        >
+          <BarcodeOutlined style={{ color: "#1890ff" }} />
+          <span style={{ color: "#1890ff", fontWeight: 600 }}>
+            {selectedVoucher.code ||
+              `Giảm ${selectedVoucher.discountPercent}%`}
+          </span>
+          <CloseOutlined style={{ color: "#1890ff", fontWeight: 600 }} />
+        </div>
+      ) : (
+        // ✅ Nếu chưa chọn voucher: chỉ hiển thị 1 nút link duy nhất
+        <Button
+          type="link"
+          onClick={() => setIsVoucherModalOpen(true)}
+          style={{ color: "#20609bff", fontWeight: 500 }}
+        >
+          Chọn voucher
+        </Button>
+      )}
+    </Flex>
+  </Col>
+</Row>
 
-
-                            </Button>
-                        </Flex>
-                    </Col>
-                </Row>
 
                 {/* Tổng tiền + Thanh toán */}
                 <Row justify="space-between" align="middle">

@@ -7,7 +7,6 @@ import ProductDetailPage from "../pages/user/ProductDetailPage";
 import ShopPage from "../pages/user/ShopPage";
 import OrderDetail from "../pages/user/OrderDetailPage";
 import ProductsPage from "../pages/user/ProductsPage";
-import PaymentResultPage from "../pages/user/PaymentResultPage";
 import MyPaidOrders from "../pages/user/MyPaidOrders";
 import Profile from "../pages/admin/Profile";
 import PaymentResult from "../pages/user/PaymentResultPage";

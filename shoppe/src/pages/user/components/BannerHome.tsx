@@ -17,7 +17,7 @@ function BannerHome() {
           minHeight: 200,
         }}
       >
-        <BannerSlider bannerTypes={["homepage", "Top Banner"]} />
+        <BannerSlider bannerTypes={["homepage", "Top Banner", "Top Banner 1"]} />
       </Col>
 
 
@@ -36,7 +36,10 @@ function BannerHome() {
           <BannerStatic bannerType="homepage" index={0} />
         </div>
         <div style={{ flex: 1, borderRadius: 10, overflow: "hidden" }}>
-          <BannerStatic bannerType="homepage" index={1} />
+          <BannerStatic bannerType="Top Banner" index={1} />
+        </div>
+        <div style={{ flex: 1, borderRadius: 10, overflow: "hidden" }}>
+          <BannerStatic bannerType="Top Banner 1" index={2} />
         </div>
       </Col>
     </Row>

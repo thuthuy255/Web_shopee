@@ -10,6 +10,7 @@ function ProductRecommended() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const dispatch = useDispatch();
+
     useEffect(() => {
         (async () => {
             setLoading(true);
@@ -17,13 +18,11 @@ function ProductRecommended() {
                 const res: any = await getAllProduct({
                     pageInfo: { page: 1, pageSize: 10 },
                     keyWord: '',
-
                 });
                 if (res.success && Array.isArray(res.data)) {
                     setData(res.data);
-                    dispatch(setProductList(res?.data));
-                }
-                else console.error('Lấy sản phẩm thất bại');
+                    dispatch(setProductList(res.data));
+                } else console.error('Lấy sản phẩm thất bại');
             } catch (e) {
                 console.error('Lỗi tải dữ liệu', e);
             } finally {
@@ -39,9 +38,11 @@ function ProductRecommended() {
                 gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
                 gap: '16px',
                 width: '100%',
-                marginTop: '10px',
+                marginTop: '20px', // 👈 tăng khoảng cách phía trên
+                marginBottom: '20px', // 👈 tăng khoảng cách phía dưới
+                paddingTop: '5px', // 👈 nhẹ nhàng cho viền trên
+                paddingBottom: '5px', // 👈 nhẹ nhàng cho viền dưới
             }}
-
         >
             {data && data.length > 0 ? (
                 data.map((p, i) => {
@@ -50,7 +51,11 @@ function ProductRecommended() {
                     const maxPrice = prices.length > 0 ? Math.max(...prices) : p.price;
 
                     return (
-                        <div key={i} className="product-card" onClick={() => navigate(`/user/products/${p.id}`)}>
+                        <div
+                            key={i}
+                            className="product-card"
+                            onClick={() => navigate(`/user/products/${p.id}`)}
+                        >
                             <div style={{ position: 'relative', padding: 8 }}>
                                 <img
                                     src={p.thumbnail}
@@ -74,7 +79,13 @@ function ProductRecommended() {
                             >
                                 <div className="product-name">{p.productName}</div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        marginBottom: 4,
+                                    }}
+                                >
                                     <div className="product-price">
                                         {minPrice === maxPrice
                                             ? `₫${minPrice.toLocaleString('vi-VN')}`

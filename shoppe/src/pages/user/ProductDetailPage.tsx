@@ -17,6 +17,7 @@ const { Title, Text, Paragraph } = Typography;
 const ProductDetailPage = () => {
     const { id } = useParams();
     const [product, setProduct] = useState<any>(null);
+    console.log(product)
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
@@ -378,7 +379,7 @@ const ProductDetailPage = () => {
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                         <Image
-                            src={product?.thumbnail}
+                            src={product?.avatar}
                             alt={product?.productName}
                             style={{
                                 width: 80,
@@ -389,7 +390,7 @@ const ProductDetailPage = () => {
                         />
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <Text style={{ fontSize: 18, fontWeight: 600 }}>
-                                {product?.productName}
+                                {product?.sellerName}
                             </Text>
                             <Text type="secondary">Người bán uy tín</Text>
                         </div>

@@ -24,5 +24,6 @@
 
         public List<string>? ProductImages { get; set; } = new();
         public List<ProductVariantDto> ProductVariants { get; set; } = new();
+        public string Avatar { get; set; }
     }
 }

@@ -14,7 +14,7 @@
         public string Thumbnail { get; set; } = null!;
         public List<string> ProductImages { get; set; } = new();
 
-
+        public string Avatar { get; set;  }
         // Thông tin danh mục
         public Guid? CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
