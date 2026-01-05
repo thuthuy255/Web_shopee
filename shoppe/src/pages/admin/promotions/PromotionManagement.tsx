@@ -48,7 +48,6 @@ const columns: TableColumnsType<Promotion> = [
         align: 'center'
     },
     { title: 'Giới hạn', dataIndex: 'quantityLimit', key: 'quantityLimit', align: 'center' },
-    { title: 'Đã dùng', dataIndex: 'usedQuantity', key: 'usedQuantity', align: 'center' },
     {
         title: 'Hiệu lực',
         key: 'dateRange',
