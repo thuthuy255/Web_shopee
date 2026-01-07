@@ -50,15 +50,15 @@ namespace ProductAPI.Controllers
         }
         [HttpPost("getMyProducts")]
         [Authorize(Roles = "Seller")]
-        public async Task<IActionResult> GetMyProducts([FromBody] GridInfo grid)
+        public async Task<IActionResult> GetMyProducts(SearchProducts request)
         {
             var sellerId = _userPrincipalService.GetUserId();
 
             if (!sellerId.HasValue)
                 return Unauthorized("Bạn chưa đăng nhập");
 
-            var result = await _productServices.FilterProductBySellerAsync(sellerId.Value, grid);
-            return result.Success ? Ok(result) : BadRequest(result);
+            var result = await _productServices.getAllListProducts(sellerId.Value, request);
+            return Ok(result);
         }
 
         [HttpPost("insertProduct")]

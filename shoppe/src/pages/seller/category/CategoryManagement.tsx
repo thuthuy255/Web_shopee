@@ -3,7 +3,11 @@ import { Flex, type TableColumnsType } from 'antd';
 import CustomTable from '../../../components/CustomTable';
 import { useNavigate } from 'react-router-dom';
 import { showError, showSuccess } from '../../../untils/ShowToast';
-import { deleteCategory, getAllCategories, getCategoryOfSeller } from '../../../api/category/category.api';
+import {
+    deleteCategory,
+    getAllCategories,
+    getCategoryOfSeller,
+} from '../../../api/category/category.api';
 import LoadingDefault from '../../../components/loading/LoadingDefault';
 import { debounce } from 'lodash';
 import Search from 'antd/es/input/Search';
@@ -19,41 +23,6 @@ interface Category {
     sellerName: string;
 }
 
-
-const columns: TableColumnsType<Category> = [
-    {
-        title: 'Tên danh mục',
-        dataIndex: 'name',
-        key: 'name',
-        align: 'center'
-    },
-    {
-        title: 'Mô tả',
-        dataIndex: 'description',
-        key: 'description',
-        ellipsis: true,
-        align: 'center'
-    },
-    {
-        title: 'Ảnh',
-        dataIndex: 'imageUrl',
-        key: 'imageUrl',
-        render: (url) => (
-            <img src={url} alt="category" style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4 }} />
-        ),
-        align: 'center'
-    },
-    {
-        title: 'Thuộc danh mục',
-        dataIndex: 'parentCategoryId',
-        key: 'parentCategoryId',
-        render: (value) => value ? value : 'Không có',
-        align: 'center'
-    },
-];
-
-
-
 export default function CategoryManagement() {
     const [data, setData] = useState<Category[]>([]);
     const token = useSelector(getTokenState);
@@ -63,23 +32,63 @@ export default function CategoryManagement() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [keyword, setKeyword] = useState('');
-    const handlePageChange = (page: number) => fetchCategory(page, keyword);
+    const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
 
+    /* ===================== COLUMNS ===================== */
+    const columns: TableColumnsType<Category> = [
+        {
+            title: 'Tên danh mục',
+            dataIndex: 'name',
+            align: 'center',
+        },
+        {
+            title: 'Mô tả',
+            dataIndex: 'description',
+            ellipsis: true,
+            align: 'center',
+        },
+        {
+            title: 'Ảnh',
+            dataIndex: 'imageUrl',
+            align: 'center',
+            render: (url) => (
+                <img
+                    src={url}
+                    alt="category"
+                    style={{
+                        width: 50,
+                        height: 50,
+                        objectFit: 'cover',
+                        borderRadius: 4,
+                    }}
+                />
+            ),
+        },
+        {
+            title: 'Thuộc danh mục',
+            dataIndex: 'parentCategoryId',
+            align: 'center',
+            render: (id?: string | null) =>
+                id ? categoryMap[id] || 'Không xác định' : 'Không có',
+        },
+    ];
+
+    /* ===================== FETCH CATEGORY ===================== */
     const fetchCategory = async (page: number, key: string) => {
         setLoading(true);
         try {
             const body = {
                 pageInfo: {
-                    page: page,
-                    pageSize: pageSize,
+                    page,
+                    pageSize,
                 },
                 keyWord: key,
-
             };
+
             const res: any = await getCategoryOfSeller(body);
             if (res?.success) {
-                setData(res?.data);
-                setTotal(res?.totalRecord);
+                setData(res.data);
+                setTotal(res.totalRecord);
                 setCurrentPage(page);
             } else {
                 showError('Không thể lấy danh sách danh mục');
@@ -87,28 +96,62 @@ export default function CategoryManagement() {
         } catch (error) {
             console.error(error);
             showError('Đã xảy ra lỗi khi tải dữ liệu');
-        }
-        finally {
+        } finally {
             setLoading(false);
         }
     };
 
-    const debouncedFetch = debounce((value: string) => {
-        fetchCategory(1, value); // luôn bắt đầu từ trang 1 khi search
-    }, 500); // 500ms
+    /* ===================== FETCH ALL CATEGORY (MAP) ===================== */
+    const fetchAllCategories = async () => {
+        try {
+            const body = {
+                pageInfo: {
+                    page: 1,
+                    pageSize: 1000,
+                },
+                keyWord: '',
+            };
 
-    // Lắng nghe keyword thay đổi
+            const res: any = await getAllCategories(body);
+            if (res?.success && Array.isArray(res.data)) {
+                const map: Record<string, string> = {};
+                res.data.forEach((item: any) => {
+                    map[item.id] = item.name;
+                });
+                setCategoryMap(map);
+            }
+        } catch (error) {
+            console.error('Lỗi load danh mục cha', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchAllCategories();
+    }, []);
+
+    /* ===================== SEARCH ===================== */
+    const debouncedFetch = debounce((value: string) => {
+        fetchCategory(1, value);
+    }, 500);
+
     useEffect(() => {
         debouncedFetch(keyword);
-        return () => debouncedFetch.cancel(); // hủy debounce khi unmount
+        return () => debouncedFetch.cancel();
     }, [keyword]);
+
+    /* ===================== HANDLERS ===================== */
+    const handlePageChange = (page: number) => {
+        fetchCategory(page, keyword);
+    };
 
     const handleAdd = () => {
         navigate('/seller/category/create');
     };
-    const handlEdit = (record: Category) => {
+
+    const handleEdit = (record: Category) => {
         navigate(`/seller/category/edit/${record.id}`);
-    }
+    };
+
     const handleDelete = async (id: string) => {
         try {
             setLoading(true);
@@ -123,19 +166,19 @@ export default function CategoryManagement() {
         }
     };
 
-
-
+    /* ===================== RENDER ===================== */
     return (
         <div>
-            <Flex align='center' justify='space-between' style={{ marginBottom: 16 }}>
-                <h2>Danh sách danh mục </h2>
+            <Flex align="center" justify="space-between" style={{ marginBottom: 16 }}>
+                <h2>Danh sách danh mục</h2>
                 <Search
-                    placeholder="Tìm kiếm theo tiêu đề, loại,..."
+                    placeholder="Tìm kiếm theo tiêu đề, loại..."
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
-                    style={{ marginBottom: 16, width: 300 }}
+                    style={{ width: 300 }}
                 />
             </Flex>
+
             {loading ? (
                 <LoadingDefault />
             ) : (
@@ -145,15 +188,13 @@ export default function CategoryManagement() {
                     dataSource={data}
                     pageSize={pageSize}
                     currentPage={currentPage}
-                    onAdd={handleAdd}
                     total={total}
-                    scrollY={window.innerHeight - 300}
+                    onAdd={handleAdd}
                     onPageChange={handlePageChange}
-                    onView={handlEdit}
+                    onView={handleEdit}
                     onDelete={handleDelete}
                 />
             )}
-
         </div>
     );
 }

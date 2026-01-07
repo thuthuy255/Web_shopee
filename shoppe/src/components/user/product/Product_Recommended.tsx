@@ -17,13 +17,19 @@ function ProductRecommended() {
                 const res: any = await getAllProduct({
                     pageInfo: { page: 1, pageSize: 10 },
                     keyWord: '',
-
                 });
+
                 if (res.success && Array.isArray(res.data)) {
-                    setData(res.data);
-                    dispatch(setProductList(res?.data));
+                    // ✅ Lọc sản phẩm
+                    const filtered = res.data.filter(
+                        (p: any) => p.isActive !== false && p.sellerStatus !== false
+                    );
+
+                    setData(filtered);
+                    dispatch(setProductList(filtered));
+                } else {
+                    console.error('Lấy sản phẩm thất bại');
                 }
-                else console.error('Lấy sản phẩm thất bại');
             } catch (e) {
                 console.error('Lỗi tải dữ liệu', e);
             } finally {
@@ -31,6 +37,7 @@ function ProductRecommended() {
             }
         })();
     }, []);
+
 
     return (
         <div

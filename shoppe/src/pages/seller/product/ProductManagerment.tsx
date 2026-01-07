@@ -240,36 +240,11 @@ export default function ProductManagement() {
                 Ngưng bán
               </Tag>
             </Select.Option>
-            <Select.Option value="outOfStock">
-              <Tag color="red" style={{ margin: 0 }}>
-                Hết hàng
-              </Tag>
-            </Select.Option>
+
           </Select>
 
           {/* Filter sellerStatus */}
-          <Select
-            placeholder="Trạng thái người bán"
-            allowClear
-            style={{ minWidth: 180 }}
-            value={filterSellerStatus}
-            onChange={(val) => {
-              setFilterSellerStatus(val);
-              setCurrentPage(1);
-            }}
-            suffixIcon={null}
-          >
-            <Select.Option value="true">
-              <Tag color="blue" style={{ margin: 0 }}>
-                Đang bán
-              </Tag>
-            </Select.Option>
-            <Select.Option value="false">
-              <Tag color="orange" style={{ margin: 0 }}>
-                Ngưng bán
-              </Tag>
-            </Select.Option>
-          </Select>
+
         </Flex>
       </Flex>
 

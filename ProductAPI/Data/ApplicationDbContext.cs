@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProductAPI.Models;
 
 namespace ProductAPI.Data
@@ -178,5 +178,6 @@ namespace ProductAPI.Data
 
 
         }
+
     }
 }

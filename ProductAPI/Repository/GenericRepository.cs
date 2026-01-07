@@ -30,8 +30,8 @@ namespace ProductAPI.Repository
         public async Task AddAsync(T entity)
         {
             entity.Id = Guid.NewGuid();
-            entity.Created = DateTime.UtcNow;
-            entity.Modified = DateTime.UtcNow;
+            entity.Created = DateTime.Now;
+            entity.Modified = DateTime.Now;
 
             var userId = _userService.GetUserId();
             if (userId.HasValue)
@@ -46,7 +46,7 @@ namespace ProductAPI.Repository
 
         public async Task AddRangeAsync(IEnumerable<T> entities)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var userId = _userService.GetUserId();
 
             foreach (var entity in entities)
@@ -71,7 +71,7 @@ namespace ProductAPI.Repository
             if (entity == null) throw new ArgumentNullException(nameof(entity));
 
             // Cập nhật thông tin audit
-            entity.Modified = DateTime.UtcNow;
+            entity.Modified = DateTime.Now;
             var userId = _userService.GetUserId();
             if (userId.HasValue)
             {

@@ -34,8 +34,8 @@ namespace ProductAPI.DAO
         // Thêm người dùng
         public async Task<User> AddAsync(User user)
         {
-            user.Created = DateTime.UtcNow;
-            user.Modified = DateTime.UtcNow;
+            user.Created = DateTime.Now;
+            user.Modified = DateTime.Now;
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
             return user;
@@ -50,7 +50,7 @@ namespace ProductAPI.DAO
             existingUser.Username = user.Username;
             existingUser.Email = user.Email;
             existingUser.PasswordHash = user.PasswordHash;
-            existingUser.Modified = DateTime.UtcNow;
+            existingUser.Modified = DateTime.Now;
 
             await _context.SaveChangesAsync();
             return existingUser;

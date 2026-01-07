@@ -143,8 +143,8 @@ namespace ProductAPI.Services
                     .FirstOrDefaultAsync(p =>
                         p.Code == body.PromotionCode &&
                         p.Status == PromotionStatus.Active.ToString() &&
-                        p.StartDate <= DateTime.UtcNow &&
-                        p.EndDate >= DateTime.UtcNow);
+                        p.StartDate <= DateTime.Now &&
+                        p.EndDate >= DateTime.Now);
 
                 if (promotion == null)
                     return MethodResult<OrderDto>.ResultWithError("Mã khuyến mãi không hợp lệ hoặc đã hết hạn.");
@@ -181,7 +181,7 @@ namespace ProductAPI.Services
                 TotalAmount = finalAmount,
                 TxnRef = txnRef,
                 OrderItems = orderItems,
-                Created = DateTime.UtcNow
+                Created = DateTime.Now
             };
 
             await _orderRepo.AddAsync(order);

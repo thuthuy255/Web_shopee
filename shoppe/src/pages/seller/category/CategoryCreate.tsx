@@ -22,7 +22,7 @@ export default function CategoryCreate() {
             name: 'description',
             label: 'Mô tả',
             type: 'text',
-            rules: [],
+            rules: [{ required: true, message: 'Vui lòng nhập mô tả' }],
         },
         {
             name: 'imageFile',

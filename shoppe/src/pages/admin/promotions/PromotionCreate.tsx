@@ -3,6 +3,7 @@ import DynamicForm, { type Field } from '../../../components/DynamicForm';
 import { showError, showSuccess } from '../../../untils/ShowToast';
 import { useNavigate } from 'react-router-dom';
 import { createPromotion } from '../../../api/promotion/promotion.api';
+import dayjs from 'dayjs';
 
 export default function PromotionCreate() {
     const formRef = useRef<any>(null);
@@ -32,6 +33,15 @@ export default function PromotionCreate() {
             rules: [
                 { required: true, message: 'Vui lòng nhập phần trăm giảm' },
                 { pattern: /^[0-9]+$/, message: 'Phần trăm phải là số' },
+                {
+                    validator: (_: any, value: any) => {
+                        const num = parseInt(value);
+                        if (value && (num < 1 || num > 100)) {
+                            return Promise.reject('DiscountPercent phải từ 1 đến 100');
+                        }
+                        return Promise.resolve();
+                    }
+                }
             ],
         },
         {
@@ -57,6 +67,10 @@ export default function PromotionCreate() {
             label: 'Ngày bắt đầu',
             type: 'date',
             rules: [{ required: true, message: 'Vui lòng chọn ngày bắt đầu' }],
+            disabledDate: (current) => {
+                // ❌ không cho chọn ngày trước hôm nay
+                return current && current.isBefore(dayjs().startOf('day'));
+            },
         },
         {
             name: 'endDate',
@@ -65,9 +79,21 @@ export default function PromotionCreate() {
             rules: [{ required: true, message: 'Vui lòng chọn ngày kết thúc' }],
             disabledDate: (current) => {
                 const startDate = formRef.current?.getFieldValue('startDate');
-                return current && startDate && current.isBefore(startDate, 'day');
+
+                // ❌ không cho chọn ngày trước hôm nay
+                if (current && current.isBefore(dayjs().startOf('day'))) {
+                    return true;
+                }
+
+                // ❌ không cho nhỏ hơn startDate
+                if (startDate && current.isBefore(startDate, 'day')) {
+                    return true;
+                }
+
+                return false;
             },
         },
+
 
 
         {
@@ -76,7 +102,7 @@ export default function PromotionCreate() {
             type: 'select',
             options: [
                 { label: 'Đang hoạt động', value: 'Active' },
-                { label: 'Đã huỷ', value: 'Inactive' },
+                { label: 'Ngừng hoạt động', value: 'Inactive' },
             ],
             rules: [{ required: true, message: 'Vui lòng chọn trạng thái' }],
         },

@@ -86,7 +86,7 @@ namespace ProductAPI.Services
                 return MethodResult<Promotion>.ResultWithError("Không tìm thấy mã khuyến mãi.");
 
             // ✅ Check nếu đã hết hạn => cập nhật trạng thái
-            if (promo.EndDate < DateTime.UtcNow && promo.Status == PromotionStatus.Active.ToString())
+            if (promo.EndDate < DateTime.Now && promo.Status == PromotionStatus.Active.ToString())
             {
                 promo.Status = PromotionStatus.Expired.ToString();
                 await _promoRepo.UpdateAsync(promo);
@@ -99,54 +99,66 @@ namespace ProductAPI.Services
         {
             var query = _promoRepo.TableNoTracking;
 
-            // Tìm kiếm theo Code hoặc Description nếu có từ khóa
+            // 🔍 Search
             if (!string.IsNullOrEmpty(grid.KeyWord))
             {
                 var keyword = grid.KeyWord.ToLower();
 
                 query = query.Where(p =>
-                    p.Code.ToLower().Contains(keyword) ||                  // text
-                    p.Description.ToLower().Contains(keyword) ||           // text
-                    p.QuantityLimit.ToString().Contains(keyword) ||       // số
-                    p.DiscountPercent.ToString().Contains(keyword) ||     // số
-                    p.MinOrderValue.ToString().Contains(keyword)          // số
+                    p.Code.ToLower().Contains(keyword) ||
+                    p.Description.ToLower().Contains(keyword) ||
+                    p.QuantityLimit.ToString().Contains(keyword) ||
+                    p.DiscountPercent.ToString().Contains(keyword) ||
+                    p.MinOrderValue.ToString().Contains(keyword)
                 );
             }
 
-
-            // Đếm tổng số bản ghi sau lọc
+            // 📌 Tổng bản ghi
             var totalRecord = await query.CountAsync();
 
-            // Phân trang và lấy dữ liệu
+            var now = DateTime.Now;
+
+            // 📄 Get data + compute Status
             var result = await query
                 .OrderByDescending(p => p.Created)
                 .Skip((grid.PageInfo.Page - 1) * grid.PageInfo.PageSize)
                 .Take(grid.PageInfo.PageSize)
+                .Select(p => new Promotion
+                {
+                    Id = p.Id,
+                    UserId = p.UserId,
+                    Code = p.Code,
+                    Description = p.Description,
+                    DiscountPercent = p.DiscountPercent,
+                    MinOrderValue = p.MinOrderValue,
+                    QuantityLimit = p.QuantityLimit,
+                    UsedQuantity = p.UsedQuantity,
+                    StartDate = p.StartDate,
+                    EndDate = p.EndDate,
+
+                    // ⭐ LOGIC 3 TRẠNG THÁI
+                    Status = p.EndDate < now
+                        ? PromotionStatus.Expired.ToString()
+                        : p.Status == PromotionStatus.Inactive.ToString()
+                            ? PromotionStatus.Inactive.ToString()
+                            : PromotionStatus.Active.ToString(),
+
+                    Created = p.Created,
+                    CreatedBy = p.CreatedBy,
+                    Modified = p.Modified,
+                    ModifiedBy = p.ModifiedBy,
+                    IsDeleted = p.IsDeleted
+                })
                 .ToListAsync();
 
-            // ✅ Cập nhật trạng thái nếu mã đã hết hạn
-            var now = DateTime.UtcNow;
-            foreach (var promo in result)
-            {
-                if (promo.EndDate < now && promo.Status == PromotionStatus.Active.ToString())
-                {
-                    promo.Status = PromotionStatus.Expired.ToString();
-                    await _promoRepo.UpdateAsync(promo);
-                }
-                else if (promo.StartDate > now && promo.Status == PromotionStatus.Active.ToString())
-                {
-                    promo.Status = PromotionStatus.Active.ToString();
-                    await _promoRepo.UpdateAsync(promo);
-                }
-                else if (promo.StartDate <= now && promo.EndDate >= now && promo.Status != PromotionStatus.Active.ToString())
-                {
-                    promo.Status = PromotionStatus.Active.ToString();
-                    await _promoRepo.UpdateAsync(promo);
-                }
-            }
-
-            return MethodResult<List<Promotion>>.ResultWithData(result, "Lấy danh sách mã khuyến mãi thành công", totalRecord);
+            return MethodResult<List<Promotion>>.ResultWithData(
+                result,
+                "Lấy danh sách mã khuyến mãi thành công",
+                totalRecord
+            );
         }
+
+
 
 
         public async Task<MethodResult<bool>> DeleteAsync(Guid userId, Guid id)

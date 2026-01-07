@@ -133,13 +133,11 @@ namespace ProductAPI.Services
                 var url = await _cloudService.UploadImageAsync(dto.Avatar);
                 existingUser.Avatar = url; // Lưu URL cloud vào DB
             }
-            existingUser.Created = DateTime.UtcNow;
             existingUser.MarkDirty(nameof(existingUser.FullName));
             existingUser.MarkDirty(nameof(existingUser.Username));
             existingUser.MarkDirty(nameof(existingUser.Phone));
             existingUser.MarkDirty(nameof(existingUser.IsLocked));
             existingUser.MarkDirty(nameof(existingUser.Avatar));
-            existingUser.MarkDirty(nameof(existingUser.Created));
 
             await _userRepo.UpdateAsync(existingUser);
 

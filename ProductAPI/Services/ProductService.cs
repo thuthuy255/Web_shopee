@@ -160,6 +160,55 @@ namespace ProductAPI.Services
             return MethodResult<ProductResultDto>.ResultWithData(dto, "Lấy sản phẩm thành công");
         }
 
+
+        public async Task<IMethodResult<List<ProductWithCategoryDto>>> getAllListProducts(Guid sellerId, SearchProducts request)
+        {
+            var query = _productRepo.TableNoTracking;
+            if (!string.IsNullOrEmpty(request.KeyWord))
+            {
+                query = query.Where(p => p.ProductName.Contains(request.KeyWord));
+            }
+            if (!string.IsNullOrEmpty(request.Status))
+            {
+                var isActive = request.Status == "inactive" ? false : true; 
+                query = query.Where(p => p.SellerStatus == isActive);
+            }
+            var result = await (from p in query
+                                join c in _categoryRepo.TableNoTracking on p.CategoryId equals c.Id
+                                where !p.IsDeleted && p.SellerId == sellerId && !c.IsDeleted
+                                select new ProductWithCategoryDto
+                                {
+                                    Id = p.Id,
+                                    ProductName = p.ProductName,
+                                    Description = p.Description,
+                                    Price = p.Price,
+                                    StockQuantity = p.StockQuantity,
+                                    // Nếu hết hàng thì mặc định isActive = false
+                                    IsActive = p.StockQuantity == 0 ? false : p.IsActive,
+                                    SellerStatus = p.SellerStatus,
+                                    Thumbnail = p.Thumbnail,
+                                    ProductImages = string.IsNullOrWhiteSpace(p.ImageListJson)
+                                        ? new List<string>()
+                                        : p.ImageListJson.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList(),
+                                    CategoryId = c.Id,
+                                    CategoryName = c.Name,
+                                    CategoryDescription = c.Description,
+                                    CategoryImageUrl = c.ImageUrl,
+                                    ParentCategoryId = c.ParentCategoryId,
+                                    Variants = _productVariantRepo.TableNoTracking
+                                                    .Where(v => v.ProductId == p.Id)
+                                                    .Select(v => new ProductVariantDto
+                                                    {
+                                                        Id = v.Id,
+                                                        VariantName = v.VariantName,
+                                                        Price = v.Price,
+                                                        StockQuantity = v.StockQuantity
+                                                    }).ToList()
+                                }).OrderByDescending(p => p.Id).ToListAsync();
+            var totalRecord = await query.CountAsync();
+            return MethodResult<List<ProductWithCategoryDto>>.ResultWithData(result, "Lấy danh sách sản phẩm theo seller thành công", totalRecord );
+
+        }
         public async Task<IMethodResult<List<ProductWithCategoryDto>>> FilterProductBySellerAsync(Guid sellerId, GridInfo grid)
         {
             var query = from p in _productRepo.TableNoTracking

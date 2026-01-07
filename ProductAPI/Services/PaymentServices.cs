@@ -134,7 +134,7 @@ namespace ProductAPI.Services
             if (string.IsNullOrEmpty(order.TxnRef))
             {
                 order.TxnRef = DateTime.Now.ToString("yyyyMMddHHmmss") + random.Next(1000, 9999);
-                order.Modified = DateTime.UtcNow;
+                order.Modified = DateTime.Now;
                 await _orderRepos.UpdateAsync(order);
             }
 
@@ -170,7 +170,7 @@ namespace ProductAPI.Services
                         : Enums.PaymentStatus.Failed;
 
                     orderPayment.MarkDirty(nameof(orderPayment.PaymentStatus));
-                    orderPayment.Modified = DateTime.UtcNow;
+                    orderPayment.Modified = DateTime.Now;
                     await _orderRepos.UpdateAsync(orderPayment);
                 }
 

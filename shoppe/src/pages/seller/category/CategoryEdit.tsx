@@ -3,7 +3,7 @@ import DynamicForm, { type Field } from '../../../components/DynamicForm';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Flex, message, Spin } from 'antd';
 import { getCategoryOfSeller, updateCategory } from '../../../api/category/category.api';
-import { showError, showSuccess } from '../../../untils/ShowToast';
+import { showError, showSuccess, showWarning } from '../../../untils/ShowToast';
 import { useGetDetailCategoryQuery } from '../../../api/category/category.query';
 import LoadingDefault from '../../../components/loading/LoadingDefault';
 
@@ -94,10 +94,13 @@ export default function CategoryEdit() {
         if (values.imageUrl && values.imageUrl.file instanceof File) {
             formData.append('imageFile', values.imageUrl.file);
         }
+        else {
+            showWarning('Ảnh danh mục là bắt buộc');
+            return;
+        }
 
         updateCategory(values.id, formData)
             .then((res: any) => {
-                console.log("🚀 ~ handleSubmit ~ res?.success:", res?.success)
                 if (res?.success) {
                     showSuccess(res?.message || 'Cập nhật danh mục thành công');
                     navigate('/seller/category');
