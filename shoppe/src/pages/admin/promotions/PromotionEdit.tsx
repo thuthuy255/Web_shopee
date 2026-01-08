@@ -40,10 +40,19 @@ export default function PromotionEdit() {
             name: 'discountPercent',
             label: 'Phần trăm giảm giá',
             type: 'number',
-            rules: [
-                { required: true, message: 'Vui lòng nhập phần trăm giảm' },
-                { type: 'number', min: 1, max: 100, message: 'Giá trị từ 1 đến 100' },
-            ],
+           rules: [
+        { required: true, message: 'Vui lòng nhập phần trăm giảm' },
+        // ✅ Thay đổi ở đây - dùng validator tùy chỉnh
+        {
+            validator: (_:any, value:any) => {
+                const num = Number(value);
+                if (isNaN(num) || num < 1 || num > 100) {
+                    return Promise.reject('Giá trị từ 1 đến 100');
+                }
+                return Promise.resolve();
+            }
+        }
+    ],
         },
         {
             name: 'minOrderValue',
@@ -136,12 +145,13 @@ export default function PromotionEdit() {
     }, [data]);
 
     const handleSubmit = (values: any) => {
+        console.log("Xin chào ",values)
         setLoadingSubmit(true);
 
         const body = {
             ...values,
-            startDate: values.startDate?.toISOString(),
-            endDate: values.endDate?.toISOString(),
+           startDate: values.startDate ? new Date(values.startDate).toISOString() : null,
+        endDate: values.endDate ? new Date(values.endDate).toISOString() : null,
         };
 
         updatePromotion(body)

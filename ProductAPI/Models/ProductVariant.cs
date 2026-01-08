@@ -21,5 +21,6 @@
 
         // Navigation
         public Product Product { get; set; }
+        public DateTime? CreatedAt { get; set; }
     }
 }

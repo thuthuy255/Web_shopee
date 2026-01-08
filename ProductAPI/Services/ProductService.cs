@@ -527,7 +527,8 @@ namespace ProductAPI.Services
                             Price = variantDto.Price ?? 0,
                             StockQuantity = variantDto.StockQuantity ?? 0,
                             IsDeleted = false,
-                            ImageUrl = imageUrl
+                            ImageUrl = imageUrl,
+                            CreatedAt = DateTime.Now
                         };
                         await _productVariantRepo.AddAsync(newVariant);
                     }
