@@ -20,7 +20,7 @@ export default function SellerCreate() {
         {
             name: 'password', label: 'Mật khẩu', type: 'password', rules: [
                 { required: true, message: 'Vui lòng nhập mật khẩu' },
-                { min: 6, message: 'Mật khẩu ít nhất 6 ký tự' }
+                { min: 6, message: 'Password phải có ít nhất 8 ký tự, chứa 1 chữ hoa, 1 số và 1 ký tự đặc biệt' }
             ]
         },
         {

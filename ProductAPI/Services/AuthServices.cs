@@ -90,8 +90,8 @@ namespace ProductAPI.Services
                 PasswordHash = passwordHash,
                 Role = Constants.ROLE_USER,
                 IsLocked = false,
-                Created = DateTime.UtcNow,
-                Modified = DateTime.UtcNow
+                Created = DateTime.Now,
+                Modified = DateTime.Now
             };
 
             await _userRepo.AddAsync(newUser);
@@ -128,7 +128,6 @@ namespace ProductAPI.Services
 
             var newUser = new User
             {
-                Id = Guid.NewGuid(),
                 Username = request.Username,
                 Email = request.Email,
                 FullName = request.FullName,
@@ -137,8 +136,6 @@ namespace ProductAPI.Services
                 IsLocked = false,
                 Avatar = request.Avatar,
                 Role = "Seller",
-                Created = DateTime.UtcNow,
-                Modified = DateTime.UtcNow
             };
 
             await _userRepo.AddAsync(newUser);

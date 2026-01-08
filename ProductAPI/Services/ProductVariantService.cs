@@ -48,10 +48,12 @@ namespace ProductAPI.Services
             return MethodResult<List<ProductVariantDto>>.ResultWithData(result, "Lấy danh sách biến thể thành công");
         }
 
-        public async Task<IMethodResult<List<ProductVariantDto>>> AddVariantsAsync(List<CreateProductVariantDto> variants)
+        public async Task<IMethodResult<List<ProductVariantDto>>> AddVariantsAsync(
+    List<CreateProductVariantDto> variants)
         {
             if (variants == null || !variants.Any())
-                return MethodResult<List<ProductVariantDto>>.ResultWithError("Danh sách biến thể trống");
+                return MethodResult<List<ProductVariantDto>>
+                    .ResultWithError("Danh sách biến thể trống");
 
             var addedVariants = new List<ProductVariantDto>();
             var currentUserId = _userPrincipalService.GetUserId();
@@ -60,15 +62,28 @@ namespace ProductAPI.Services
             {
                 var product = await _productRepo.GetByIdAsync(variant.ProductId);
                 if (product == null || product.CreatedBy != currentUserId)
-                    return MethodResult<List<ProductVariantDto>>.ResultWithError("Bạn không có quyền thêm biến thể cho sản phẩm này");
+                    return MethodResult<List<ProductVariantDto>>
+                        .ResultWithError("Bạn không có quyền thêm biến thể cho sản phẩm này");
 
                 string? imageUrl = null;
+
                 if (variant.ImageFile != null)
                 {
-                    var uploadResult = await _cloudinaryService.UploadImageAsync(variant.ImageFile);
-                    if (string.IsNullOrEmpty(uploadResult))
-                        return MethodResult<List<ProductVariantDto>>.ResultWithError("Tải ảnh lên thất bại");
-                    imageUrl = uploadResult;
+                    try
+                    {
+                        imageUrl = await _cloudinaryService.UploadImageAsync(variant.ImageFile);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        // ❗ BẮT LỖI ĐỊNH DẠNG FILE
+                        return MethodResult<List<ProductVariantDto>>
+                            .ResultWithError(ex.Message);
+                    }
+                    catch (Exception)
+                    {
+                        return MethodResult<List<ProductVariantDto>>
+                            .ResultWithError("Tải ảnh biến thể thất bại");
+                    }
                 }
 
                 var entity = new ProductVariant
@@ -80,7 +95,7 @@ namespace ProductAPI.Services
                     Price = variant.Price,
                     StockQuantity = variant.StockQuantity,
                     ImageUrl = imageUrl,
-                    Created = DateTime.UtcNow,
+                    Created = DateTime.Now,
                     CreatedBy = currentUserId
                 };
 
@@ -98,37 +113,57 @@ namespace ProductAPI.Services
                 });
             }
 
-            return MethodResult<List<ProductVariantDto>>.ResultWithData(addedVariants, "Thêm danh sách biến thể thành công");
+            return MethodResult<List<ProductVariantDto>>
+                .ResultWithData(addedVariants, "Thêm danh sách biến thể thành công");
         }
 
-        public async Task<IMethodResult<ProductVariantDto>> UpdateVariantAsync(UpdateProductVariantDto dto)
+        public async Task<IMethodResult<ProductVariantDto>> UpdateVariantAsync(
+    UpdateProductVariantDto dto)
         {
             var variant = await _productVariantRepo.GetByIdAsync(dto.Id);
             if (variant == null)
-                return MethodResult<ProductVariantDto>.ResultWithError("Không tìm thấy biến thể sản phẩm");
+                return MethodResult<ProductVariantDto>
+                    .ResultWithError("Không tìm thấy biến thể sản phẩm");
 
             var product = await _productRepo.GetByIdAsync(variant.ProductId);
             var currentUserId = _userPrincipalService.GetUserId();
-            if (product == null || product.CreatedBy != currentUserId)
-                return MethodResult<ProductVariantDto>.ResultWithError("Bạn không có quyền sửa biến thể này");
 
-            // Cập nhật
+            if (product == null || product.CreatedBy != currentUserId)
+                return MethodResult<ProductVariantDto>
+                    .ResultWithError("Bạn không có quyền sửa biến thể này");
+
+            // ===== UPDATE BASIC INFO =====
             variant.VariantName = dto.VariantName;
             variant.VariantValue = dto.VariantValue;
             variant.Price = dto.Price;
             variant.StockQuantity = dto.StockQuantity;
 
+            // ===== UPDATE IMAGE =====
             if (dto.ImageFile != null)
             {
-                var uploadResult = await _cloudinaryService.UploadImageAsync(dto.ImageFile);
-                if (!string.IsNullOrEmpty(uploadResult))
+                try
+                {
+                    var uploadResult = await _cloudinaryService.UploadImageAsync(dto.ImageFile);
                     variant.ImageUrl = uploadResult;
+                }
+                catch (ArgumentException ex)
+                {
+                    return MethodResult<ProductVariantDto>
+                        .ResultWithError(ex.Message);
+                }
+                catch (Exception)
+                {
+                    return MethodResult<ProductVariantDto>
+                        .ResultWithError("Tải ảnh biến thể thất bại");
+                }
             }
-            else if (!string.IsNullOrEmpty(dto.ImageUrl))
+            else if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
             {
-                variant.ImageUrl = dto.ImageUrl; // giữ nguyên hoặc update bằng url
+                // giữ ảnh cũ hoặc set lại url
+                variant.ImageUrl = dto.ImageUrl;
             }
 
+            // ===== TRACK DIRTY =====
             variant.MarkDirty(nameof(variant.VariantName));
             variant.MarkDirty(nameof(variant.VariantValue));
             variant.MarkDirty(nameof(variant.Price));
@@ -148,10 +183,12 @@ namespace ProductAPI.Services
                 ImageUrl = variant.ImageUrl
             };
 
-            return MethodResult<ProductVariantDto>.ResultWithData(result, "Cập nhật biến thể thành công");
+            return MethodResult<ProductVariantDto>
+                .ResultWithData(result, "Cập nhật biến thể thành công");
         }
 
-        
+
+
     }
 
 

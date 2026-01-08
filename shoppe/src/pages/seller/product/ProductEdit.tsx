@@ -60,11 +60,11 @@ export default function ProductEdit() {
         // Thumbnail
         Thumbnail: product.thumbnail
           ? {
-              url: product.thumbnail,
-              uid: "thumb",
-              name: product.productName,
-              status: "done",
-            }
+            url: product.thumbnail,
+            uid: "thumb",
+            name: product.productName,
+            status: "done",
+          }
           : null,
         ProductImages:
           product.productImages?.map((url: string, idx: number) => ({
@@ -89,26 +89,70 @@ export default function ProductEdit() {
   }, [data]);
 
   const fields: Field[] = [
-    { name: "Id", type: "hidden" },
-    { name: "productName", label: "Tên sản phẩm", type: "text" },
-    { name: "description", label: "Mô tả", type: "text" },
-    { name: "Price", label: "Giá", type: "number" },
-    { name: "StockQuantity", label: "Tồn kho", type: "number" },
+    {
+      name: "Id",
+      type: "hidden",
+    },
+
+    {
+      name: "productName",
+      label: "Tên sản phẩm",
+      type: "text",
+      rules: [
+        { required: true, message: "Vui lòng nhập tên sản phẩm" },
+      ],
+    },
+
+    {
+      name: "description",
+      label: "Mô tả",
+      type: "text",
+      rules: [
+        { required: true, message: "Vui lòng nhập mô tả sản phẩm" },
+      ],
+    },
+
+    {
+      name: "Price",
+      label: "Giá",
+      type: "number",
+      rules: [
+        { required: true, message: 'Vui lòng nhập giá' },
+        { pattern: /^[0-9]+$/, message: 'Giá phải là số' },
+      ],
+    },
+
+    {
+      name: "StockQuantity",
+      label: "Tồn kho",
+      type: "number",
+      rules: [
+        { required: true, message: 'Vui lòng nhập tồn kho' },
+        { pattern: /^[0-9]+$/, message: 'Tồn kho phải là số' },
+      ],
+    },
+
     {
       name: "sellerStatus",
       label: "Trạng thái",
       type: "select",
+      rules: [
+        { required: true, message: "Vui lòng chọn trạng thái sản phẩm" },
+      ],
       options: [
         { label: "Hoạt động", value: true },
         { label: "Ngưng bán", value: false },
       ],
     },
+
     {
       name: "categoryId",
       label: "Danh mục",
       type: "select",
+      rules: [
+        { required: true, message: "Vui lòng chọn danh mục" },
+      ],
       options: categoryOptions,
-      rules: [{ required: true, message: "Vui lòng chọn danh mục" }],
     },
     {
       name: "Thumbnail",
@@ -133,7 +177,7 @@ export default function ProductEdit() {
       formData.append("Description", values.description);
       formData.append("Price", values.Price.toString());
       formData.append("StockQuantity", values.StockQuantity.toString());
-      formData.append("SellerStatus", values.sellerStatus.toString());
+      formData.append("sellerStatus", values.sellerStatus.toString());
       formData.append("CategoryId", values.categoryId);
 
       // Thumbnail

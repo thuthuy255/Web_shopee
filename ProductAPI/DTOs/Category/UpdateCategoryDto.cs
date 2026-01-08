@@ -7,5 +7,6 @@
         public IFormFile? ImageFile { get; set; }  // Ảnh đại diện
 
         public Guid? ParentCategoryId { get; set; }
+        public bool RemoveImage { get; set; } = false;
     }
 }

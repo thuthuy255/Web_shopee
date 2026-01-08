@@ -87,14 +87,15 @@ function CustomTable<T>({
                   cancelText="Huỷ"
                 >
                   <Button
-                    icon={isLocked ? <UnlockOutlined /> : <LockOutlined />}
+                    icon={isLocked ? <LockOutlined /> : <UnlockOutlined />}
                     shape="circle"
                     style={{
-                      backgroundColor: isLocked ? "#52c41a" : "#faad14",
-                      borderColor: isLocked ? "#52c41a" : "#faad14",
+                      backgroundColor: isLocked ? "#faad14" : "#52c41a", // xanh = mở, cam = khóa
+                      borderColor: isLocked ? "#faad14" : "#52c41a",
                       color: "#fff",
                     }}
                   />
+
                 </Popconfirm>
               </Tooltip>
             )}

@@ -9,6 +9,8 @@ namespace ProductAPI.IServices
     {
         Task<MethodResult<List<ProductWithCategoryDto>>> FilterProductAsync(GridInfo grid);
         Task<IMethodResult<List<ProductWithCategoryDto>>> FilterProductBySellerAsync(Guid sellerId, GridInfo grid);
+        Task<IMethodResult<List<ProductWithCategoryDto>>> getAllListProducts(Guid sellerId, SearchProducts request);
+
         Task<IMethodResult<SellerProductListDto>> GetShopWithProductsAsync(Guid sellerId, GridInfo grid);
         Task<MethodResult<int>> GetTotalProductAsync();
 

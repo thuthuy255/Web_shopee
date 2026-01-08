@@ -2,6 +2,7 @@ import React, { useState, useEffect, memo } from "react";
 import { Button, Input, InputNumber, Upload, Image, Card, Row, Col, Space, Popconfirm, Form } from "antd";
 import { PlusOutlined, DeleteOutlined, UploadOutlined } from "@ant-design/icons";
 import { deleteVariant } from "../api/product/product.api";
+import { showError, showWarning } from "../untils/ShowToast";
 
 interface Variant {
     id?: string;
@@ -127,12 +128,28 @@ function VariantsForm({ value = [], onChange }: Props) {
                                 <Form.Item label="Ảnh biến thể">
                                     <Upload
                                         listType="picture-card"
-                                        beforeUpload={(file) => {
-                                            updateVariant(index, "imageFile", file);
-                                            return false; // không upload ngay, chỉ lưu vào state
-                                        }}
+                                        accept=".jpg,.jpeg,.png,.gif,.webp,.bmp"
                                         showUploadList={false}
+                                        beforeUpload={(file) => {
+                                            const isValidImage =
+                                                file.type === "image/jpeg" ||
+                                                file.type === "image/png" ||
+                                                file.type === "image/gif" ||
+                                                file.type === "image/webp" ||
+                                                file.type === "image/bmp";
+
+                                            if (!isValidImage) {
+                                                showWarning(
+                                                    "Chỉ được chọn ảnh (.jpg, .jpeg, .png, .gif, .webp, .bmp)"
+                                                );
+                                                return Upload.LIST_IGNORE; // ❌ KHÔNG cho vào list
+                                            }
+
+                                            updateVariant(index, "imageFile", file);
+                                            return false; // không upload ngay
+                                        }}
                                     >
+
                                         {v.imageUrl || v.imageFile ? (
                                             <div style={{ position: "relative" }}>
                                                 <Image

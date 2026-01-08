@@ -14,8 +14,10 @@ import {
 } from "antd";
 import { getUserInfo, updateUser } from "../../api/user.api";
 import { showError, showSuccess } from "../../untils/ShowToast";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setUserState } from "../../features/slices/user.slice";
+import type { RootState } from "../../features/store";
+
 
 const { Title, Text } = Typography;
 
@@ -25,6 +27,7 @@ export const ProfileForm = () => {
   const [loading, setLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const role = useSelector((state: RootState) => state.user.role);
   const dispatch = useDispatch();
   const handleUpload = ({ fileList }: { fileList: UploadFile[] }) => {
     setFileList(fileList);
@@ -39,18 +42,23 @@ export const ProfileForm = () => {
   const onFinish = async (values: any) => {
     try {
       const formData = new FormData();
-      formData.append("Id", values.id);
-      formData.append("Username", values.username);
-      formData.append("Email", values.email);
-      formData.append("FullName", values.fullName);
-      formData.append("Phone", values.phone);
 
-      // Avatar phải là file thật
+      formData.append("Id", values.id);
+
+      if (role === "Seller" && values.userName) {
+        formData.append("UserName", values.userName);
+      }
+      if (values.email) formData.append("Email", values.email);
+      if (values.fullName) formData.append("FullName", values.fullName);
+      if (values.phone) formData.append("Phone", values.phone);
+
+
       if (fileList[0]?.originFileObj) {
         formData.append("Avatar", fileList[0].originFileObj as File);
       }
 
       const res: any = await updateUser(formData);
+
       if (res.success) {
         showSuccess("Cập nhật thành công");
         dispatch(setUserState(res.data));
@@ -59,10 +67,10 @@ export const ProfileForm = () => {
         showError(res.message || "Cập nhật thất bại");
       }
     } catch (err) {
-      console.error("🚀 ~ onFinish ~ err:", err);
       showError("Cập nhật thất bại");
     }
   };
+
 
   const handleGetInfoUser = useCallback(async () => {
     setLoading(true);
@@ -141,6 +149,15 @@ export const ProfileForm = () => {
                 }}
               />
             </Form.Item> */}
+            {role === "Seller" && (
+              <Form.Item
+                name="userName"
+                label="Tên cửa hàng"
+                rules={[{ required: true, message: "Vui lòng nhập tên cửa hàng" }]}
+              >
+                <Input size="large" placeholder="Nhập tên cửa hàng" />
+              </Form.Item>
+            )}
 
 
             <Form.Item

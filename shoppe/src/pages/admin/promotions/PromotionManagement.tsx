@@ -10,6 +10,7 @@ import {
 } from "../../../api/promotion/promotion.api";
 import CustomTable from "../../../components/CustomTable";
 import LoadingDefault from "../../../components/loading/LoadingDefault";
+import { showError, showSuccess } from "../../../untils/ShowToast";
 
 interface Promotion {
   id: string;
@@ -30,7 +31,7 @@ interface Promotion {
 const statusMap: Record<string, string> = {
   Active: "Hoạt động",
   Expired: "Hết hạn",
-  Inactive: "Không hoạt động",
+  Inactive: "Ngừng hoạt động",
 };
 
 const columns: TableColumnsType<Promotion> = [
@@ -142,20 +143,26 @@ export default function PromotionManagement() {
   const handleDelete = async (id: string) => {
     try {
       setLoading(true);
-      await deletePromotion(id);
-      setData((prev) => prev.filter((item) => item.id !== id));
-      message.success("Đã xoá mã khuyến mãi");
+      const res: any = await deletePromotion(id); // giả sử API trả về object giống bạn gửi
+      if (res?.success) {
+        setData((prev) => prev.filter((item) => item.id !== id));
+        showSuccess(res?.message || "Xoá mã khuyến mãi thành công");
+      } else {
+        showError(res?.message || "Xoá mã khuyến mãi thất bại");
+      }
     } catch (error) {
       console.error(error);
-      message.error("Xoá mã khuyến mãi thất bại");
+      showError("Xoá mã khuyến mãi thất bại");
     } finally {
       setLoading(false);
     }
   };
+
   const handleSearch = (value: string) => {
     setKeyword(value);
-    fetchPromotion(1, value);
+    fetchPromotion(1, value || "");
   };
+
   return (
     <div>
       <Flex align="center" justify="space-between" style={{ marginBottom: 16 }}>

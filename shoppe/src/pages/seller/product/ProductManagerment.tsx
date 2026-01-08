@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import type { TableColumnsType } from "antd";
-import { Flex, message, Select, Space, Tag } from "antd";
+import { Flex, message, Select, Tag } from "antd";
 import { FilterOutlined } from "@ant-design/icons";
 import CustomTable from "../../../components/CustomTable";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +26,14 @@ interface Product {
   categoryImageUrl: string;
 }
 
+// Hàm tính trạng thái hiển thị 3 loại
+const getProductStatus = (product: Product) => {
+  if (product.stockQuantity === 0 && !product.isActive) return "outOfStock";
+  if (product.sellerStatus) return "active";
+  return "inactive"; // isActive false && stock >0
+};
+
+// Cột table
 const columns: TableColumnsType<Product> = [
   {
     title: "Tên sản phẩm",
@@ -69,15 +77,17 @@ const columns: TableColumnsType<Product> = [
     align: "center",
   },
   {
-    title: "Hoạt động",
-    dataIndex: "isActive",
-    key: "isActive",
-    render: (value) => (
-      <Tag color={value ? "green" : "red"}>
-        {value ? "Hoạt động" : "Hết hàng"}
-      </Tag>
-    ),
+    title: "Trạng thái",
+    key: "status",
     align: "center",
+    render: (_, record: Product) => {
+      const status = getProductStatus(record);
+      if (status === "active")
+        return <Tag color="green">Hoạt động</Tag>;
+      if (status === "inactive")
+        return <Tag color="orange">Ngưng bán</Tag>;
+      return <Tag color="red">Hết hàng</Tag>;
+    },
   },
   {
     title: "Ảnh",
@@ -108,18 +118,19 @@ export default function ProductManagement() {
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [searchValue, setSearchValue] = useState("");
-  const [filterIsActive, setFilterIsActive] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<
+    "active" | "inactive" | "outOfStock" | null
+  >(null);
   const [filterSellerStatus, setFilterSellerStatus] = useState<string | null>(
     null
   );
   const navigate = useNavigate();
 
-  // Hàm fetch dữ liệu chính
   const fetchProduct = useCallback(
     async (
       page: number,
       key: string,
-      isActive: string | null,
+      status: typeof filterStatus,
       sellerStatus: string | null
     ) => {
       try {
@@ -127,7 +138,7 @@ export default function ProductManagement() {
         const body = {
           pageInfo: { page, pageSize },
           keyWord: key,
-          isActive: isActive,
+          status: status, // BE nên xử lý 3 trạng thái nếu có
           sellerStatus: sellerStatus,
         };
         const res: any = await getAllProductOfSeller(body);
@@ -148,36 +159,18 @@ export default function ProductManagement() {
     [pageSize]
   );
 
-  // Load dữ liệu khi các dependencies thay đổi
   useEffect(() => {
-    fetchProduct(currentPage, keyword, filterIsActive, filterSellerStatus);
-  }, [currentPage, keyword, filterIsActive, filterSellerStatus, fetchProduct]);
+    fetchProduct(currentPage, keyword, filterStatus, filterSellerStatus);
+  }, [currentPage, keyword, filterStatus, filterSellerStatus, fetchProduct]);
 
-  // Xử lý search
   const handleSearch = (value: string) => {
     setKeyword(value);
     setCurrentPage(1);
   };
-
-  // Xử lý thay đổi trang
   const handlePageChange = (page: number) => setCurrentPage(page);
-
-  // Xử lý thay đổi filter isActive
-  const handleFilterIsActiveChange = (val: string | null) => {
-    setFilterIsActive(val);
-    setCurrentPage(1);
-  };
-
-  // Xử lý thay đổi filter sellerStatus
-  const handleFilterSellerStatusChange = (val: string | null) => {
-    setFilterSellerStatus(val);
-    setCurrentPage(1);
-  };
-
   const handleAdd = () => navigate("/seller/products/create");
   const handleView = (record: Product) =>
     navigate(`/seller/products/edit/${record.id}`);
-
   const handleDelete = async (id: string) => {
     try {
       setLoading(true);
@@ -225,70 +218,33 @@ export default function ProductManagement() {
             <span style={{ fontWeight: 500, color: "#595959" }}>Bộ lọc:</span>
           </Flex>
 
+          {/* Filter trạng thái 3 loại */}
           <Select
             placeholder="Tất cả trạng thái"
             allowClear
-            style={{ minWidth: 180 }}
-            value={filterIsActive}
-            onChange={handleFilterIsActiveChange}
+            style={{ minWidth: 200 }}
+            value={filterStatus}
+            onChange={(val) => {
+              setFilterStatus(val);
+              setCurrentPage(1);
+            }}
             suffixIcon={null}
           >
-            <Select.Option value="true">
+            <Select.Option value="active">
               <Tag color="green" style={{ margin: 0 }}>
                 Hoạt động
               </Tag>
             </Select.Option>
-            <Select.Option value="false">
-              <Tag color="red" style={{ margin: 0 }}>
-                Hết hàng
-              </Tag>
-            </Select.Option>
-          </Select>
-
-          <Select
-            placeholder="Trạng thái người bán"
-            allowClear
-            style={{ minWidth: 180 }}
-            value={filterSellerStatus}
-            onChange={handleFilterSellerStatusChange}
-            suffixIcon={null}
-          >
-            <Select.Option value="true">
-              <Tag color="blue" style={{ margin: 0 }}>
-                Đang bán
-              </Tag>
-            </Select.Option>
-            <Select.Option value="false">
+            <Select.Option value="inactive">
               <Tag color="orange" style={{ margin: 0 }}>
                 Ngưng bán
               </Tag>
             </Select.Option>
+
           </Select>
 
-          {/* Active Filters Display */}
-          {(filterIsActive || filterSellerStatus) && (
-            <Flex align="center" gap={8} style={{ marginLeft: "auto" }}>
-              <span style={{ fontSize: 12, color: "#8c8c8c" }}>Đang lọc:</span>
-              {filterIsActive && (
-                <Tag
-                  color={filterIsActive === "true" ? "green" : "red"}
-                  closable
-                  onClose={() => handleFilterIsActiveChange(null)}
-                >
-                  {filterIsActive === "true" ? "Hoạt động" : "Hết hàng"}
-                </Tag>
-              )}
-              {filterSellerStatus && (
-                <Tag
-                  color={filterSellerStatus === "true" ? "blue" : "orange"}
-                  closable
-                  onClose={() => handleFilterSellerStatusChange(null)}
-                >
-                  {filterSellerStatus === "true" ? "Đang bán" : "Ngưng bán"}
-                </Tag>
-              )}
-            </Flex>
-          )}
+          {/* Filter sellerStatus */}
+
         </Flex>
       </Flex>
 

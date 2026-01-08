@@ -3,7 +3,7 @@ import DynamicForm, { type Field } from '../../../components/DynamicForm';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Flex, message, Spin } from 'antd';
 import { getCategoryOfSeller, updateCategory } from '../../../api/category/category.api';
-import { showError, showSuccess } from '../../../untils/ShowToast';
+import { showError, showSuccess, showWarning } from '../../../untils/ShowToast';
 import { useGetDetailCategoryQuery } from '../../../api/category/category.query';
 import LoadingDefault from '../../../components/loading/LoadingDefault';
 
@@ -84,7 +84,6 @@ export default function CategoryEdit() {
     ];
 
     const handleSubmit = (values: any) => {
-        // setLoadingSubmit(true);
         const formData = new FormData();
         formData.append('Id', values.id);
         formData.append('name', values.name);
@@ -95,23 +94,23 @@ export default function CategoryEdit() {
         if (values.imageUrl && values.imageUrl.file instanceof File) {
             formData.append('imageFile', values.imageUrl.file);
         }
+        else {
+            showWarning('Ảnh danh mục là bắt buộc');
+            return;
+        }
 
         updateCategory(values.id, formData)
-            .then((res) => {
-                if (res?.data) {
-                    showSuccess('Cập nhật danh mục thành công');
+            .then((res: any) => {
+                if (res?.success) {
+                    showSuccess(res?.message || 'Cập nhật danh mục thành công');
                     navigate('/seller/category');
-                } else {
-                    message.error(res.data?.message || 'Cập nhật danh mục thất bại');
                 }
             })
-            .catch(() => {
-                message.error('Đã xảy ra lỗi khi cập nhật danh mục');
-            })
-        // .finally(() => {
-        //     setLoadingSubmit(false);
-        // });
+            .catch((res: any) => {
+                showError(res?.error || res?.message);
+            });
     };
+
 
     return (
         <div>
