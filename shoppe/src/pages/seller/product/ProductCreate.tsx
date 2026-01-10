@@ -84,8 +84,7 @@ export default function ProductsCreate() {
             type: 'select',
             options: [
                 { label: 'Hoạt động', value: 'active' },
-                { label: 'Ngừng bán', value: 'inactive' },
-                // { label: 'Hết hàng', value: 'out_of_stock' },
+                { label: 'Ngừng bán', value: 'inactive' }
             ],
             rules: [{ required: true, message: 'Vui lòng chọn trạng thái' }],
         },

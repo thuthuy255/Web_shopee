@@ -1,8 +1,8 @@
 // pages/product/ProductDetailPage.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Spin, Alert, Button, Input, Image, message, Typography, Divider } from 'antd';
-import { ArrowLeftOutlined, ShopFilled, ShoppingCartOutlined } from '@ant-design/icons';
+import { Spin, Alert, Button, Input, Image, message, Typography, Divider, Avatar } from 'antd';
+import { ArrowLeftOutlined, ShopFilled, ShoppingCartOutlined, UserOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { getDetailProduct } from '../../api/product/product.api';
 import { createCartItem } from '../../api/cartitem/cartitem.api';
@@ -378,16 +378,24 @@ const ProductDetailPage = () => {
                     }}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                        <Image
-                            src={product?.avatar}
-                            alt={product?.productName}
-                            style={{
-                                width: 80,
-                                height: 80,
-                                borderRadius: '50%',
-                                objectFit: 'cover',
-                            }}
-                        />
+                        {product?.avatar ? (
+                            <Image
+                                src={product.avatar}
+                                alt={product.productName}
+                                style={{
+                                    width: 80,
+                                    height: 80,
+                                    borderRadius: '50%',
+                                    objectFit: 'cover',
+                                }}
+                            />
+                        ) : (
+                            <Avatar
+                                size={80}
+                                icon={<UserOutlined />}
+                                style={{ backgroundColor: '#f0f0f0', color: '#999' }}
+                            />
+                        )}
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <Text style={{ fontSize: 18, fontWeight: 600 }}>
                                 {product?.sellerName}

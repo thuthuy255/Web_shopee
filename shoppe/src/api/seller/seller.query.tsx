@@ -12,6 +12,7 @@ export const useGetDetailSellerQuery = ({
         queryKey: queryKey,
         queryFn: () => getDetailSeller(params),
         staleTime: 0,
+        gcTime: 0,
         enabled: true,
     };
     return useQuery(_options);

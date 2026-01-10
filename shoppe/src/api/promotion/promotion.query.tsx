@@ -12,6 +12,7 @@ export const useGetDetailPromotionQuery = ({
         queryKey: queryKey,
         queryFn: () => getDetailPromotion(params),
         staleTime: 0,
+        gcTime: 0,
         enabled: true,
     };
     return useQuery(_options);

@@ -110,7 +110,7 @@ namespace ProductAPI.Controllers
         public async Task<IActionResult> UpdateCategory([FromRoute] Guid id, [FromForm] UpdateCategoryDto dto)
         {
             var result = await _categoryService.UpdateAsync(id, dto);
-            return result.Success ? Ok(result) : BadRequest(result);
+            return Ok(result) ;
         }
 
         [HttpDelete("delete/{id}")]

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import DynamicForm, { type Field } from '../../../components/DynamicForm';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Flex, message, Spin } from 'antd';
+import { Flex } from 'antd';
 import { getCategoryOfSeller, updateCategory } from '../../../api/category/category.api';
 import { showError, showSuccess, showWarning } from '../../../untils/ShowToast';
 import { useGetDetailCategoryQuery } from '../../../api/category/category.query';
@@ -12,6 +12,7 @@ export default function CategoryEdit() {
     const [initialValues, setInitialValues] = useState<any>(null);
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [categoryOptions, setCategoryOptions] = useState<{ label: string; value: string }[]>([]);
+    const [isOptionsLoaded, setIsOptionsLoaded] = useState(false);
     const formRef = useRef<any>(null);
     const navigate = useNavigate();
 
@@ -21,7 +22,7 @@ export default function CategoryEdit() {
     const fetchCategories = async () => {
         try {
             const body = {
-                pageInfo: { page: 1, pageSize: 10 },
+                pageInfo: { page: 1, pageSize: 999999 },
                 keyWord: '',
             };
             const res: any = await getCategoryOfSeller(body);
@@ -33,10 +34,12 @@ export default function CategoryEdit() {
                 }));
 
                 setCategoryOptions([{ label: 'Không có', value: '' }, ...options]);
+                setIsOptionsLoaded(true); // ✅ Đánh dấu đã load xong
             }
         } catch (err) {
             showError('Không thể tải danh mục');
             console.error(err);
+            setIsOptionsLoaded(true); // ✅ Vẫn cho phép hiển thị form
         }
     };
 
@@ -44,8 +47,9 @@ export default function CategoryEdit() {
         fetchCategories();
     }, []);
 
+    // ✅ CHỈ SET initialValues khi ĐÃ CÓ cả data VÀ categoryOptions
     useEffect(() => {
-        if (data?.data) {
+        if (data?.data && isOptionsLoaded) {
             const category = data.data;
             setInitialValues({
                 id: category.id,
@@ -62,7 +66,7 @@ export default function CategoryEdit() {
                     : null,
             });
         }
-    }, [data]);
+    }, [data, isOptionsLoaded]);
 
     const fields: Field[] = [
         { name: 'id', type: 'hidden' },
@@ -73,7 +77,7 @@ export default function CategoryEdit() {
             label: 'Danh mục cha',
             type: 'select',
             rules: [],
-            options: categoryOptions,
+            options: categoryOptions, // ✅ Options đã được load đầy đủ
         },
         {
             name: 'imageUrl',
@@ -91,8 +95,12 @@ export default function CategoryEdit() {
         formData.append('parentCategoryId', values.parentCategoryId || '');
 
         // Nếu user upload file mới
-        if (values.imageUrl && values.imageUrl.file instanceof File) {
-            formData.append('imageFile', values.imageUrl.file);
+        if (values.imageUrl && values.imageUrl.originFileObj instanceof File) {
+            formData.append('imageFile', values.imageUrl.originFileObj);
+        }
+        // Nếu giữ nguyên ảnh cũ (đã có url)
+        else if (values.imageUrl && values.imageUrl.url) {
+            // Không cần append gì, backend sẽ giữ nguyên
         }
         else {
             showWarning('Ảnh danh mục là bắt buộc');
@@ -105,17 +113,23 @@ export default function CategoryEdit() {
                     showSuccess(res?.message || 'Cập nhật danh mục thành công');
                     navigate('/seller/category');
                 }
+                else {
+                    showWarning(res?.error || "Có lỗi xảy ra")
+                }
             })
-            .catch((res: any) => {
-                showError(res?.error || res?.message);
+            .catch((e) => {
+                showError(e);
+                console.log("Có lỗi xảy ra");
             });
     };
 
+    // ✅ CHỈ RENDER form khi đã load đủ cả data VÀ options
+    const isReady = !isLoading && isOptionsLoaded && initialValues;
 
     return (
         <div>
             <h2 style={{ marginBottom: 16 }}>Cập nhật danh mục</h2>
-            {!isLoading ? (
+            {isReady ? (
                 <DynamicForm
                     formRef={formRef}
                     fields={fields}

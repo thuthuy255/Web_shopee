@@ -1,9 +1,8 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import DynamicForm, { type Field } from '../../../components/DynamicForm';
 import { RegisterbyAdmin } from '../../../api/auth.api';
 import { showError, showSuccess } from '../../../untils/ShowToast';
 import { useNavigate } from 'react-router-dom';
-import { inserProduct } from '../../../api/product/product.api';
 import LoadingDefault from '../../../components/loading/LoadingDefault';
 
 export default function SellerCreate() {
@@ -18,10 +17,17 @@ export default function SellerCreate() {
             ]
         },
         {
-            name: 'password', label: 'Mật khẩu', type: 'password', rules: [
+            name: 'password',
+            label: 'Mật khẩu',
+            type: 'password',
+            rules: [
                 { required: true, message: 'Vui lòng nhập mật khẩu' },
-                { min: 6, message: 'Password phải có ít nhất 8 ký tự, chứa 1 chữ hoa, 1 số và 1 ký tự đặc biệt' }
-            ]
+                {
+                    pattern: /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+=\-])[A-Za-z\d@$!%*?&#^()_+=\-]{8,}$/,
+                    message:
+                        'Mật khẩu phải có ít nhất 8 ký tự, gồm 1 chữ hoa, 1 số và 1 ký tự đặc biệt',
+                },
+            ],
         },
         {
             name: 'username', label: 'Tên người bán', type: 'text', rules: [
@@ -40,16 +46,12 @@ export default function SellerCreate() {
             ]
         },
     ];
-
-
-
-
     const handleSubmit = async (values: any) => {
         try {
             setLoading(true);
             await RegisterbyAdmin(values);
             showSuccess('Tạo tài khoản thành công');
-            formRef.current?.resetFields(); // ✅
+            formRef.current?.resetFields();
             navigate('/admin/seller')
         } catch (e: any) {
             showError(e?.error);
@@ -61,7 +63,7 @@ export default function SellerCreate() {
 
     return (
         <div>
-            <h2>Thêm sản phẩm</h2>
+            <h2>Thêm người bán</h2>
             {loading ? (
                 <LoadingDefault />
             ) :
