@@ -13,6 +13,8 @@ export default function PromotionCreate() {
     const fields: Field[] = [
         { name: 'id', type: 'hidden' },
         { name: 'sellerId', type: 'hidden' },
+
+        // ===== CODE =====
         {
             name: 'code',
             label: 'Mã khuyến mãi',
@@ -23,6 +25,7 @@ export default function PromotionCreate() {
             ],
         },
 
+        // ===== DESCRIPTION =====
         {
             name: 'description',
             label: 'Mô tả khuyến mãi',
@@ -33,6 +36,7 @@ export default function PromotionCreate() {
             ],
         },
 
+        // ===== DISCOUNT PERCENT (decimal 5,2) =====
         {
             name: 'discountPercent',
             label: 'Phần trăm giảm giá',
@@ -41,7 +45,9 @@ export default function PromotionCreate() {
                 { required: true, message: 'Vui lòng nhập phần trăm giảm' },
                 {
                     validator: (_: any, value: any) => {
-                        if (value === null || value === undefined) return Promise.resolve();
+                        if (value === null || value === undefined || value === '') {
+                            return Promise.resolve(); // 🔥 chỉ required báo lỗi
+                        }
 
                         const num = Number(value);
 
@@ -63,6 +69,7 @@ export default function PromotionCreate() {
             ],
         },
 
+        // ===== MIN ORDER VALUE (decimal 18,2) =====
         {
             name: 'minOrderValue',
             label: 'Giá trị đơn tối thiểu',
@@ -71,12 +78,14 @@ export default function PromotionCreate() {
                 { required: true, message: 'Vui lòng nhập giá trị đơn tối thiểu' },
                 {
                     validator: (_: any, value: any) => {
-                        if (value === null || value === undefined) return Promise.resolve();
+                        if (value === null || value === undefined || value === '') {
+                            return Promise.resolve();
+                        }
 
                         const num = Number(value);
 
                         if (isNaN(num) || num < 0) {
-                            return Promise.reject('Giá trị phải lớn hơn hoặc bằng 0');
+                            return Promise.reject('Giá trị phải ≥ 0');
                         }
 
                         if (!/^\d+(\.\d{1,2})?$/.test(String(value))) {
@@ -89,6 +98,7 @@ export default function PromotionCreate() {
             ],
         },
 
+        // ===== QUANTITY LIMIT (int) =====
         {
             name: 'quantityLimit',
             label: 'Số lượng giới hạn',
@@ -97,6 +107,10 @@ export default function PromotionCreate() {
                 { required: true, message: 'Vui lòng nhập số lượng giới hạn' },
                 {
                     validator: (_: any, value: any) => {
+                        if (value === null || value === undefined || value === '') {
+                            return Promise.resolve();
+                        }
+
                         const num = Number(value);
 
                         if (!Number.isInteger(num) || num <= 0) {
@@ -108,16 +122,18 @@ export default function PromotionCreate() {
                 }
             ],
         },
+
+        // ===== START DATE =====
         {
             name: 'startDate',
             label: 'Ngày bắt đầu',
             type: 'date',
             rules: [{ required: true, message: 'Vui lòng chọn ngày bắt đầu' }],
-            disabledDate: (current) => {
-                // ❌ không cho chọn ngày trước hôm nay
-                return current && current.isBefore(dayjs().startOf('day'));
-            },
+            disabledDate: (current) =>
+                current && current.isBefore(dayjs().startOf('day')),
         },
+
+        // ===== END DATE =====
         {
             name: 'endDate',
             label: 'Ngày kết thúc',
@@ -126,12 +142,10 @@ export default function PromotionCreate() {
             disabledDate: (current) => {
                 const startDate = formRef.current?.getFieldValue('startDate');
 
-                // ❌ không cho chọn ngày trước hôm nay
                 if (current && current.isBefore(dayjs().startOf('day'))) {
                     return true;
                 }
 
-                // ❌ không cho nhỏ hơn startDate
                 if (startDate && current.isBefore(startDate, 'day')) {
                     return true;
                 }
@@ -140,8 +154,7 @@ export default function PromotionCreate() {
             },
         },
 
-
-
+        // ===== STATUS =====
         {
             name: 'status',
             label: 'Trạng thái',
@@ -153,6 +166,7 @@ export default function PromotionCreate() {
             rules: [{ required: true, message: 'Vui lòng chọn trạng thái' }],
         },
     ];
+
 
     const handleSubmit = async (values: any) => {
         try {
