@@ -178,6 +178,7 @@ export default function PromotionEdit() {
     ];
 
 
+
     // ===== SET INITIAL VALUES =====
     useEffect(() => {
         if (data?.data) {
