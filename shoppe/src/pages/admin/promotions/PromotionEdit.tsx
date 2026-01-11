@@ -22,71 +22,112 @@ export default function PromotionEdit() {
 
     const fields: Field[] = [
         { name: 'id', type: 'hidden' },
-        { name: 'userId', type: 'hidden' },
-
+        { name: 'sellerId', type: 'hidden' },
         {
             name: 'code',
             label: 'Mã khuyến mãi',
             type: 'text',
-            rules: [{ required: true, message: 'Vui lòng nhập mã khuyến mãi' }, { max: 50, message: 'Mã khuyến mãi tối đa 50 ký tự' }],
+            rules: [
+                { required: true, message: 'Vui lòng nhập mã khuyến mãi' },
+                { max: 50, message: 'Mã khuyến mãi tối đa 50 ký tự' }
+            ],
         },
+
         {
             name: 'description',
-            label: 'Mô tả',
+            label: 'Mô tả khuyến mãi',
             type: 'text',
-            rules: [{ required: true, message: 'Vui lòng nhập mô tả' }, { max: 255, message: 'Mô tả tối đa 255 ký tự' }],
+            rules: [
+                { required: true, message: 'Vui lòng nhập mô tả' },
+                { max: 255, message: 'Mô tả tối đa 255 ký tự' }
+            ],
         },
+
         {
             name: 'discountPercent',
             label: 'Phần trăm giảm giá',
             type: 'number',
             rules: [
                 { required: true, message: 'Vui lòng nhập phần trăm giảm' },
-                // ✅ Thay đổi ở đây - dùng validator tùy chỉnh
+                {
+                    validator: (_: any, value: any) => {
+                        if (value === null || value === undefined) return Promise.resolve();
+
+                        const num = Number(value);
+
+                        if (isNaN(num)) {
+                            return Promise.reject('Giá trị phải là số');
+                        }
+
+                        if (num < 1 || num > 100) {
+                            return Promise.reject('Phần trăm giảm phải từ 1 đến 100');
+                        }
+
+                        if (!/^\d{1,3}(\.\d{1,2})?$/.test(String(value))) {
+                            return Promise.reject('Tối đa 2 chữ số thập phân');
+                        }
+
+                        return Promise.resolve();
+                    }
+                }
+            ],
+        },
+
+        {
+            name: 'minOrderValue',
+            label: 'Giá trị đơn tối thiểu',
+            type: 'number',
+            rules: [
+                { required: true, message: 'Vui lòng nhập giá trị đơn tối thiểu' },
+                {
+                    validator: (_: any, value: any) => {
+                        if (value === null || value === undefined) return Promise.resolve();
+
+                        const num = Number(value);
+
+                        if (isNaN(num) || num < 0) {
+                            return Promise.reject('Giá trị phải là số lớn hơn hoặc bằng 0');
+                        }
+
+                        if (!/^\d+(\.\d{1,2})?$/.test(String(value))) {
+                            return Promise.reject('Tối đa 2 chữ số thập phân');
+                        }
+
+                        return Promise.resolve();
+                    }
+                }
+            ],
+        },
+
+        {
+            name: 'quantityLimit',
+            label: 'Số lượng giới hạn',
+            type: 'number',
+            rules: [
+                { required: true, message: 'Vui lòng nhập số lượng giới hạn' },
                 {
                     validator: (_: any, value: any) => {
                         const num = Number(value);
-                        if (isNaN(num) || num < 1 || num > 100) {
-                            return Promise.reject('Giá trị từ 1 đến 100');
+
+                        if (!Number.isInteger(num) || num <= 0) {
+                            return Promise.reject('Số lượng phải là số nguyên dương');
                         }
+
                         return Promise.resolve();
                     }
                 }
             ],
         },
         {
-            name: 'minOrderValue',
-            label: 'Giá trị đơn tối thiểu',
-            type: 'number',
-            rules: [{ required: true, message: 'Vui lòng nhập giá trị đơn tối thiểu' }],
-        },
-        {
-            name: 'quantityLimit',
-            label: 'Số lượng giới hạn',
-            type: 'number',
-            rules: [{ required: true, message: 'Vui lòng nhập số lượng giới hạn' }],
-        },
-
-        // ===== START DATE =====
-        {
             name: 'startDate',
             label: 'Ngày bắt đầu',
             type: 'date',
             rules: [{ required: true, message: 'Vui lòng chọn ngày bắt đầu' }],
             disabledDate: (current) => {
-                const oldStartDate = formRef.current?.getFieldValue('startDate');
-
-                // Nếu là ngày cũ → cho phép
-                if (oldStartDate && dayjs(oldStartDate).isSame(current, 'day')) {
-                    return false;
-                }
-
-                // Không cho chọn ngày quá khứ
-                return current && current.isBefore(today);
+                // ❌ không cho chọn ngày trước hôm nay
+                return current && current.isBefore(dayjs().startOf('day'));
             },
         },
-
-        // ===== END DATE =====
         {
             name: 'endDate',
             label: 'Ngày kết thúc',
@@ -94,20 +135,22 @@ export default function PromotionEdit() {
             rules: [{ required: true, message: 'Vui lòng chọn ngày kết thúc' }],
             disabledDate: (current) => {
                 const startDate = formRef.current?.getFieldValue('startDate');
-                const oldEndDate = formRef.current?.getFieldValue('endDate');
 
-                // Cho giữ nguyên endDate cũ
-                if (oldEndDate && dayjs(oldEndDate).isSame(current, 'day')) {
-                    return false;
+                // ❌ không cho chọn ngày trước hôm nay
+                if (current && current.isBefore(dayjs().startOf('day'))) {
+                    return true;
                 }
 
-                if (current && current.isBefore(today)) return true;
-
-                if (startDate && current.isBefore(dayjs(startDate), 'day')) return true;
+                // ❌ không cho nhỏ hơn startDate
+                if (startDate && current.isBefore(startDate, 'day')) {
+                    return true;
+                }
 
                 return false;
             },
         },
+
+
 
         {
             name: 'status',
