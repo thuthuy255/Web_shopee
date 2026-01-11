@@ -28,13 +28,13 @@ export default function PromotionEdit() {
             name: 'code',
             label: 'Mã khuyến mãi',
             type: 'text',
-            rules: [{ required: true, message: 'Vui lòng nhập mã khuyến mãi' }],
+            rules: [{ required: true, message: 'Vui lòng nhập mã khuyến mãi' }, { max: 50, message: 'Mã khuyến mãi tối đa 50 ký tự' }],
         },
         {
             name: 'description',
             label: 'Mô tả',
             type: 'text',
-            rules: [{ required: true, message: 'Vui lòng nhập mô tả' }],
+            rules: [{ required: true, message: 'Vui lòng nhập mô tả' }, { max: 255, message: 'Mô tả tối đa 255 ký tự' }],
         },
         {
             name: 'discountPercent',
