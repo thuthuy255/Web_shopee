@@ -31,7 +31,7 @@ interface Promotion {
 const statusMap: Record<string, string> = {
   Active: "Hoạt động",
   Expired: "Hết hạn",
-  Inactive: "Ngừng hoạt động",
+  Inactive: "Ngừng áp dụng"
 };
 
 const columns: TableColumnsType<Promotion> = [

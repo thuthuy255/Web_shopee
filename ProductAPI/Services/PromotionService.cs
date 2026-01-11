@@ -19,28 +19,68 @@ namespace ProductAPI.Services
 
         public async Task<MethodResult<Promotion>> CreateAsync(Guid userId, PromotionDto dto)
         {
+            // 1. Code bắt buộc
             if (string.IsNullOrWhiteSpace(dto.Code))
-                return MethodResult<Promotion>.ResultWithError("Mã khuyến mãi (Code) là bắt buộc.");
+                return MethodResult<Promotion>.ResultWithError("Mã khuyến mãi là bắt buộc.");
+
+            if (dto.Code.Length > 50)
+                return MethodResult<Promotion>.ResultWithError("Mã khuyến mãi tối đa 50 ký tự.");
+
+            // 2. Code không được trùng
+            if (await _promoRepo.TableNoTracking
+    .AnyAsync(x => x.Code == dto.Code && x.UserId == userId))
+            {
+                return MethodResult<Promotion>.ResultWithError("Mã khuyến mãi đã tồn tại.");
+            }
+
+
+            // 3. DiscountPercent
+            if (dto.DiscountPercent < 1 || dto.DiscountPercent > 100)
+                return MethodResult<Promotion>.ResultWithError("Phần trăm giảm phải từ 1 đến 100.");
+
+            // 4. MinOrderValue
+            if (dto.MinOrderValue.HasValue && dto.MinOrderValue < 0)
+                return MethodResult<Promotion>.ResultWithError("Giá trị đơn tối thiểu không được âm.");
+
+            // 5. QuantityLimit
+            if (dto.QuantityLimit.HasValue && dto.QuantityLimit <= 0)
+                return MethodResult<Promotion>.ResultWithError("Số lượng giới hạn phải lớn hơn 0.");
+
+            // 6. Date
             if (dto.EndDate < dto.StartDate)
                 return MethodResult<Promotion>.ResultWithError("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.");
+
+            // 7. Status hợp lệ
+            if (!string.IsNullOrEmpty(dto.Status) &&
+                !Enum.TryParse<PromotionStatus>(dto.Status, out _))
+            {
+                return MethodResult<Promotion>.ResultWithError("Trạng thái khuyến mãi không hợp lệ.");
+            }
+
+            // 8. Create entity
             var newPromo = new Promotion
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                Code = dto.Code,
-                Description = dto.Description,
+                Code = dto.Code.Trim(),
+                Description = dto.Description?.Trim(),
                 DiscountPercent = dto.DiscountPercent,
                 MinOrderValue = dto.MinOrderValue,
                 QuantityLimit = dto.QuantityLimit,
                 UsedQuantity = 0,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
-                Status = PromotionStatus.Active.ToString(),
+                Status = dto.Status ?? PromotionStatus.Active.ToString()
             };
 
             await _promoRepo.AddAsync(newPromo);
-            return MethodResult<Promotion>.ResultWithData(newPromo, "Tạo mã khuyến mãi thành công.");
+
+            return MethodResult<Promotion>.ResultWithData(
+                newPromo,
+                "Tạo mã khuyến mãi thành công."
+            );
         }
+
 
         public async Task<MethodResult<int>> GetTotalPromotionAsync()
         {

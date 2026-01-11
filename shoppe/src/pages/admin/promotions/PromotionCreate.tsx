@@ -35,38 +35,77 @@ export default function PromotionCreate() {
 
         {
             name: 'discountPercent',
-            label: 'Phần trăm giảm (%)',
-            type: 'text',
+            label: 'Phần trăm giảm giá',
+            type: 'number',
             rules: [
                 { required: true, message: 'Vui lòng nhập phần trăm giảm' },
-                { pattern: /^[0-9]+$/, message: 'Phần trăm phải là số' },
                 {
                     validator: (_: any, value: any) => {
-                        const num = parseInt(value);
-                        if (value && (num < 1 || num > 100)) {
-                            return Promise.reject('DiscountPercent phải từ 1 đến 100');
+                        if (value === null || value === undefined) return Promise.resolve();
+
+                        const num = Number(value);
+
+                        if (isNaN(num)) {
+                            return Promise.reject('Giá trị phải là số');
                         }
+
+                        if (num < 1 || num > 100) {
+                            return Promise.reject('Phần trăm giảm phải từ 1 đến 100');
+                        }
+
+                        if (!/^\d{1,3}(\.\d{1,2})?$/.test(String(value))) {
+                            return Promise.reject('Tối đa 2 chữ số thập phân');
+                        }
+
                         return Promise.resolve();
                     }
                 }
             ],
         },
+
         {
             name: 'minOrderValue',
-            label: 'Giá trị đơn hàng tối thiểu',
-            type: 'text',
+            label: 'Giá trị đơn tối thiểu',
+            type: 'number',
             rules: [
-                { required: true, message: 'Vui lòng nhập giá trị tối thiểu' },
-                { pattern: /^[0-9]+$/, message: 'Giá trị phải là số' },
+                { required: true, message: 'Vui lòng nhập giá trị đơn tối thiểu' },
+                {
+                    validator: (_: any, value: any) => {
+                        if (value === null || value === undefined) return Promise.resolve();
+
+                        const num = Number(value);
+
+                        if (isNaN(num) || num < 0) {
+                            return Promise.reject('Giá trị phải lớn hơn hoặc bằng 0');
+                        }
+
+                        if (!/^\d+(\.\d{1,2})?$/.test(String(value))) {
+                            return Promise.reject('Tối đa 2 chữ số thập phân');
+                        }
+
+                        return Promise.resolve();
+                    }
+                }
             ],
         },
+
         {
             name: 'quantityLimit',
-            label: 'Số lượng mã tối đa',
-            type: 'text',
+            label: 'Số lượng giới hạn',
+            type: 'number',
             rules: [
-                { required: true, message: 'Vui lòng nhập số lượng mã' },
-                { pattern: /^[0-9]+$/, message: 'Số lượng phải là số' },
+                { required: true, message: 'Vui lòng nhập số lượng giới hạn' },
+                {
+                    validator: (_: any, value: any) => {
+                        const num = Number(value);
+
+                        if (!Number.isInteger(num) || num <= 0) {
+                            return Promise.reject('Số lượng phải là số nguyên dương');
+                        }
+
+                        return Promise.resolve();
+                    }
+                }
             ],
         },
         {
@@ -108,8 +147,8 @@ export default function PromotionCreate() {
             label: 'Trạng thái',
             type: 'select',
             options: [
-                { label: 'Đang hoạt động', value: 'Active' },
-                { label: 'Ngừng hoạt động', value: 'Inactive' },
+                { label: 'Hoạt động', value: 'Active' },
+                { label: 'Ngừng áp dụng', value: 'Inactive' },
             ],
             rules: [{ required: true, message: 'Vui lòng chọn trạng thái' }],
         },
