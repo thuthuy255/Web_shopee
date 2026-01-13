@@ -52,23 +52,47 @@ export default function ProductsCreate() {
             name: 'productName',
             label: 'Tên sản phẩm',
             type: 'text',
-            rules: [{ required: true, message: 'Vui lòng nhập tên sản phẩm' }],
+            rules: [
+                { required: true, message: 'Vui lòng nhập tên sản phẩm' },
+                { max: 255, message: 'Tên sản phẩm tối đa 255 ký tự' }
+            ],
         },
         {
             name: 'description',
             label: 'Mô tả sản phẩm',
             type: 'text',
-            rules: [{ required: true, message: 'Vui lòng nhập mô tả' }],
+            rules: [
+                { required: true, message: 'Vui lòng nhập mô tả' },
+                { max: 255, message: 'Mô tả tối đa 255 ký tự' }
+            ],
         },
+
         {
             name: 'price',
             label: 'Giá bán',
             type: 'text',
             rules: [
                 { required: true, message: 'Vui lòng nhập giá' },
-                { pattern: /^[0-9]+$/, message: 'Giá phải là số' },
+                {
+                    validator: (_: any, value: any) => {
+                        if (value === null || value === undefined || value === '') {
+                            return Promise.resolve();
+                        }
+
+                        // decimal(18,2): 16 số nguyên + 2 số thập phân
+                        if (!/^\d{1,16}(\.\d{1,2})?$/.test(value)) {
+                            return Promise.reject(
+                                'Giá tối đa 16 chữ số phần nguyên và 2 chữ số thập phân'
+                            );
+                        }
+
+                        return Promise.resolve();
+                    }
+                }
             ],
         },
+
+
         {
             name: 'stockQuantity',
             label: 'Tồn kho',

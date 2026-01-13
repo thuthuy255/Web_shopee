@@ -21,7 +21,7 @@ import {
 import LoadingDefault from "../../components/loading/LoadingDefault";
 import { COLOR_DEFAULT } from "../../constants/Color";
 import VoucherModal from "./VoucherModal";
-import { showError, showSuccess } from "../../untils/ShowToast";
+import { showError, showSuccess, showWarning } from "../../untils/ShowToast";
 
 const { Text } = Typography;
 
@@ -165,11 +165,10 @@ function CartPage() {
     // --- Checkout ---
     const handleCheckout = () => {
         if (selectedItems.length === 0) {
-            alert("Bạn chưa chọn sản phẩm nào!");
+            showWarning("Vui lòng chọn ít nhất 1 sản phẩm để mua");
             return;
         }
 
-        // Chuẩn hóa lại giá trước khi navigate
         const checkoutItems = selectedItems.map(item => {
             const unitPrice = item.productVariant?.price ?? item.price;
             return {
@@ -179,10 +178,12 @@ function CartPage() {
         });
 
         const cartItemIds = checkoutItems.map((i) => i.id);
+
         navigate("/user/checkout", {
             state: { items: checkoutItems, cartItemIds, appliedVoucher },
         });
     };
+
 
     // --- Delete item ---
     const handleDelete = async (id: string) => {
@@ -382,7 +383,7 @@ function CartPage() {
                                     type="primary"
                                     style={{ backgroundColor: COLOR_DEFAULT }}
                                     size="large"
-                                    disabled={finalPrice === 0}
+                                    // disabled={finalPrice === 0}
                                     onClick={handleCheckout}
                                 >
                                     Mua hàng
