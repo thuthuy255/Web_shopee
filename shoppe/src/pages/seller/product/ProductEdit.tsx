@@ -99,7 +99,8 @@ export default function ProductEdit() {
       label: "Tên sản phẩm",
       type: "text",
       rules: [
-        { required: true, message: "Vui lòng nhập tên sản phẩm" },
+        { required: true, message: 'Vui lòng nhập tên sản phẩm' },
+        { max: 255, message: 'Tên sản phẩm tối đa 255 ký tự' }
       ],
     },
 
@@ -108,7 +109,8 @@ export default function ProductEdit() {
       label: "Mô tả",
       type: "text",
       rules: [
-        { required: true, message: "Vui lòng nhập mô tả sản phẩm" },
+        { required: true, message: 'Vui lòng nhập mô tả' },
+        { max: 255, message: 'Mô tả tối đa 255 ký tự' }
       ],
     },
 
@@ -118,7 +120,22 @@ export default function ProductEdit() {
       type: "number",
       rules: [
         { required: true, message: 'Vui lòng nhập giá' },
-        { pattern: /^[0-9]+$/, message: 'Giá phải là số' },
+        {
+          validator: (_: any, value: any) => {
+            if (value === null || value === undefined || value === '') {
+              return Promise.resolve();
+            }
+
+            // decimal(18,2): 16 số nguyên + 2 số thập phân
+            if (!/^\d{1,16}(\.\d{1,2})?$/.test(value)) {
+              return Promise.reject(
+                'Giá tối đa 16 chữ số phần nguyên và 2 chữ số thập phân'
+              );
+            }
+
+            return Promise.resolve();
+          }
+        }
       ],
     },
 
