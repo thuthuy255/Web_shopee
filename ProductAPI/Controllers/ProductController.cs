@@ -93,16 +93,29 @@ namespace ProductAPI.Controllers
 
         [HttpDelete("deleteProduct")]
         [Authorize(Roles = $"{Constant.Constants.ROLE_SELLER},{Constant.Constants.ROLE_ADMIN}")]
-
         public async Task<IActionResult> DeleteProduct([FromQuery] Guid productId)
         {
             var sellerId = _userPrincipalService.GetUserId();
 
             if (!sellerId.HasValue)
-                return Unauthorized("Bạn chưa đăng nhập.");
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Bạn chưa đăng nhập."
+                });
+
             var result = await _productServices.DeleteProductAsync(productId);
-            return result.Success ? Ok(result) : BadRequest(result);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(new
+            {
+                success = true,
+                message = result.Message ?? "Xóa sản phẩm thành công"
+            });
         }
+
         [HttpDelete("deleteVariants")]
         [Authorize(Roles = "Seller")]
         public async Task<IActionResult> DeleteVariant([FromQuery] Guid variantId)

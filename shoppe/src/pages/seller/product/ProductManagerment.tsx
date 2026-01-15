@@ -10,6 +10,7 @@ import {
 } from "../../../api/product/product.api";
 import LoadingDefault from "../../../components/loading/LoadingDefault";
 import Search from "antd/es/input/Search";
+import { showError, showSuccess } from "../../../untils/ShowToast";
 
 interface Product {
   id: string;
@@ -147,10 +148,10 @@ export default function ProductManagement() {
           setTotal(res?.totalRecord || 0);
           setCurrentPage(page);
         } else {
-          message.error("Không thể lấy danh sách sản phẩm");
+          showError("Không thể lấy danh sách sản phẩm");
         }
-      } catch (error) {
-        console.error(error);
+      } catch (e) {
+        console.log(e);
         message.error("Đã xảy ra lỗi khi tải dữ liệu");
       } finally {
         setLoading(false);
@@ -174,17 +175,29 @@ export default function ProductManagement() {
   const handleDelete = async (id: string) => {
     try {
       setLoading(true);
-      await deleteProduct(id);
+
+      const res: any = await deleteProduct(id);
+
+      // ❌ Delete thất bại
+      if (!res?.success) {
+        message.error(res?.message || "Xóa sản phẩm thất bại");
+        return;
+      }
+
+      // ✅ Update UI sau khi delete thành công
       setData((prev) => prev.filter((item) => item.id !== id));
-      setTotal((prev) => prev - 1);
-      message.success("Đã xoá sản phẩm");
+
+      setTotal((prev) => Math.max(0, prev - 1));
+
+      showSuccess(res?.message || "Xóa sản phẩm thành công");
     } catch (error) {
       console.error(error);
-      message.error("Xoá sản phẩm thất bại");
+      message.error("Đã xảy ra lỗi khi xóa sản phẩm");
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div>
