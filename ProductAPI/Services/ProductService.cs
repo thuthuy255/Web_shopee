@@ -164,50 +164,77 @@ namespace ProductAPI.Services
         public async Task<IMethodResult<List<ProductWithCategoryDto>>> getAllListProducts(Guid sellerId, SearchProducts request)
         {
             var query = _productRepo.TableNoTracking;
+
+            // Filter keyword
             if (!string.IsNullOrEmpty(request.KeyWord))
             {
                 query = query.Where(p => p.ProductName.Contains(request.KeyWord));
             }
+
+            // ✅ Sửa logic filter status để khớp với 3 trạng thái
             if (!string.IsNullOrEmpty(request.Status))
             {
-                var isActive = request.Status == "inactive" ? false : true; 
-                query = query.Where(p => p.SellerStatus == isActive);
+                switch (request.Status.ToLower())
+                {
+                    case "active":
+                        query = query.Where(p => p.SellerStatus == true);
+                        break;
+                    case "inactive":
+                        query = query.Where(p => p.SellerStatus == false && p.StockQuantity > 0);
+                        break;
+                    case "outofstock":
+                        query = query.Where(p => p.StockQuantity == 0);
+                        break;
+                }
             }
-            var result = await (from p in query
-                                join c in _categoryRepo.TableNoTracking on p.CategoryId equals c.Id
-                                where !p.IsDeleted && p.SellerId == sellerId && !c.IsDeleted
-                                select new ProductWithCategoryDto
-                                {
-                                    Id = p.Id,
-                                    ProductName = p.ProductName,
-                                    Description = p.Description,
-                                    Price = p.Price,
-                                    StockQuantity = p.StockQuantity,
-                                    // Nếu hết hàng thì mặc định isActive = false
-                                    IsActive = p.StockQuantity == 0 ? false : p.IsActive,
-                                    SellerStatus = p.SellerStatus,
-                                    Thumbnail = p.Thumbnail,
-                                    ProductImages = string.IsNullOrWhiteSpace(p.ImageListJson)
-                                        ? new List<string>()
-                                        : p.ImageListJson.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList(),
-                                    CategoryId = c.Id,
-                                    CategoryName = c.Name,
-                                    CategoryDescription = c.Description,
-                                    CategoryImageUrl = c.ImageUrl,
-                                    ParentCategoryId = c.ParentCategoryId,
-                                    Variants = _productVariantRepo.TableNoTracking
-                                                    .Where(v => v.ProductId == p.Id)
-                                                    .Select(v => new ProductVariantDto
-                                                    {
-                                                        Id = v.Id,
-                                                        VariantName = v.VariantName,
-                                                        Price = v.Price,
-                                                        StockQuantity = v.StockQuantity
-                                                    }).ToList()
-                                }).OrderByDescending(p => p.Id).ToListAsync();
-            var totalRecord = await query.CountAsync();
-            return MethodResult<List<ProductWithCategoryDto>>.ResultWithData(result, "Lấy danh sách sản phẩm theo seller thành công", totalRecord );
 
+            // ✅ Tạo query đầy đủ với join
+            var fullQuery = from p in query
+                            join c in _categoryRepo.TableNoTracking on p.CategoryId equals c.Id
+                            where !p.IsDeleted && p.SellerId == sellerId && !c.IsDeleted
+                            select new { p, c };
+
+            // ✅ Đếm total từ query SAU KHI join
+            var totalRecord = await fullQuery.CountAsync();
+
+            // ✅ Lấy data
+            var result = await fullQuery
+                .OrderByDescending(x => x.p.Id)
+                .Select(x => new ProductWithCategoryDto
+                {
+                    Id = x.p.Id,
+                    ProductName = x.p.ProductName,
+                    Description = x.p.Description,
+                    Price = x.p.Price,
+                    StockQuantity = x.p.StockQuantity,
+                    IsActive = x.p.StockQuantity == 0 ? false : x.p.IsActive,
+                    SellerStatus = x.p.SellerStatus,
+                    Thumbnail = x.p.Thumbnail,
+                    ProductImages = string.IsNullOrWhiteSpace(x.p.ImageListJson)
+                        ? new List<string>()
+                        : x.p.ImageListJson.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList(),
+                    CategoryId = x.c.Id,
+                    CategoryName = x.c.Name,
+                    CategoryDescription = x.c.Description,
+                    CategoryImageUrl = x.c.ImageUrl,
+                    ParentCategoryId = x.c.ParentCategoryId,
+                    Variants = _productVariantRepo.TableNoTracking
+                        .Where(v => v.ProductId == x.p.Id && !v.IsDeleted)
+                        .Select(v => new ProductVariantDto
+                        {
+                            Id = v.Id,
+                            VariantName = v.VariantName,
+                            Price = v.Price,
+                            StockQuantity = v.StockQuantity
+                        }).ToList()
+                })
+                .ToListAsync();
+
+            return MethodResult<List<ProductWithCategoryDto>>.ResultWithData(
+                result,
+                "Lấy danh sách sản phẩm theo seller thành công",
+                totalRecord
+            );
         }
         public async Task<IMethodResult<List<ProductWithCategoryDto>>> FilterProductBySellerAsync(Guid sellerId, GridInfo grid)
         {
