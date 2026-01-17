@@ -143,6 +143,7 @@ export default function ProductManagement() {
           sellerStatus: sellerStatus,
         };
         const res: any = await getAllProductOfSeller(body);
+        console.log("🚀 ~ ProductManagement ~ res:", res)
         if (res?.success) {
           setData(res?.data || []);
           setTotal(res?.totalRecord || 0);
