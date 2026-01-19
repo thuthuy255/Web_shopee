@@ -387,26 +387,35 @@ namespace ProductAPI.Services
                 SellerId = sellerId
             };
 
+            string? thumbnailUrl = product.Thumbnail;
+
+            // ✅ UPLOAD ẢNH MỚI
             if (dto.Thumbnail != null)
             {
-                var url = await _cloudinaryService.UploadImageAsync(dto.Thumbnail);
-                if (!string.IsNullOrEmpty(url))
+                try
                 {
-                    product.Thumbnail = url;
+                    thumbnailUrl = await _cloudinaryService.UploadImageAsync(dto.Thumbnail);
                 }
+                catch (ArgumentException ex)
+                {
+                    return MethodResult<ProductResultDto>
+                        .ResultWithError(ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    return MethodResult<ProductResultDto>
+                        .ResultWithError($"Không thể upload ảnh đại diện: {ex.Message}");
+                }
+            }
+            // ✅ XÓA ẢNH
+            else if (dto.RemoveImage)
+            {
+                thumbnailUrl = null;
             }
 
-            if (dto.ProductImages != null && dto.ProductImages.Any())
-            {
-                var imageUrls = new List<string>();
-                foreach (var image in dto.ProductImages)
-                {
-                    var url = await _cloudinaryService.UploadImageAsync(image);
-                    if (!string.IsNullOrEmpty(url))
-                        imageUrls.Add(url);
-                }
-                product.ImageListJson = imageUrls.Count > 0 ? $";{string.Join(';', imageUrls)};" : null;
-            }
+            product.Thumbnail = thumbnailUrl;
+            product.MarkDirty(nameof(product.Thumbnail));
+
 
 
             await _productRepo.AddAsync(product);
@@ -458,46 +467,85 @@ namespace ProductAPI.Services
             product.MarkDirty(nameof(product.SellerStatus));
             product.MarkDirty(nameof(product.ProductName));
 
+            // ================== THUMBNAIL ==================
+            string? thumbnailUrl = product.Thumbnail;
+
+            // ✅ UPLOAD ẢNH MỚI
             if (dto.Thumbnail != null)
             {
-                var url = await _cloudinaryService.UploadImageAsync(dto.Thumbnail);
-                if (!string.IsNullOrEmpty(url))
+                try
                 {
-                    product.Thumbnail = url;
-                    product.MarkDirty(nameof(product.Thumbnail));
+                    thumbnailUrl = await _cloudinaryService.UploadImageAsync(dto.Thumbnail);
+                }
+                catch (ArgumentException ex)
+                {
+                    return MethodResult<ProductResultDto>.ResultWithError(ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    return MethodResult<ProductResultDto>
+                        .ResultWithError($"Không thể upload ảnh đại diện: {ex.Message}");
                 }
             }
+            // ✅ XÓA ẢNH
+            else if (dto.RemoveImage)
+            {
+                thumbnailUrl = null;
+            }
+
+            product.Thumbnail = thumbnailUrl;
+            product.MarkDirty(nameof(product.Thumbnail));
+
+
+            // ================== PRODUCT IMAGES ==================
+            string? imageListJson = product.ImageListJson;
+
+            // ✅ UPLOAD / GIỮ ẢNH CŨ
             if (!string.IsNullOrEmpty(dto.ExistingProductImages) ||
                 (dto.ProductImages != null && dto.ProductImages.Any()))
             {
                 var imageUrls = new List<string>();
 
-                // 1. Giữ ảnh cũ
+                // 1️⃣ Giữ ảnh cũ
                 if (!string.IsNullOrEmpty(dto.ExistingProductImages))
                 {
-                    var oldImages = JsonConvert.DeserializeObject<List<string>>(dto.ExistingProductImages);
+                    var oldImages =
+                        JsonConvert.DeserializeObject<List<string>>(dto.ExistingProductImages);
+
                     if (oldImages != null && oldImages.Any())
                         imageUrls.AddRange(oldImages);
                 }
 
-                // 2. Upload ảnh mới
+                // 2️⃣ Upload ảnh mới
                 if (dto.ProductImages != null && dto.ProductImages.Any())
                 {
                     foreach (var image in dto.ProductImages)
                     {
-                        var url = await _cloudinaryService.UploadImageAsync(image);
-                        if (!string.IsNullOrEmpty(url))
+                        try
+                        {
+                            var url = await _cloudinaryService.UploadImageAsync(image);
                             imageUrls.Add(url);
+                        }
+                        catch (ArgumentException ex)
+                        {
+                            return MethodResult<ProductResultDto>.ResultWithError(ex.Message);
+                        }
+                        catch (Exception ex)
+                        {
+                            return MethodResult<ProductResultDto>
+                                .ResultWithError($"Không thể upload ảnh chi tiết: {ex.Message}");
+                        }
                     }
                 }
 
-                // 3. Lưu lại list mới (gồm cả ảnh cũ + mới)
-                product.ImageListJson = imageUrls.Count > 0
+                imageListJson = imageUrls.Any()
                     ? $";{string.Join(';', imageUrls)};"
                     : null;
-
-                product.MarkDirty(nameof(product.ImageListJson));
             }
+         
+            product.ImageListJson = imageListJson;
+            product.MarkDirty(nameof(product.ImageListJson));
+
 
 
             if (dto.Variants != null)

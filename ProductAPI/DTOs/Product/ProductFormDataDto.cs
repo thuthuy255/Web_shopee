@@ -7,7 +7,7 @@
         public decimal? Price { get; set; }
         public int? StockQuantity { get; set; }
         public bool IsActive { get; set; } = true;
-
+        public bool RemoveImage { get; set; } = false;
         public bool SellerStatus { get; set; } = true; 
         public Guid? CategoryId { get; set; }
        
