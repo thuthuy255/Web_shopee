@@ -9,6 +9,7 @@
         public int StockQuantity { get; set; }
         public bool IsActive { get; set; } = true;
 
+
         // Trạng thái do seller set: true = hoạt động, false = ngưng bán
         public bool SellerStatus { get; set; } = true;
         public string Thumbnail { get; set; } = null!;
