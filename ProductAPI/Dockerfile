@@ -10,7 +10,7 @@ RUN dotnet restore ./ProductAPI/ProductAPI.csproj
 COPY . .
 
 WORKDIR /app/ProductAPI
-RUN dotnet publish -c Release -o out
+RUN dotnet publish -c Release -o out --no-restore
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
