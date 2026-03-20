@@ -24,6 +24,7 @@ interface CustomTableProps<T> {
   onToggleLock?: (id: string, currentLockStatus: boolean) => void;
   lockStatusKey?: string; // Key để lấy trạng thái khóa từ record (mặc định: 'isLocked')
   title?: string;
+  scrollY?: number;
 }
 
 function CustomTable<T>({

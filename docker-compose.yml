@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_container
+    environment:
+      SA_PASSWORD: "Admin123@"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+
+  backend:
+    build:
+      context: ./ProductAPI
+    container_name: backend_container
+    ports:
+      - "5000:8080"
+    depends_on:
+      - sqlserver
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=Shopee;User Id=sa;Password=Admin123@;TrustServerCertificate=True;Encrypt=False
+
+  frontend:
+    build:
+      context: ./shoppe
+    container_name: frontend_container
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Card, Avatar, Row, Col, Typography, Button, Divider, Spin, Pagination, Input, message } from "antd";
+import { Card, Avatar, Row, Col, Typography, Pagination, message } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import { getInfoShop } from "./../../api/product/product.api";
 import LoadingDefault from "../../components/loading/LoadingDefault";
@@ -29,9 +29,9 @@ const ShopPage = () => {
     const navigate = useNavigate();
     const [products, setProducts] = useState<Product[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(15);
+    const [pageSize] = useState(15);
+    const [keyword] = useState("");
     const [total, setTotal] = useState(0);
-    const [keyword, setKeyword] = useState("");
 
     const fetchShopWithProducts = async (page: number, key: string = "") => {
         if (!sellerId) return;

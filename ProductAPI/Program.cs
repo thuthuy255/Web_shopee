@@ -121,7 +121,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // App pipeline
 var app = builder.Build();
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
 
